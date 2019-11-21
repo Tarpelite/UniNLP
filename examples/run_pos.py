@@ -236,15 +236,13 @@ def evaluate(args, model, tokenizer, prefix=""):
                       }
             if args.model_type != 'distilbert':
                 inputs['token_type_ids'] = None if args.model_type == 'xlm' else batch[2]  # XLM don't use segment_ids
-            example_indices = batch[3]
-            if args.model_type in ['xlnet', 'xlm']:
-                inputs.update({'cls_index': batch[4],
-                               'p_mask':    batch[5]})
+            example_indices = batch[4]
             outputs = model(**inputs)
 
         for i, example_index in enumerate(example_indices):
+            print("test")
             print(i, example_index)
-            
+
             eval_feature = features[example_index.item()]
             unique_id = int(eval_feature.unique_id)
             valid_length = eval_feature.valid_length
@@ -293,7 +291,12 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
     all_input_mask = torch.tensor([f.input_mask for f in features], dtype=torch.long)
     all_segment_ids = torch.tensor([f.segment_ids for f in features], dtype=torch.long)
     all_label_ids = torch.tensor([f.label_ids for f in features], dtype=torch.long)
-    dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids,
+
+    if evaluate:
+        all_example_index = torch.arrange(all_input_ids.size(0), dtype=torch.long)
+        dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids,all_label_ids, all_example_index)
+    else:
+        dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids,
                                 all_label_ids)
 
     if output_examples:
