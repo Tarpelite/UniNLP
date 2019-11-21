@@ -16,10 +16,10 @@ class UDExample(object):
     """
     def __init__(self,
                 UD_id,
-                doc_tokens,
+                tokens,
                 pos_tags=None):
         self.UD_id = UD_id
-        self.doc_tokens = doc_tokens
+        self.tokens = tokens
         self.pos_tags = pos_tags
     
     def __str__(self):
@@ -28,7 +28,7 @@ class UDExample(object):
     def __repr__(self):
         s = ""
         s += "qas_id: %s" % (self.UD_id)
-        s += ", doc_tokens: %s" % (self.doc_tokens)
+        s += ", doc_tokens: %s" % (self.tokens)
         if self.pos_tags is not None:
             s += ", pos_tags: %s"%(self.pos_tags)
         return s
@@ -79,7 +79,7 @@ def read_UD_examples(input_file, is_training):
     for i, instance in enumerate(instances):
         example =  UDExample(
             UD_id=i,
-            doc_tokens = instance[0], 
+            tokens = instance[0], 
             pos_tags = instance[1] 
         )
         examples.append(example)
