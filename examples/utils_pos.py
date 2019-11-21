@@ -36,14 +36,16 @@ class UDExample(object):
 
 class InputFeatures(object):
 
-    def __init__(self, 
+    def __init__(self,
+                unique_id, 
                 input_ids, 
-                input_mask, segment_ids, label_ids):
+                input_mask, segment_ids, label_ids, valid_length):
         
         self.input_ids = input_ids
         self.input_mask = input_mask
         self.segment_ids = segment_ids
         self.label_ids = label_ids
+        self.valid_length = valid_length
     
 def read_UD_examples(input_file, is_training):
 
@@ -61,10 +63,7 @@ def read_UD_examples(input_file, is_training):
     
     for line in tqdm(data):
         if line == "\n":
-            if is_training:
-                instances.append([tokens, tags])
-            else:
-                instances.append([tokens, None])
+            instances.append([tokens, tags])
             tokens = []
             tags = []
         elif line.startswith("#"):
@@ -72,8 +71,7 @@ def read_UD_examples(input_file, is_training):
         else:
             line = line.strip("\n").split("\t")
             tokens.append(line[1])
-            if is_training:
-                tags.append(line[3])
+            tags.append(line[3])
     
     for i, instance in enumerate(instances):
         example =  UDExample(
@@ -132,17 +130,17 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
                 all_pos_tags_idx.append(0)
 
         tokens = all_doc_tokens
+        valid_length = len(tokens) + 2
         if len(tokens) > max_tokens_for_doc:
             tokens = tokens[:max_tokens_for_doc]
             all_pos_tags_idx = all_pos_tags_idx[:max_tokens_for_doc]
+            valid_length = max_seq_length
         
         tokens = [cls_token] + tokens 
-        if is_training:
-            label_ids = [17] + all_pos_tags_idx 
+        label_ids = [17] + all_pos_tags_idx 
         
         tokens += ["[SEP]"]
-        if is_training:
-            label_ids += [17]
+        label_ids += [17]
 
         input_ids = tokenizer.convert_tokens_to_ids(tokens)
         input_mask = [1 if mask_padding_with_zero else 0]*len(input_ids)
@@ -152,8 +150,7 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
         input_ids += ([0]*padding_length)
         input_mask += ([0 if mask_padding_with_zero else 1] * padding_length)
         segment_ids += ([pad_token_segment_id] * padding_length)
-        if is_training:
-            label_ids += ([pad_token_segment_id] * padding_length)
+        label_ids += ([pad_token_segment_id] * padding_length)
 
         try:
             assert len(input_ids) == max_seq_length
@@ -163,7 +160,6 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
             print("input_ids", len(input_ids))
             print("input_mask", len(input_mask))
             print("segment_ids", len(segment_ids))
-        if is_training:
             assert len(label_ids) == max_seq_length
 
         if example_index < 5:
@@ -173,14 +169,16 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
             logger.info("input_ids: %s", " ".join([str(x) for x in input_ids]))
             logger.info("input_mask: %s", " ".join([str(x) for x in input_mask]))
             logger.info("segment_ids: %s", " ".join([str(x) for x in segment_ids]))
-            if is_training:
-                logger.info("label_ids: %s", " ".join([str(x) for x in label_ids]))
+            logger.info("label_ids: %s", " ".join([str(x) for x in label_ids]))
         
         features.append(
-            InputFeatures(input_ids=input_ids, 
-                            input_mask=input_mask,
-                            segment_ids=segment_ids,
-                            label_ids=label_ids if is_training else None
+            InputFeatures(
+                unique_id=example_index,
+                input_ids=input_ids, 
+                input_mask=input_mask,
+                segment_ids=segment_ids,
+                label_ids=label_ids, 
+                valid_length=valid_length 
                          )
         )
     return features
