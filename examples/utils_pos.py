@@ -80,10 +80,10 @@ def read_UD_examples(input_file, is_training):
         example =  UDExample(
             UD_id=i,
             doc_tokens = instance[0], 
-            pos_tags = instance[2] 
+            pos_tags = instance[1] 
         )
         examples.append(example)
-        doc_tokens_lens.append(len(doc_tokens))
+        doc_tokens_lens.append(len(instance[0]))
     
     print("Statistics")
     print("max_len: {} min_len:{} avg_len: {}".format(max(doc_tokens_lens), min(doc_tokens_lens), sum(doc_tokens_lens)/len(doc_tokens_lens)))
