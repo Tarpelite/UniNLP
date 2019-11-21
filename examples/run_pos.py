@@ -243,6 +243,8 @@ def evaluate(args, model, tokenizer, prefix=""):
             outputs = model(**inputs)
 
         for i, example_index in enumerate(example_indices):
+            print(i, example_index)
+            
             eval_feature = features[example_index.item()]
             unique_id = int(eval_feature.unique_id)
             valid_length = eval_feature.valid_length
