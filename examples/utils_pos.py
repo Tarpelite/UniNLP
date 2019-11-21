@@ -1,7 +1,5 @@
 """ Load UD dataset. """
 
-from __future__ import absolute_import, division, whitespace_tokenize
-
 import json
 import logging
 import math
