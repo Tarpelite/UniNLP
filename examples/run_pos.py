@@ -314,13 +314,7 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
     all_input_mask = torch.tensor([f.input_mask for f in features], dtype=torch.long)
     all_segment_ids = torch.tensor([f.segment_ids for f in features], dtype=torch.long)
     all_label_ids = torch.tensor([f.label_ids for f in features], dtype=torch.long)
-    if evaluate:
-        pass
-        # all_example_index = torch.arange(all_input_ids.size(0), dtype=torch.long)
-        # dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids,
-        #                         all_example_index, all_cls_index, all_p_mask)
-    else:
-        dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids,
+    dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids,
                                 all_label_ids)
 
     if output_examples:
