@@ -45,7 +45,7 @@ from transformers import (WEIGHTS_NAME, BertConfig,
 
 from transformers import AdamW, get_linear_schedule_with_warmup
 
-from utils_pos import (read_UD_examples, convert_examples_to_features,)
+from utils_pos import (read_UD_examples, convert_examples_to_features)
 
 # The follwing import is the official SQuAD evaluation script (2.0).
 # You can remove it from the dependencies if you are using this script outside of the library
@@ -58,7 +58,7 @@ ALL_MODELS = sum((tuple(conf.pretrained_config_archive_map.keys()) \
                   for conf in (BertConfig, XLNetConfig, XLMConfig)), ())
 
 MODEL_CLASSES = {
-    'bert': (BertConfig, BertForQuestionAnswering, BertTokenizer),
+    'bert': (BertConfig, BertForTokenClassification, BertTokenizer),
     'xlnet': (XLNetConfig, XLNetForQuestionAnswering, XLNetTokenizer),
     'xlm': (XLMConfig, XLMForQuestionAnswering, XLMTokenizer),
     'distilbert': (DistilBertConfig, DistilBertForQuestionAnswering, DistilBertTokenizer)
