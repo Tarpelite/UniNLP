@@ -183,6 +183,7 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
                             label_ids=label_ids if is_training else None
                          )
         )
+    return features
 
 
         
