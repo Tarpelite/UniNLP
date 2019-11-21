@@ -1140,8 +1140,8 @@ class BertForTokenClassification(BertPreTrainedModel):
         loss, scores = outputs[:2]
 
     """
-    def __init__(self, config):
-        super(BertForTokenClassification, self).__init__(config, num_pos_labels=18)
+    def __init__(self, config, num_pos_labels=18):
+        super(BertForTokenClassification, self).__init__(config)
         self.num_labels = config.num_labels
 
         self.bert = BertModel(config)
