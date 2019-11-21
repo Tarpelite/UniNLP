@@ -175,8 +175,7 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
             InputFeatures(input_ids=input_ids, 
                             input_mask=input_mask,
                             segment_ids=segment_ids,
-                            label_ids=label_ids if is_training else None, 
-                            tokens=all_doc_tokens,
+                            label_ids=label_ids if is_training else None
                          )
         )
 
