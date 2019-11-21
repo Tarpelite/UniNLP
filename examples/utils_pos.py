@@ -131,11 +131,12 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
             else:
                 all_pos_tags_idx.append(0)
 
-        if len(all_doc_tokens) > max_tokens_for_doc:
-            tokens = all_doc_tokens[:max_tokens_for_doc]
+        tokens = all_doc_tokens
+        if len(tokens) > max_tokens_for_doc:
+            tokens = tokens[:max_tokens_for_doc]
             all_pos_tags_idx = all_pos_tags_idx[:max_tokens_for_doc]
         
-        tokens = [cls_token] + all_doc_tokens 
+        tokens = [cls_token] + tokens 
         if is_training:
             label_ids = [17] + all_pos_tags_idx 
         
@@ -154,9 +155,14 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
         if is_training:
             label_ids += ([pad_token_segment_id] * padding_length)
 
-        assert len(input_ids) == max_seq_length
-        assert len(input_mask) ==  max_seq_length
-        assert len(segment_ids) == max_seq_length
+        try:
+            assert len(input_ids) == max_seq_length
+            assert len(input_mask) ==  max_seq_length
+            assert len(segment_ids) == max_seq_length
+        except Exception as e:
+            print("input_ids", len(input_ids))
+            print("input_mask", len(input_mask))
+            print("segment_ids", len(segment_ids))
         if is_training:
             assert len(label_ids) == max_seq_length
 
