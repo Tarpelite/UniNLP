@@ -203,6 +203,14 @@ def train(args, train_dataset, model, tokenizer):
     return global_step, tr_loss / global_step
 
 
+def acc(labels, preds):
+    hit = 0
+    for label, pred in zip(labels, preds):
+        if label == pred:
+            hit += 1
+
+    return hit*1.00000 / len(preds)
+
 def evaluate(args, model, tokenizer, prefix=""):
     dataset, examples, features = load_and_cache_examples(args, tokenizer, evaluate=True, output_examples=True)
 
@@ -237,47 +245,17 @@ def evaluate(args, model, tokenizer, prefix=""):
         for i, example_index in enumerate(example_indices):
             eval_feature = features[example_index.item()]
             unique_id = int(eval_feature.unique_id)
-            if args.model_type in ['xlnet', 'xlm']:
-                # XLNet uses a more complex post-processing procedure
-                result = RawResultExtended(unique_id            = unique_id,
-                                           start_top_log_probs  = to_list(outputs[0][i]),
-                                           start_top_index      = to_list(outputs[1][i]),
-                                           end_top_log_probs    = to_list(outputs[2][i]),
-                                           end_top_index        = to_list(outputs[3][i]),
-                                           cls_logits           = to_list(outputs[4][i]))
-            else:
-                result = RawResult(unique_id    = unique_id,
-                                   start_logits = to_list(outputs[0][i]),
-                                   end_logits   = to_list(outputs[1][i]))
+            valid_length = eval_feature.valid_length
+            label_ids = eval_feature.label_ids[:valid_length]
+            predict_labels = np.argmax(to_list(outputs[0][i]), dim = 1)[:valid_length]
+
+            result = acc(label_ids, predict_labels)
+
             all_results.append(result)
+        
+        print("acc", sum(all_results) / len(all_results))
 
-    # Compute predictions
-    output_prediction_file = os.path.join(args.output_dir, "predictions_{}.json".format(prefix))
-    output_nbest_file = os.path.join(args.output_dir, "nbest_predictions_{}.json".format(prefix))
-    if args.version_2_with_negative:
-        output_null_log_odds_file = os.path.join(args.output_dir, "null_odds_{}.json".format(prefix))
-    else:
-        output_null_log_odds_file = None
-
-    if args.model_type in ['xlnet', 'xlm']:
-        # XLNet uses a more complex post-processing procedure
-        write_predictions_extended(examples, features, all_results, args.n_best_size,
-                        args.max_answer_length, output_prediction_file,
-                        output_nbest_file, output_null_log_odds_file, args.predict_file,
-                        model.config.start_n_top, model.config.end_n_top,
-                        args.version_2_with_negative, tokenizer, args.verbose_logging)
-    else:
-        write_predictions(examples, features, all_results, args.n_best_size,
-                        args.max_answer_length, args.do_lower_case, output_prediction_file,
-                        output_nbest_file, output_null_log_odds_file, args.verbose_logging,
-                        args.version_2_with_negative, args.null_score_diff_threshold)
-
-    # Evaluate with the official SQuAD script
-    evaluate_options = EVAL_OPTS(data_file=args.predict_file,
-                                 pred_file=output_prediction_file,
-                                 na_prob_file=output_null_log_odds_file)
-    results = evaluate_on_squad(evaluate_options)
-    return results
+    return all_results
 
 
 def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False):
@@ -300,8 +278,6 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
         features = convert_examples_to_features(examples=examples,
                                                 tokenizer=tokenizer,
                                                 max_seq_length=args.max_seq_length,
-                                                doc_stride=args.doc_stride,
-                                                max_query_length=args.max_query_length,
                                                 is_training=not evaluate)
         if args.local_rank in [-1, 0]:
             logger.info("Saving features into cached file %s", cached_features_file)
@@ -385,7 +361,7 @@ def main():
                         help="Linear warmup over warmup_steps.")
     parser.add_argument("--n_best_size", default=20, type=int,
                         help="The total number of n-best predictions to generate in the nbest_predictions.json output file.")
-   
+    
     parser.add_argument("--verbose_logging", action='store_true',
                         help="If true, all of the warnings related to data processing will be printed. "
                              "A number of warnings are expected for a normal SQuAD evaluation.")
