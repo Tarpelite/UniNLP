@@ -123,7 +123,7 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
                 if example.pos_tags is not None:
                     all_pos_tags.append(example.pos_tags[i])
         
-        max_tokens_for_doc = max_seq_length - 3
+        max_tokens_for_doc = max_seq_length - 2
 
         for tag in all_pos_tags:
             if tag in pos_tags_dict:
