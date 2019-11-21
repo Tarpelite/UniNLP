@@ -56,6 +56,8 @@ def read_UD_examples(input_file, is_training):
     tags = []
     cnt = 0
     examples = []
+    doc_tokens_lens = []
+    
     with open(input_file, "r", encoding="utf-8") as f:
         for line in f.readlines():
             data.append(line)
@@ -82,7 +84,12 @@ def read_UD_examples(input_file, is_training):
             doc_tokens = instance[0], 
             pos_tags = instance[2] 
         )
-
+        examples.append(example)
+        doc_tokens_lens.append(len(doc_tokens))
+    
+    print("Statistics")
+    print("max_len: {} min_len:{} avg_len: {}".format(max(doc_tokens_lens), min(doc_tokens_lens), sum(doc_tokens_lens)/len(doc_tokens_lens)))
+    return examples
 
 def convert_examples_to_features(examples, tokenizer, max_seq_length,
                                  doc_stride, max_query_length, is_training,
@@ -132,10 +139,12 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
             all_pos_tags_idx = all_pos_tags_idx[:max_tokens_for_doc]
         
         tokens = [cls_token] + all_doc_tokens 
-        label_ids = [17] + all_pos_tags_idx 
+        if is_training:
+            label_ids = [17] + all_pos_tags_idx 
         
         tokens += ["[SEP]"]
-        label_ids += [17]
+        if is_training:
+            label_ids += [17]
 
         input_ids = tokenizer.convert_tokens_to_ids(tokens)
         input_mask = [1 if mask_padding_with_zero else 0]*len(input_ids)
@@ -145,12 +154,14 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
         input_ids += ([0]*padding_length)
         input_mask += ([0 if mask_padding_with_zero else 1] * padding_length)
         segment_ids += ([pad_token_segment_id] * padding_length)
-        label_ids += ([pad_token_segment_id] * padding_length)
+        if is_training:
+            label_ids += ([pad_token_segment_id] * padding_length)
 
         assert len(input_ids) == max_seq_length
         assert len(input_mask) ==  max_seq_length
         assert len(segment_ids) == max_seq_length
-        assert len(label_ids) == max_seq_length
+        if is_training:
+            assert len(label_ids) == max_seq_length
 
         if example_index < 5:
             logger.info("*** Example ***")
@@ -159,13 +170,14 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
             logger.info("input_ids: %s", " ".join([str(x) for x in input_ids]))
             logger.info("input_mask: %s", " ".join([str(x) for x in input_mask]))
             logger.info("segment_ids: %s", " ".join([str(x) for x in segment_ids]))
-            logger.info("label_ids: %s", " ".join([str(x) for x in label_ids]))
+            if is_training:
+                logger.info("label_ids: %s", " ".join([str(x) for x in label_ids]))
         
         features.append(
             InputFeatures(input_ids=input_ids, 
                             input_mask=input_mask,
                             segment_ids=segment_ids,
-                            label_ids=label_ids, 
+                            label_ids=label_ids if is_training else None, 
                             tokens=all_doc_tokens,
                          )
         )
