@@ -41,6 +41,7 @@ class InputFeatures(object):
                 input_ids, 
                 input_mask, segment_ids, label_ids, valid_length):
         
+        self.unique_id = unique_id
         self.input_ids = input_ids
         self.input_mask = input_mask
         self.segment_ids = segment_ids
