@@ -37,6 +37,7 @@ from tqdm import tqdm, trange
 
 from transformers import (WEIGHTS_NAME, BertConfig,
                                   BertForTokenClassification, BertTokenizer,
+                                  RobertaConfig, RobertaForTokenClassification, RobertaTokenizer,
                                   XLMConfig, XLMForQuestionAnswering,
                                   XLMTokenizer, XLNetConfig,
                                   XLNetForQuestionAnswering,
@@ -61,7 +62,8 @@ MODEL_CLASSES = {
     'bert': (BertConfig, BertForTokenClassification, BertTokenizer),
     'xlnet': (XLNetConfig, XLNetForQuestionAnswering, XLNetTokenizer),
     'xlm': (XLMConfig, XLMForQuestionAnswering, XLMTokenizer),
-    'distilbert': (DistilBertConfig, DistilBertForQuestionAnswering, DistilBertTokenizer)
+    'distilbert': (DistilBertConfig, DistilBertForQuestionAnswering, DistilBertTokenizer),
+    'roberta':(RobertaConfig, RobertaForTokenClassification, RobertaTokenizer)
 }
 
 def set_seed(args):
