@@ -247,7 +247,7 @@ def evaluate(args, model, tokenizer, prefix=""):
             unique_id = int(eval_feature.unique_id)
             valid_length = eval_feature.valid_length
             label_ids = eval_feature.label_ids[:valid_length]
-            predict_labels = np.argmax(to_list(outputs[0][i]), dim = 1)[:valid_length]
+            predict_labels = np.argmax(to_list(outputs[0][i]), axis = 1)[:valid_length]
 
             result = acc(label_ids, predict_labels)
 
