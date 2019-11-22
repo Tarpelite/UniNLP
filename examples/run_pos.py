@@ -293,7 +293,7 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
     all_label_ids = torch.tensor([f.label_ids for f in features], dtype=torch.long)
 
     if evaluate:
-        all_example_index = torch.arrange(all_input_ids.size(0), dtype=torch.long)
+        all_example_index = torch.arange(all_input_ids.size(0), dtype=torch.long)
         dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids,all_label_ids, all_example_index)
     else:
         dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids,
