@@ -83,10 +83,7 @@ class CoNLL2003Dataset(torch.utils.data.Dataset):
                                 words_tk.append(tk)
                                 labels_seq.append(labels[i])
                         if len(words_tk) > 0 and len(labels_seq) > 0:
-                            valid_length = len(words_tk) + 1
-                            if valid_length > self.max_len:
-                                valid_length = self.max_len
-                            self.ex_list.append([words_tk, labels_seq, valid_length])
+                            self.ex_list.append([words_tk, labels_seq])
                             words = []
                             labels = []
                 else:
@@ -107,10 +104,7 @@ class CoNLL2003Dataset(torch.utils.data.Dataset):
                         labels_seq.append(labels[i])
 
                 if len(words_tk) > 0 and len(labels_seq) > 0:
-                    valid_length = len(words_tk) + 1
-                    if valid_length > self.max_len:
-                        valid_length = self.max_len
-                    self.ex_list.append([words_tk, labels_seq, valid_length])
+                    self.ex_list.append([words, labels])
                     words = []
                     labels = []
 
@@ -168,7 +162,7 @@ class Preprocess4CoNLL2003(Pipeline):
         self.pos_shift = pos_shift
 
     def __call__(self, instance):
-        tokens_a, labels, valid_length = instance
+        tokens_a, labels = instance
         tokens_b = ['[SEP]']
 
         if self.pos_shift:
@@ -345,7 +339,7 @@ class Preprocess4CoNLL2003(Pipeline):
                     masked_pos, masked_weights, -1, self.task_idx,
                     oracle_pos, oracle_weights, oracle_labels)
 
-        return (input_ids, segment_ids, input_mask, mask_qkv, masked_ids, masked_pos, masked_weights, -1, self.task_idx, label_ids, valid_length)
+        return (input_ids, segment_ids, input_mask, mask_qkv, masked_ids, masked_pos, masked_weights, -1, self.task_idx, label_ids)
         
 
 

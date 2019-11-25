@@ -15,7 +15,7 @@ from pathlib import Path
 from tqdm import tqdm, trange
 import numpy as np
 import torch
-from torch.utils.data import RandomSampler
+from torch.utils.data import RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
 
 from pytorch_pretrained_bert.tokenization import BertTokenizer, WhitespaceTokenizer
@@ -45,6 +45,13 @@ def _get_max_epoch_model(output_dir):
         return max(both_set)
     else:
         return None
+
+def acc(pred, labels):
+    hit = 0
+    for i in pred:
+        if i in labels:
+            hit += 1
+    return hit*1.00000 / len(pred)
 
 
 def main():
@@ -214,6 +221,8 @@ def main():
                         help="Sharing segment embeddings for the encoder of S2S (used with --s2s_add_segment).")
     parser.add_argument('--pos_shift', action='store_true',
                         help="Using position shift for fine-tuning.")
+    parser.add_argument('--do_eval',action='store_true')
+    parser.add_argument('--eval_file', type=str, default="")
 
     args = parser.parse_args()
 
@@ -427,7 +436,7 @@ def main():
                 if args.has_sentence_oracle:
                     input_ids, segment_ids, input_mask, mask_qkv, lm_label_ids, masked_pos, masked_weights, is_next, task_idx, oracle_pos, oracle_weights, oracle_labels = batch
                 else:
-                    input_ids, segment_ids, input_mask, mask_qkv, lm_label_ids, masked_pos, masked_weights, is_next, task_idx, label_ids = batch
+                    input_ids, segment_ids, input_mask, mask_qkv, lm_label_ids, masked_pos, masked_weights, is_next, task_idx, label_ids, valid_length = batch
                     oracle_pos, oracle_weights, oracle_labels = None, None, None
                 loss = model(input_ids, segment_ids, input_mask, label_ids, mask_qkv, task_idx)
                 
@@ -474,7 +483,108 @@ def main():
 
                 logger.info("***** CUDA.empty_cache() *****")
                 torch.cuda.empty_cache()
+    
+    if args.do_eval:
+        print("Loading Eval Dataset", args.data_dir)
+        bi_uni_pipeline = [Preprocess4CoNLL2003(args.max_pred, args.mask_prob, list(tokenizer.vocab.keys(
+        )), tokenizer.convert_tokens_to_ids, args.max_seq_length, new_segment_ids=args.new_segment_ids, truncate_config={'max_len_a': args.max_len_a, 'max_len_b': args.max_len_b, 'trunc_seg': args.trunc_seg, 'always_truncate_tail': args.always_truncate_tail}, mask_source_words=args.mask_source_words, skipgram_prb=args.skipgram_prb, skipgram_size=args.skipgram_size, mask_whole_word=args.mask_whole_word, mode="s2s", has_oracle=args.has_sentence_oracle, num_qkv=args.num_qkv, s2s_special_token=args.s2s_special_token, s2s_add_segment=args.s2s_add_segment, s2s_share_segment=args.s2s_share_segment, pos_shift=args.pos_shift)]
+        file_oracle = None
 
+        fn_src = os.path.join(args.data_dir, args.eval_file)
+        eval_dataset = CoNLL2003Dataset(
+            fn_src, fn_tgt, args.train_batch_size, data_tokenizer, args.max_seq_length, file_oracle=file_oracle, bi_uni_pipeline=bi_uni_pipeline)
+        eval_sampler = SequentialSampler(eval_dataset, replacement=False)
+        _batch_size = args.train_batch_size
+
+        eval_dataloader = torch.utils.data.DataLoader(eval_dataset, batch_size=_batch_size, sampler=eval_sampler, 
+                                                      num_workers=args.num_workers, collate_fn=seq2seq_loader.batch_list_to_batch_tensors, pin_memory=False)
+        
+        # Prepare model
+        recover_step = _get_max_epoch_model(args.output_dir)
+        cls_num_labels = 2
+        type_vocab_size = 6 + \
+            (1 if args.s2s_add_segment else 0) if args.new_segment_ids else 2
+        num_sentlvl_labels = 2 if args.has_sentence_oracle else 0
+        relax_projection = 4 if args.relax_projection else 0
+        if args.local_rank not in (-1, 0):
+            # Make sure only the first process in distributed training will download model & vocab
+            dist.barrier()
+        if (recover_step is None) and (args.model_recover_path is None):
+            # if _state_dict == {}, the parameters are randomly initialized
+            # if _state_dict == None, the parameters are initialized with bert-init
+            _state_dict = {} if args.from_scratch else None
+            model = BertForTokenClassification.from_pretrained(
+                args.bert_model, state_dict=_state_dict, num_labels=9)
+            global_step = 0
+        else:
+            if recover_step:
+                logger.info("***** Recover model: %d *****", recover_step)
+                model_recover = torch.load(os.path.join(
+                    args.output_dir, "model.{0}.bin".format(recover_step)), map_location='cpu')
+                # recover_step == number of epochs
+                global_step = math.floor(
+                    recover_step * t_total / args.num_train_epochs)
+            elif args.model_recover_path:
+                logger.info("***** Recover model: %s *****",
+                            args.model_recover_path)
+                model_recover = torch.load(
+                    args.model_recover_path, map_location='cpu')
+                global_step = 0
+            model = BertForTokenClassification.from_pretrained(
+                args.bert_model, state_dict=_state_dict, num_labels=9)
+        if args.local_rank == 0:
+            dist.barrier()
+
+        if args.fp16:
+            model.half()
+            if args.fp32_embedding:
+                model.bert.embeddings.word_embeddings.float()
+                model.bert.embeddings.position_embeddings.float()
+                model.bert.embeddings.token_type_embeddings.float()
+        model.to(device)
+        if args.local_rank != -1:
+            try:
+                from torch.nn.parallel import DistributedDataParallel as DDP
+            except ImportError:
+                raise ImportError("DistributedDataParallel")
+            model = DDP(model, device_ids=[
+                        args.local_rank], output_device=args.local_rank, find_unused_parameters=True)
+        elif n_gpu > 1:
+            # model = torch.nn.DataParallel(model)
+            model = DataParallelImbalance(model)
+    
+        logger.info("***** CUDA.empty_cache() *****")
+        torch.cuda.empty_cache()
+
+        logger.info("***** Running Evaluation *****")
+        logger.info("  Batch size = %d", args.train_batch_size)
+        model.eval()
+
+        iter_bar = tqdm(eval_dataloader, desc="Evaluating")
+
+        acc_score = 0.0000
+        total_t = 0
+
+        for step, batch in enumerate(iter_bar):
+            batch = [
+                    t.to(device) if t is not None else None for t in batch]
+            
+            input_ids, segment_ids, input_mask, mask_qkv, lm_label_ids, masked_pos, masked_weights, is_next, task_idx, label_ids, valid_length = batch
+            oracle_pos, oracle_weights, oracle_labels = None, None, None
+            with torch.no_grad():
+                logits = model(input_ids, segment_ids, input_mask, mask_qkv=mask_qkv, task_idx=task_idx)
+            valid_length = valid_length.view(-1)
+            logits = logits.view(-1, input_ids.size(1), 9)
+            for i in range(input_ids.size(0)):
+                valid_len = valid_length[i]
+                logits_i = logits[i]
+                pred_i = torch.argmax(logits_i, dim=-1)[:valid_len]
+                labels_i = label_ids[i][:valid_len]
+                acc_t = acc(pred_i, labels_i)
+                acc_score += acc_t
+                total_t += 1
+        
+        print("acc score:", acc_score/len(total_t))
 
 if __name__ == "__main__":
     main()
