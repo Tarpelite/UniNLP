@@ -440,7 +440,7 @@ def main():
                     oracle_pos, oracle_weights, oracle_labels = None, None, None
                
                 print("labels_ids_num:")
-                print(Counter([int(x) for x in labels_ids.cpu().detach().numpy()]))
+                print(Counter([int(x) for x in label_ids.cpu().detach().numpy()]))
                 loss = model(input_ids, segment_ids, input_mask, label_ids, mask_qkv, task_idx)
                 
                 if n_gpu > 1:    # mean() to average on multi-gpu.
