@@ -344,7 +344,7 @@ def main():
                 args.model_recover_path, map_location='cpu')
             global_step = 0
         model = BertForTokenClassification.from_pretrained(
-            args.bert_model num_labels=9)
+            args.bert_model, num_labels=9)
     if args.local_rank == 0:
         dist.barrier()
 
