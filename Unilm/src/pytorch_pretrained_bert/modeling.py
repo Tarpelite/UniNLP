@@ -2080,7 +2080,7 @@ class BertForTokenClassification(PreTrainedBertModel):
     ```
     """
 
-    def __init__(self, config, num_labels=2):
+    def __init__(self, config, num_labels=10):
         super(BertForTokenClassification, self).__init__(config)
         self.num_labels = num_labels
         self.bert = BertModel(config)

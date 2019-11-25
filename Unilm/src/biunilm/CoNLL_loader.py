@@ -2,7 +2,7 @@ from biunilm.seq2seq_loader import *
 from tqdm import *
 
 ner_labels = ["O", "B-MISC", "I-MISC",  "B-PER", "I-PER", "B-ORG", "I-ORG", "B-LOC", "I-LOC"]
-
+ner_dict = {w:i+1 for i,w in enumerate(ner_labels)}
 
 def ner_truncate_tokens_pair(tokens_a, tokens_b, ner_labels, max_len, max_len_a=0, max_len_b=0, trunc_seg=None, always_truncate_tail=False):
     num_truncated_a = [0, 0]
@@ -93,9 +93,11 @@ class CoNLL2003Dataset(torch.utils.data.Dataset):
                     splits = line.split(" ")
                     words.append(splits[0])
                     if len(splits) > 1:
-                        labels.append(ner_labels.index(splits[-1].replace("\n", "")))
+                        label = splits[-1].replace("\n", "")
+                        if label in ner_dict:
+                            labels.append(ner_dict[label])
                     else:
-                        labels.append(ner_labels.index("O"))
+                        labels.append(0)
             if words:
                 words_tk = []
                 labels_seq = []
