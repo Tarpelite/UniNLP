@@ -27,6 +27,7 @@ import biunilm.seq2seq_loader as seq2seq_loader
 from biunilm.CoNLL_loader import *
 import torch.distributed as dist
 
+from collections import Counter
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
                     datefmt='%m/%d/%Y %H:%M:%S',
@@ -437,6 +438,9 @@ def main():
                 else:
                     input_ids, segment_ids, input_mask, mask_qkv, lm_label_ids, masked_pos, masked_weights, is_next, task_idx, label_ids, valid_length = batch
                     oracle_pos, oracle_weights, oracle_labels = None, None, None
+               
+                print("labels_ids_num:")
+                print(Counter([int(x) for x in labels_ids.cpu().detach().numpy()]))
                 loss = model(input_ids, segment_ids, input_mask, label_ids, mask_qkv, task_idx)
                 
                 if n_gpu > 1:    # mean() to average on multi-gpu.
