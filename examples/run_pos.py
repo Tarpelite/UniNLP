@@ -255,7 +255,7 @@ def evaluate(args, model, tokenizer, prefix=""):
 
             all_results.append(result)
         
-        print("acc", sum(all_results) / len(all_results))
+    print("acc", sum(all_results) / len(all_results))
 
     return all_results
 

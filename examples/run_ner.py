@@ -32,6 +32,7 @@ from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, Tenso
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
 from utils_ner import convert_examples_to_features, get_labels, read_examples_from_file
+import torch.nn as nn
 
 from transformers import AdamW, get_linear_schedule_with_warmup
 from transformers import WEIGHTS_NAME, BertConfig, BertForTokenClassification, BertTokenizer
@@ -440,6 +441,8 @@ def main():
     tokenizer = tokenizer_class.from_pretrained(args.tokenizer_name if args.tokenizer_name else args.model_name_or_path,
                                                 do_lower_case=args.do_lower_case,
                                                 cache_dir=args.cache_dir if args.cache_dir else None)
+    if args.config_name == "bert-large-cased":
+        model_class.embeddings.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size)
     model = model_class.from_pretrained(args.model_name_or_path,
                                         from_tf=bool(".ckpt" in args.model_name_or_path),
                                         config=config,
