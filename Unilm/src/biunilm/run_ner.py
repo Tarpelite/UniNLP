@@ -221,7 +221,6 @@ def main():
                         help="Sharing segment embeddings for the encoder of S2S (used with --s2s_add_segment).")
     parser.add_argument('--pos_shift', action='store_true',
                         help="Using position shift for fine-tuning.")
-    parser.add_argument('--do_eval',action='store_true')
     parser.add_argument('--eval_file', type=str, default="")
 
     args = parser.parse_args()
