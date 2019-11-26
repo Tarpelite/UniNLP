@@ -33,6 +33,7 @@ from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
 from utils_ner import convert_examples_to_features, get_labels, read_examples_from_file
 import torch.nn as nn
+from torch.optim import adam
 
 from transformers import AdamW, get_linear_schedule_with_warmup
 from transformers import WEIGHTS_NAME, BertConfig, BertForTokenClassification, BertTokenizer
@@ -82,7 +83,7 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
          "weight_decay": args.weight_decay},
         {"params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], "weight_decay": 0.0}
     ]
-    optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
+    optimizer = adam(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_total)
     if args.fp16:
         try:
