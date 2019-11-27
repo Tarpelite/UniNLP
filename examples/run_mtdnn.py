@@ -162,7 +162,104 @@ def load_and_cache_examples(args, tokenizer, mini_batch=4):
     all_example_index = torch.arange(all_input_ids.size(0), dtype=torch.long)
 
     pos_eval_dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids)
-    pass
+
+
+    all_input_ids = torch.tensor([f.input_ids for f in ner_eval_feartures], dtype=torch.long)
+    all_input_mask = torch.tensor([f.input_mask for f in ner_eval_features], dtype=torch.long)
+    all_segment_ids = torch.tensor([f.segment_ids for f in ner_eval_features], dtype=torch.long)
+    all_label_ids = torch.tensor([f.label_ids for f in ner_eval_features], dtype=torch.long)
+    all_example_index = torch.arange(all_input_ids.size(0), dtype=torch.long)
+
+    ner_eval_dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids)
+    
+    return train_task_list, train_dataset_list, pos_eval_dataset, ner_eval_dataset
+
+
+def train(args, train_task_list, train_data_list, model, tokenizer):
+    """ Train the model """ 
+    if args.local_rank in [-1, 0]:
+        tb_writer = SummaryWriter()
+    
+    args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
+
+    # prepare optimizer and schedule (linear warmup and decay)
+    no_decay = ['bias', 'LayerNorm.weight']
+    optimizer_grouped_parameters = [
+        {'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)], 'weight_decay': args.weight_decay},
+        {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
+        ]
+    optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
+    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_total)
+
+    if args.fp16:
+        try:
+            from apex import amp
+        except ImportError:
+            raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
+        model, optimizer = amp.initialize(model, optimizer, opt_level=args.fp16_opt_level)
+
+    # multi-gpu training (should be after apex fp16 initialization)
+    if args.n_gpu > 1:
+        model = torch.nn.DataParallel(model)
+
+    # Distributed training (should be after apex fp16 initialization)
+    if args.local_rank != -1:
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank],
+                                                          output_device=args.local_rank,
+                                                          find_unused_parameters=True)
+
+    logger.info("***** Running training *****")
+    logger.info(" Num Epochs = %d", args.num_train_epochs)
+    logger.info(" Gradient Accumulation steps = %d", args.gradient_accumulation_steps)
+    
+
+
+    # for each epoch, 1. merge all the datasets, 2. shuffle
+    step = 0
+    for epoch in trange(int(args.num_train_epochs), desc="Epoch"):
+        train_data_list = [random.shuffle(t) for t in train_data_list]
+        all_iters = [iter(item) for item in train_data_list]
+        all_indices = []
+        if len(train_data_list) > 1 and args.ratio > 0:
+            main_indices = [0]*len(train_data_list[0])
+            extra_indices = []
+            for i in range(1, len(train_data_list)):
+                extra_indices += [i]*len(train_data_list[i])
+            random_picks = int(min(len(train_data_list[0]) * args.ratio, len(extra_indices)))
+            extra_indices = np.random.choice(extra_indices, random_picks, replace=False)
+
+            all_indices = main_indices + extra_indices.tolist()
+
+        else:
+            for i in range(1, len(train_data_list)):
+                all_indices += [i]*len(train_data_list[i])
+
+        random.shuffle(all_indices)
+        model.train()
+        for i in range(len(all_indices)):
+            task_id = all_indices[i]
+            batch_data = next(all_iters[task_id])
+            outputs = model(task_id, batch_data)
+            loss = outputs[0]     
+            step += 1
+
+            # scale loss
+            if step % args.gradient_accumulate_steps == 0:
+
+
+
+            
+            
+
+
+
+
+
+
+    
+
+
+
 
 
 
@@ -172,6 +269,4 @@ def load_and_cache_examples(args, tokenizer, mini_batch=4):
 
 def train(args, train_dataset, model, tokenizer):
     pass
-
-
 
