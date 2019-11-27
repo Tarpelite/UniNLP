@@ -107,7 +107,7 @@ def convert_examples_to_features(examples,
     label_map = {label: i for i, label in enumerate(label_list)}
 
     features = []
-    cnt_conuts = []
+    cnt_counts = []
     for (ex_index, example) in enumerate(examples):
         if ex_index % 10000 == 0:
             logger.info("Writing example %d of %d", ex_index, len(examples))
@@ -203,7 +203,7 @@ def convert_examples_to_features(examples,
     
     logger.info("*** Statistics ***")
     logger.info("*** max_len:{}  min_len:{} avg_len:{}***".format(max(cnt_counts), min(cnt_counts), sum(cnt_counts) / len(cnt_counts)))
-    
+
     return features
 
 
