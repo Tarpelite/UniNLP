@@ -173,7 +173,7 @@ def get_labels(path):
             labels = ["X"] + labels
         return labels
     else:
-        return ["ADJ", "ADP", "ADV", "AUX", "CONJ",
+        return ["ADJ", "ADP", "ADV", "AUX", "CCONJ",
                 "DET", "INTJ", "NOUN", "NUM", "PART", 
                 "PRON", "PROPN", "PUNCT", "SCONJ", "SYM", 
                 "VERB", "X"]
