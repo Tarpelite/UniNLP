@@ -26,7 +26,7 @@ import torch
 from torch import nn
 from torch.nn import CrossEntropyLoss, MSELoss
 
-from .modeling_utils import PreTrainedModel, prune_linear_layer
+from .modeling_utils import PreTrainedModel, prune_linear_layer, AverageMeter
 from .configuration_bert import BertConfig
 from .file_utils import add_start_docstrings
 
@@ -1271,3 +1271,72 @@ class BertForQuestionAnswering(BertPreTrainedModel):
             outputs = (total_loss,) + outputs
 
         return outputs  # (loss), start_logits, end_logits, (hidden_states), (attentions)
+
+class MTDNNModel(BertPreTrainedModel):
+    def __init__(self, config, args):
+        super(MTDNNModel, self).__init__(config)
+
+
+        self.bert = BertModel(config)
+        self.dropout_pos = nn.Dropout_pos(args.dropout_pos)
+        self.dropout_ner = nn.Dropout_ner(args.dropout_ner)
+
+        self.classifier_pos = nn.Linear(config.hidden_size, args.num_pos_labels)
+        self.classifier_ner = nn.Linear(config.hidden_size, args.num_ner_labels)
+
+        self.num_pos_labels = args.num_pos_labels
+        self.num_ner_labels = args.num_ner_labels
+        self.init_weights()
+    
+    def forward(self, batch_meta, batch_data):
+        labels_list = batch_data[batch_meta['label']]
+        task_id = batch_meta['task_id'] # 0 for pos_tag and 1 for NER
+        
+        if task_id in [0,1]:
+            input_ids, attention_mask, token_type_ids, position_ids, head_mask, inputs_embeds, labels = batch_data
+            outputs = self.bert(input_ids,
+                            attention_mask=attention_mask,
+                            token_type_ids=token_type_ids,
+                            position_ids=position_ids,
+                            head_mask=head_mask,
+                            inputs_embeds=inputs_embeds)
+        
+        sequence_output = outputs[0]
+        if task_id == 0:
+            sequence_output = self.dropout_pos(sequence_output)
+            logits = self.classifier_pos(sequence_output)
+        else:
+            sequence_output = self.dropout_ner(sequence_output)
+            logits = self.classifier_ner(sequence_output)
+        
+        outputs= (logits, ) + outputs[2:]
+
+        if task_id in [0,1]:
+            if labels is not None:
+                loss_fct = CrossEntropyLoss()
+
+                if attention_mask is not None:
+                    active_loss = attention_mask.view(-1) == 1
+                    if task_id == 0:
+                        active_logits = logits.view(-1, self.num_pos_labels)[active_loss]
+                    else:
+                        active_logits = logits.view(-1, self.num_ner_labels)[active_loss]
+
+                    active_labels = labels.view(-1)
+                    loss = loss_fct(active_logits, active_labels)
+                else:
+                    if task_id == 0:
+                        loss = loss_fct(logits.view(-1, self.num_pos_labels), labels.view(-1))
+                    else:
+                        loss = loss_fct(logits.view(-1, self.num_ner_labels), labels.view(0))
+                outputs = (loss,) + outputs
+
+        return outputs 
+
+
+
+
+
+
+
+        
