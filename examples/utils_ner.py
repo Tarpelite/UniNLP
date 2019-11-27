@@ -108,6 +108,7 @@ def convert_examples_to_features(examples,
 
     features = []
     cnt_counts = []
+    last_tokens = []
     for (ex_index, example) in enumerate(examples):
         if ex_index % 10000 == 0:
             logger.info("Writing example %d of %d", ex_index, len(examples))
@@ -121,7 +122,7 @@ def convert_examples_to_features(examples,
             label_ids.extend([label_map[label]] + [pad_token_label_id] * (len(word_tokens) - 1))
 
         # Account for [CLS] and [SEP] with "- 2" and with "- 3" for RoBERTa.
-        cnt_counts.append(len(word_tokens))
+        cnt_counts.append(len(tokens))
         special_tokens_count = 3 if sep_token_extra else 2
         if len(tokens) > max_seq_length - special_tokens_count:
             tokens = tokens[:(max_seq_length - special_tokens_count)]
