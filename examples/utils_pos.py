@@ -1,197 +1,200 @@
-""" Load UD dataset. """
 
-import json
+from __future__ import absolute_import, division, print_function
+
 import logging
-import math
-import collections
-from tqdm import *
+import os
 from io import open
-
-from transformers.tokenization_bert import BasicTokenizer, whitespace_tokenize
 
 logger = logging.getLogger(__name__)
 
-class UDExample(object):
-    """
-    """
-    def __init__(self,
-                UD_id,
-                tokens,
-                pos_tags=None):
-        self.UD_id = UD_id
-        self.tokens = tokens
-        self.pos_tags = pos_tags
-    
-    def __str__(self):
-        return self.__repr__()
-    
-    def __repr__(self):
-        s = ""
-        s += "qas_id: %s" % (self.UD_id)
-        s += ", doc_tokens: %s" % (self.tokens)
-        if self.pos_tags is not None:
-            s += ", pos_tags: %s"%(self.pos_tags)
-        return s
+class InputExample(object):
 
+    def __init__(self, guid, words, labels):
+
+        self.guid = guid
+        self.words = words
+        self.labels = labels
 
 class InputFeatures(object):
 
-    def __init__(self,
-                unique_id, 
-                input_ids, 
-                input_mask, segment_ids, label_ids, valid_length):
-        
-        self.unique_id = unique_id
+    def __init__(self, input_ids, input_mask, segment_ids, label_ids):
         self.input_ids = input_ids
         self.input_mask = input_mask
         self.segment_ids = segment_ids
         self.label_ids = label_ids
-        self.valid_length = valid_length
-    
-def read_UD_examples(input_file, is_training):
 
-    data = []
-    instances = []
-    tokens = []
-    tags = []
-    cnt = 0
+def read_examples_from_file(data_dir, mode):
+    file_path = os.path.join(data_dir, "{}".txt.format(mode))
+    guid_index = 1
     examples = []
-    doc_tokens_lens = []
-    
-    with open(input_file, "r", encoding="utf-8") as f:
+    with open(file_path, encoding="utf-8") as f:
+        words = []
+        labels = []
         for line in f.readlines():
-            data.append(line)
+            if line == "\n":
+                if words:
+                    examples.append(InputExample(guid="{}-{}".format(mode, guid_index), 
+                                                words=words, 
+                                                labels=labels))
+                    guid_index += 1
+                    words = []
+                    labels = []
+            elif line.startswith("#"):
+                pass
+            else:
+                line = line.strip("\n").split("\t")
+                words.append(line[1])
+                tags.append(line[3])
     
-    for line in tqdm(data):
-        if line == "\n":
-            instances.append([tokens, tags])
-            tokens = []
-            tags = []
-        elif line.startswith("#"):
-            pass
-        else:
-            line = line.strip("\n").split("\t")
-            tokens.append(line[1])
-            tags.append(line[3])
-    
-    for i, instance in enumerate(instances):
-        example =  UDExample(
-            UD_id=i,
-            tokens = instance[0], 
-            pos_tags = instance[1] 
-        )
-        examples.append(example)
-        doc_tokens_lens.append(len(instance[0]))
-    
-    print("Statistics")
-    print("max_len: {} min_len:{} avg_len: {}".format(max(doc_tokens_lens), min(doc_tokens_lens), sum(doc_tokens_lens)/len(doc_tokens_lens)))
+        if words:
+            examples.append(InputExample(guid="%s-%d".format(mode, guid_index),
+                                         words=words,
+                                         labels=labels))
     return examples
 
-def convert_examples_to_features(examples, tokenizer, max_seq_length,
-                                 is_training,
+
+def convert_examples_to_features(examples, 
+                                label_list,
+                                 max_seq_length,
+                                 tokenizer,
                                  cls_token_at_end=False,
-                                 cls_token='[CLS]', sep_token='[SEP]', pad_token=0,
-                                 sequence_a_segment_id=0, sequence_b_segment_id=1,
-                                 cls_token_segment_id=0, pad_token_segment_id=0, pad_token_label_id=-1,
+                                 cls_token="[CLS]",
+                                 cls_token_segment_id=1,
+                                 sep_token="[SEP]",
+                                 sep_token_extra=False,
+                                 pad_on_left=False,
+                                 pad_token=0,
+                                 pad_token_segment_id=0,
+                                 pad_token_label_id=-1,
+                                 sequence_a_segment_id=0,
                                  mask_padding_with_zero=True):
     
-    unique_id = 1000000000
+    label_map = {label: i for i, label in enumerate(label_list)}
 
     features = []
-    logger.info("converting {} examples to features".format(features))
-
-    pos_tags = ["ADJ", "ADP", "ADV", "AUX", "CONJ",
-                "DET", "INTJ", "NOUN", "NUM", "PART", 
-                "PRON", "PROPN", "PUNCT", "SCONJ", "SYM", 
-                "VERB", "X"]
-    pos_tags_dict = {tag:i+1 for i, tag in enumerate(pos_tags)}
-
-    for (example_index, example) in enumerate(tqdm(examples)):
-
-        tok_to_orig_index = []
-        orig_to_tok_index = []
-        all_doc_tokens = []
-        all_pos_tags = []
-        all_pos_tags_idx = []
-        for(i, token) in enumerate(example.tokens):
-            orig_to_tok_index.append(len(all_doc_tokens))
-            sub_tokens = tokenizer.tokenize(token)
-            for sub_token in sub_tokens:
-                tok_to_orig_index.append(i)
-                all_doc_tokens.append(sub_token)
-                if example.pos_tags is not None:
-                    all_pos_tags.append(example.pos_tags[i])
+    cnt_counts = []
+    last_tokens = []
+    last_label_ids = []
+    for(ex_index, example) in enumerate(examples):
+        if ex_index % 10000 == 0:
+            logger.info("Writing example %d of %d", ex_index, len(examples))
         
-        max_tokens_for_doc = max_seq_length - 2
+        tokens = []
+        label_ids = []
+        for word, label in zip(example.words, example.labels):
+            word_tokens = tokenizer.tokenize(word)
+            label_ids.extend([label_map[label]] + [pad_token_label_id] * (len(word_tokens) - 1))
 
-        for tag in all_pos_tags:
-            if tag in pos_tags_dict:
-                all_pos_tags_idx.append(pos_tags_dict[tag])
-            else:
-                all_pos_tags_idx.append(0)
+        if ex_index == 0:
+            last_tokens = tokens[-64:]
+            last_label_ids = label_ids[-64:]
+        
+        else:
+            tokens = last_tokens + tokens
+            label_ids = last_label_ids + label_ids
+            last_tokens= tokens[-64:]
+            last_label_ids = label_ids[-64:]
 
-        tokens = all_doc_tokens
-        valid_length = len(tokens) + 2
-        if len(tokens) > max_tokens_for_doc:
-            tokens = tokens[:max_tokens_for_doc]
-            all_pos_tags_idx = all_pos_tags_idx[:max_tokens_for_doc]
-            valid_length = max_seq_length
-        
-        tokens = [cls_token] + tokens 
-        label_ids = [17] + all_pos_tags_idx 
-        
-        tokens += ["[SEP]"]
-        label_ids += [17]
+        # Account for [CLS] and [SEP] with "- 2" and with "- 3" for RoBERTa.
+        cnt_counts.append(len(tokens))
+        special_tokens_count = 3 if sep_token_extra else 2
+        if len(tokens) > max_seq_length - special_tokens_count:
+            tokens = tokens[:(max_seq_length - special_tokens_count)]
+            label_ids = label_ids[:(max_seq_length - special_tokens_count)]
+
+        # The convention in BERT is:
+        # (a) For sequence pairs:
+        #  tokens:   [CLS] is this jack ##son ##ville ? [SEP] no it is not . [SEP]
+        #  type_ids:   0   0  0    0    0     0       0   0   1  1  1  1   1   1
+        # (b) For single sequences:
+        #  tokens:   [CLS] the dog is hairy . [SEP]
+        #  type_ids:   0   0   0   0  0     0   0
+        #
+        # Where "type_ids" are used to indicate whether this is the first
+        # sequence or the second sequence. The embedding vectors for `type=0` and
+        # `type=1` were learned during pre-training and are added to the wordpiece
+        # embedding vector (and position vector). This is not *strictly* necessary
+        # since the [SEP] token unambiguously separates the sequences, but it makes
+        # it easier for the model to learn the concept of sequences.
+        #
+        # For classification tasks, the first vector (corresponding to [CLS]) is
+        # used as as the "sentence vector". Note that this only makes sense because
+        # the entire model is fine-tuned.
+        tokens += [sep_token]
+        label_ids += [pad_token_label_id]
+        if sep_token_extra:
+            # roberta uses an extra separator b/w pairs of sentences
+            tokens += [sep_token]
+            label_ids += [pad_token_label_id]
+        segment_ids = [sequence_a_segment_id] * len(tokens)
+
+        if cls_token_at_end:
+            tokens += [cls_token]
+            label_ids += [pad_token_label_id]
+            segment_ids += [cls_token_segment_id]
+        else:
+            tokens = [cls_token] + tokens
+            label_ids = [pad_token_label_id] + label_ids
+            segment_ids = [cls_token_segment_id] + segment_ids
 
         input_ids = tokenizer.convert_tokens_to_ids(tokens)
-        input_mask = [1 if mask_padding_with_zero else 0]*len(input_ids)
-        segment_ids = [sequence_a_segment_id]*len(tokens)
 
+        # The mask has 1 for real tokens and 0 for padding tokens. Only real
+        # tokens are attended to.
+        input_mask = [1 if mask_padding_with_zero else 0] * len(input_ids)
+
+        # Zero-pad up to the sequence length.
         padding_length = max_seq_length - len(input_ids)
-        input_ids += ([0]*padding_length)
-        input_mask += ([0 if mask_padding_with_zero else 1] * padding_length)
-        segment_ids += ([pad_token_segment_id] * padding_length)
-        label_ids += ([pad_token_segment_id] * padding_length)
+        if pad_on_left:
+            input_ids = ([pad_token] * padding_length) + input_ids
+            input_mask = ([0 if mask_padding_with_zero else 1] * padding_length) + input_mask
+            segment_ids = ([pad_token_segment_id] * padding_length) + segment_ids
+            label_ids = ([pad_token_label_id] * padding_length) + label_ids
+        else:
+            input_ids += ([pad_token] * padding_length)
+            input_mask += ([0 if mask_padding_with_zero else 1] * padding_length)
+            segment_ids += ([pad_token_segment_id] * padding_length)
+            label_ids += ([pad_token_label_id] * padding_length)
 
-        try:
-            assert len(input_ids) == max_seq_length
-            assert len(input_mask) ==  max_seq_length
-            assert len(segment_ids) == max_seq_length
-        except Exception as e:
-            print("input_ids", len(input_ids))
-            print("input_mask", len(input_mask))
-            print("segment_ids", len(segment_ids))
-            assert len(label_ids) == max_seq_length
+        assert len(input_ids) == max_seq_length
+        assert len(input_mask) == max_seq_length
+        assert len(segment_ids) == max_seq_length
+        assert len(label_ids) == max_seq_length
 
-        if example_index < 5:
+        if ex_index < 5:
             logger.info("*** Example ***")
-            logger.info("UD_id: %s", example.UD_id)
+            logger.info("guid: %s", example.guid)
             logger.info("tokens: %s", " ".join([str(x) for x in tokens]))
             logger.info("input_ids: %s", " ".join([str(x) for x in input_ids]))
             logger.info("input_mask: %s", " ".join([str(x) for x in input_mask]))
             logger.info("segment_ids: %s", " ".join([str(x) for x in segment_ids]))
             logger.info("label_ids: %s", " ".join([str(x) for x in label_ids]))
-        
+
         features.append(
-            InputFeatures(
-                unique_id=example_index,
-                input_ids=input_ids, 
-                input_mask=input_mask,
-                segment_ids=segment_ids,
-                label_ids=label_ids, 
-                valid_length=valid_length 
-                         )
-        )
+                InputFeatures(input_ids=input_ids,
+                              input_mask=input_mask,
+                              segment_ids=segment_ids,
+                              label_ids=label_ids))
+    
+    logger.info("*** Statistics ***")
+    logger.info("*** max_len:{}  min_len:{} avg_len:{}***".format(max(cnt_counts), min(cnt_counts), sum(cnt_counts) / len(cnt_counts)))
+
     return features
 
+def get_labels(path):
+    if path:
+        with open(path, "r") as f:
+            labels = f.read().splitlines()
+        if "X" not in labels:
+            labels = ["X"] + labels
+        return labels
+    else:
+        return ["ADJ", "ADP", "ADV", "AUX", "CONJ",
+                "DET", "INTJ", "NOUN", "NUM", "PART", 
+                "PRON", "PROPN", "PUNCT", "SCONJ", "SYM", 
+                "VERB", "X"]
 
-        
-
-
-        
             
 
-    
 
 
-        
