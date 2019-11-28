@@ -1283,6 +1283,9 @@ class MTDNNModel(BertPreTrainedModel):
         self.classifier_pos = nn.Linear(config.hidden_size, num_labels_pos)
         self.classifier_ner = nn.Linear(config.hidden_size, num_labels_ner)
 
+        self.num_labels_pos = num_labels_pos
+        self.num_labels_ner = num_labels_ner
+
         self.init_weights()
     
     def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, 
@@ -1301,10 +1304,10 @@ class MTDNNModel(BertPreTrainedModel):
 
         if task_id == 0:
             classifier = self.classifier_pos
-            num_labels = self.num_pos_labels
+            num_labels = self.num_labels_pos
         else:
             classifier = self.classifier_ner
-            num_labels = self.num_ner_labels
+            num_labels = self.num_labels_ner
 
         logits = classifier(sequence_output)
 
