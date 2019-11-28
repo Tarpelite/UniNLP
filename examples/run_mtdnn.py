@@ -25,6 +25,7 @@ from utils_pos import read_examples_from_file as read_examples_from_file_pos
 
 import torch.nn as nn
 from torch.optim import Adam
+import copy
 
 from transformers import AdamW, get_linear_schedule_with_warmup
 from transformers import WEIGHTS_NAME, BertConfig, BertForTokenClassification, BertTokenizer, MTDNNModel
@@ -49,13 +50,17 @@ def set_seed(args):
     if args.n_gpu > 0:
         torch.cuda.manual_seed_all(args.seed)
 
-def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_token_label_id):
+
+def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_token_label_id, is_ft=False):
 
     # Load data features from cache or dataset file
     
     
     logger.info("Creating pos features from dataset file at %s", args.pos_data_dir)
-    pos_examples = read_examples_from_file_pos(args.pos_data_dir, "dev")
+    if is_ft:
+        pos_examples = read_examples_from_file_pos(args.pos_data_dir, "train")
+    else:
+        pos_examples = read_examples_from_file_pos(args.pos_data_dir, "dev")
     pos_features = convert_examples_to_features_pos(pos_examples, pos_labels, args.max_seq_length, tokenizer,
                                             cls_token_at_end=bool(args.model_type in ["xlnet"]),
                                             # xlnet has a cls token at the end
@@ -70,8 +75,11 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_tok
                                             pad_token_segment_id=4 if args.model_type in ["xlnet"] else 0,
                                             pad_token_label_id=pad_token_label_id
                                             )
-    logger.info("Creating ner features from dataset file at %s", args.ner_data_dir)    
-    ner_examples = read_examples_from_file_ner(args.ner_data_dir, "dev")
+    logger.info("Creating ner features from dataset file at %s", args.ner_data_dir)
+    if is_ft:
+        ner_examples = read_examples_from_file_pos(args.ner_data_dir, "train")
+    else:   
+        ner_examples = read_examples_from_file_ner(args.ner_data_dir, "dev")
     ner_features = convert_examples_to_features_ner(ner_examples, ner_labels, args.max_seq_length, tokenizer,
                                             cls_token_at_end=bool(args.model_type in ["xlnet"]),
                                             # xlnet has a cls token at the end
@@ -292,11 +300,25 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
     if args.local_rank in [-1, 0]:
         tb_writer.close()
 
-    return global_step, tr_loss / global_step
+    return global_step, tr_loss / global_step, model
 
-def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id, mode, prefix=""):
-    pos_dataset, ner_dataset = load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_token_label_id)
+def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id, mode, prefix="", do_ft = True):
 
+    if do_ft:
+        pos_dataset, ner_dataset = load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_token_label_id, is_ft=True)
+        model_pos = copy.deepcopy(model)
+        model_ner = model
+
+        # fine_tune pos
+        _, _, model_pos = train(args, pos_dataset, model_pos, tokenizer, pos_labels, pad_token_label_id)
+
+        # fine tune ner
+        _, _, model_ner = train(args, ner_dataset, model_ner, tokenizer, ner_labels, pad_token_label_id)
+
+    
+    pos_dataset, ner_dataset = load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_token_label_id, is_ft=False)
+
+    
     args.eval_batch_size = args.per_gpu_eval_batch_size * max(1, args.n_gpu)
     # Note that DistributedSampler samples randomly
     eval_dataset = ner_dataset
@@ -315,6 +337,7 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
     nb_eval_steps = 0
     preds = None
     out_label_ids = None
+    model = model_ner
     model.eval()
     for batch in tqdm(eval_dataloader, desc="Evaluating"):
         batch = tuple(t.to(args.device) for t in batch)
@@ -370,7 +393,7 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
 
     # multi-gpu evaluate
 
-
+    model=model_pos
     logger.info("***** Running  POS evaluation %s *****", prefix)
     logger.info("  Num examples = %d", len(eval_dataset))
     logger.info("  Batch size = %d", args.eval_batch_size)
@@ -500,6 +523,7 @@ def main():
     
     parser.add_argument("--pos_data_dir", type=str, default="")
     parser.add_argument("--ner_data_dir", type=str, default="")
+    parser.add_argument("--ft_before_eval", action="store_true")
 
     parser.add_argument("--fp16", action="store_true",
                         help="Whether to use 16-bit (mixed) precision (through NVIDIA apex) instead of 32-bit")
@@ -585,7 +609,7 @@ def main():
         train_dataset = load_and_cache_train_examples(args, tokenizer, labels_pos, labels_ner, pad_token_label_id)
         # print("dataset lens", len(train_dataset))
         # logger.info("first dataset lens :{}".format(type(train_dataset[0])))
-        global_step, tr_loss = train(args, train_dataset, model, tokenizer, labels_pos, labels_ner, pad_token_label_id)
+        global_step, tr_loss, _ = train(args, train_dataset, model, tokenizer, labels_pos, labels_ner, pad_token_label_id)
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 
     # Saving best-practices: if you use defaults names for the model, you can reload it using from_pretrained()
@@ -623,7 +647,7 @@ def main():
             global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
             model = model_class.from_pretrained(checkpoint, num_labels_pos=num_labels_pos, num_labels_ner=num_labels_ner)
             model.to(args.device)
-            result, _ = evaluate(args, model, tokenizer, labels_pos, labels_ner, pad_token_label_id, mode="dev", prefix=global_step)
+            result, _ = evaluate(args, model, tokenizer, labels_pos, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, do_ft=args.ft_before_eval)
             if global_step:
                 result = {"{}_{}".format(global_step, k): v for k, v in result.items()}
             results.update(result)
