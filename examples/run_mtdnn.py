@@ -308,7 +308,7 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
     return global_step, tr_loss / global_step
 
 def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id, mode, prefix=""):
-    pos_dataset, ner_dataset = load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_token_label_id, mode=mode)
+    pos_dataset, ner_dataset = load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_token_label_id)
 
     args.eval_batch_size = args.per_gpu_eval_batch_size * max(1, args.n_gpu)
     # Note that DistributedSampler samples randomly
