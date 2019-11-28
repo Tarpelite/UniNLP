@@ -366,10 +366,9 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
     eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=args.eval_batch_size)
 
     # multi-gpu evaluate
-    if args.n_gpu > 1:
-        model = torch.nn.DataParallel(model)
 
-    # Eval!
+
+    # Eval pos
     eval_dataset = pos_dataset
     logger.info("***** Running  POS evaluation %s *****", prefix)
     logger.info("  Num examples = %d", len(eval_dataset))
@@ -406,7 +405,7 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
     eval_loss = eval_loss / nb_eval_steps
     preds = np.argmax(preds, axis=2)
 
-    label_map = {i: label for i, label in enumerate(ner_labels)}
+    label_map = {i: label for i, label in enumerate(pos_labels)}
 
     out_label_list = [[] for _ in range(out_label_ids.shape[0])]
     preds_list = [[] for _ in range(out_label_ids.shape[0])]
