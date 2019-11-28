@@ -50,56 +50,43 @@ def set_seed(args):
         torch.cuda.manual_seed_all(args.seed)
 
 def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_token_label_id):
-    if args.local_rank not in [-1, 0] and not evaluate:
-        torch.distributed.barrier()  # Make sure only the first process in distributed training process the dataset, and the others will use the cache
 
     # Load data features from cache or dataset file
-    cached_features_file = os.path.join(args.data_dir, "cached_{}_{}_{}".format("dev",
-        list(filter(None, args.model_name_or_path.split("/"))).pop(),
-        str(args.max_seq_length)))
-    if os.path.exists(cached_features_file) and not args.overwrite_cache:
-        logger.info("Loading features from cached file %s", cached_features_file)
-        features = torch.load(cached_features_file)
-    else:
-        logger.info("Creating pos features from dataset file at %s", args.data_dir)
-        pos_examples = read_examples_from_file_pos(args.data_dir, "dev")
-        pos_features = convert_examples_to_features_pos(pos_examples, pos_labels, args.max_seq_length, tokenizer,
-                                                cls_token_at_end=bool(args.model_type in ["xlnet"]),
-                                                # xlnet has a cls token at the end
-                                                cls_token=tokenizer.cls_token,
-                                                cls_token_segment_id=2 if args.model_type in ["xlnet"] else 0,
-                                                sep_token=tokenizer.sep_token,
-                                                sep_token_extra=bool(args.model_type in ["roberta"]),
-                                                # roberta uses an extra separator b/w pairs of sentences, cf. github.com/pytorch/fairseq/commit/1684e166e3da03f5b600dbb7855cb98ddfcd0805
-                                                pad_on_left=bool(args.model_type in ["xlnet"]),
-                                                # pad on the left for xlnet
-                                                pad_token=tokenizer.convert_tokens_to_ids([tokenizer.pad_token])[0],
-                                                pad_token_segment_id=4 if args.model_type in ["xlnet"] else 0,
-                                                pad_token_label_id=pad_token_label_id
-                                                )
-            
-        ner_examples = read_examples_from_file_ner(args.data_dir, "dev")
-        ner_features = convert_examples_to_features_ner(ner_examples, ner_labels, args.max_seq_length, tokenizer,
-                                                cls_token_at_end=bool(args.model_type in ["xlnet"]),
-                                                # xlnet has a cls token at the end
-                                                cls_token=tokenizer.cls_token,
-                                                cls_token_segment_id=2 if args.model_type in ["xlnet"] else 0,
-                                                sep_token=tokenizer.sep_token,
-                                                sep_token_extra=bool(args.model_type in ["roberta"]),
-                                                # roberta uses an extra separator b/w pairs of sentences, cf. github.com/pytorch/fairseq/commit/1684e166e3da03f5b600dbb7855cb98ddfcd0805
-                                                pad_on_left=bool(args.model_type in ["xlnet"]),
-                                                # pad on the left for xlnet
-                                                pad_token=tokenizer.convert_tokens_to_ids([tokenizer.pad_token])[0],
-                                                pad_token_segment_id=4 if args.model_type in ["xlnet"] else 0,
-                                                pad_token_label_id=pad_token_label_id
-                                                )
-        if args.local_rank in [-1, 0]:
-            logger.info("Saving features into cached file %s", cached_features_file)
-            torch.save(features, cached_features_file)
-
-    if args.local_rank == 0 and not evaluate:
-        torch.distributed.barrier()  # Make sure only the first process in distributed training process the dataset, and the others will use the cache
-
+    
+    
+    logger.info("Creating pos features from dataset file at %s", args.data_dir)
+    pos_examples = read_examples_from_file_pos(args.pos_data_dir, "dev")
+    pos_features = convert_examples_to_features_pos(pos_examples, pos_labels, args.max_seq_length, tokenizer,
+                                            cls_token_at_end=bool(args.model_type in ["xlnet"]),
+                                            # xlnet has a cls token at the end
+                                            cls_token=tokenizer.cls_token,
+                                            cls_token_segment_id=2 if args.model_type in ["xlnet"] else 0,
+                                            sep_token=tokenizer.sep_token,
+                                            sep_token_extra=bool(args.model_type in ["roberta"]),
+                                            # roberta uses an extra separator b/w pairs of sentences, cf. github.com/pytorch/fairseq/commit/1684e166e3da03f5b600dbb7855cb98ddfcd0805
+                                            pad_on_left=bool(args.model_type in ["xlnet"]),
+                                            # pad on the left for xlnet
+                                            pad_token=tokenizer.convert_tokens_to_ids([tokenizer.pad_token])[0],
+                                            pad_token_segment_id=4 if args.model_type in ["xlnet"] else 0,
+                                            pad_token_label_id=pad_token_label_id
+                                            )
+    logger.info("Creating ner features from dataset file at %s", args.data_dir)    
+    ner_examples = read_examples_from_file_ner(args.ner_data_dir, "dev")
+    ner_features = convert_examples_to_features_ner(ner_examples, ner_labels, args.max_seq_length, tokenizer,
+                                            cls_token_at_end=bool(args.model_type in ["xlnet"]),
+                                            # xlnet has a cls token at the end
+                                            cls_token=tokenizer.cls_token,
+                                            cls_token_segment_id=2 if args.model_type in ["xlnet"] else 0,
+                                            sep_token=tokenizer.sep_token,
+                                            sep_token_extra=bool(args.model_type in ["roberta"]),
+                                            # roberta uses an extra separator b/w pairs of sentences, cf. github.com/pytorch/fairseq/commit/1684e166e3da03f5b600dbb7855cb98ddfcd0805
+                                            pad_on_left=bool(args.model_type in ["xlnet"]),
+                                            # pad on the left for xlnet
+                                            pad_token=tokenizer.convert_tokens_to_ids([tokenizer.pad_token])[0],
+                                            pad_token_segment_id=4 if args.model_type in ["xlnet"] else 0,
+                                            pad_token_label_id=pad_token_label_id
+                                            )
+    
     # Convert to Tensors and build dataset
     all_input_ids = torch.tensor([f.input_ids for f in pos_features], dtype=torch.long)
     all_input_mask = torch.tensor([f.input_mask for f in pos_features], dtype=torch.long)
