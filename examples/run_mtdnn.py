@@ -251,7 +251,7 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
                 loss.backward()
             
             tr_loss += loss.item()
-            print("loss", loss.item())
+            # print("loss", loss.item())
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 if args.fp16:
                     torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), args.max_grad_norm)
