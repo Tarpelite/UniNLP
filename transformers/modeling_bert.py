@@ -1283,8 +1283,6 @@ class MTDNNModel(BertPreTrainedModel):
         self.classifier_pos = nn.Linear(config.hidden_size, num_labels_pos)
         self.classifier_ner = nn.Linear(config.hidden_size, num_labels_ner)
 
-        self.num_pos_labels = args.num_pos_labels
-        self.num_ner_labels = args.num_ner_labels
         self.init_weights()
     
     def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, 
