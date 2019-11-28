@@ -54,7 +54,7 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_tok
     # Load data features from cache or dataset file
     
     
-    logger.info("Creating pos features from dataset file at %s", args.data_dir)
+    logger.info("Creating pos features from dataset file at %s", args.pos_data_dir)
     pos_examples = read_examples_from_file_pos(args.pos_data_dir, "dev")
     pos_features = convert_examples_to_features_pos(pos_examples, pos_labels, args.max_seq_length, tokenizer,
                                             cls_token_at_end=bool(args.model_type in ["xlnet"]),
@@ -70,7 +70,7 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_tok
                                             pad_token_segment_id=4 if args.model_type in ["xlnet"] else 0,
                                             pad_token_label_id=pad_token_label_id
                                             )
-    logger.info("Creating ner features from dataset file at %s", args.data_dir)    
+    logger.info("Creating ner features from dataset file at %s", args.ner_data_dir)    
     ner_examples = read_examples_from_file_ner(args.ner_data_dir, "dev")
     ner_features = convert_examples_to_features_ner(ner_examples, ner_labels, args.max_seq_length, tokenizer,
                                             cls_token_at_end=bool(args.model_type in ["xlnet"]),
