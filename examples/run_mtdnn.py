@@ -599,7 +599,7 @@ def main():
     if args.do_train:
         train_dataset = load_and_cache_train_examples(args, tokenizer, labels_pos, labels_ner, pad_token_label_id)
         print("dataset lens", len(train_dataset))
-        logger.info("first dataset lens :{}".format(len(train_dataset[0])))
+        logger.info("first dataset lens :{}".format(type(train_dataset[0])))
         global_step, tr_loss = train(args, train_dataset, model, tokenizer, labels_pos, labels_ner, pad_token_label_id)
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 
