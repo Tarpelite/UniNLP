@@ -233,7 +233,7 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
     # for each epoch, 1. merge all the datasets, 2. shuffle
     step = 0
     for _ in train_iterator:
-        train_data_list = [random.shuffle(t) for t in train_data_list]
+        train_data_list = [sorted(t, key=lambda k:random.random()) for t in train_data_list]
         all_iters = [iter(item) for item in train_data_list]
         all_indices = []
         all_indices = [0]*len(train_data_list[0]) + [1]*len(train_data_list[1])
@@ -598,8 +598,8 @@ def main():
     # Training
     if args.do_train:
         train_dataset = load_and_cache_train_examples(args, tokenizer, labels_pos, labels_ner, pad_token_label_id)
-        print("dataset lens", len(train_dataset))
-        logger.info("first dataset lens :{}".format(type(train_dataset[0])))
+        # print("dataset lens", len(train_dataset))
+        # logger.info("first dataset lens :{}".format(type(train_dataset[0])))
         global_step, tr_loss = train(args, train_dataset, model, tokenizer, labels_pos, labels_ner, pad_token_label_id)
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 
