@@ -77,7 +77,7 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_tok
                                             )
     logger.info("Creating ner features from dataset file at %s", args.ner_data_dir)
     if is_ft:
-        ner_examples = read_examples_from_file_pos(args.ner_data_dir, "train")
+        ner_examples = read_examples_from_file_ner(args.ner_data_dir, "train")
     else:   
         ner_examples = read_examples_from_file_ner(args.ner_data_dir, "dev")
     ner_features = convert_examples_to_features_ner(ner_examples, ner_labels, args.max_seq_length, tokenizer,
