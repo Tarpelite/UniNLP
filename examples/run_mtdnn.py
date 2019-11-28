@@ -164,8 +164,8 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, pad_t
         pos_features_batchs.append(batch_t)
         cnt += mini_batch_size
     batch_t = []
-    for i in range(cnt, cnt + mini_batch_size):
-            batch_t.append(pos_features[i])
+    for i in range(cnt, len(pos_features)):
+        batch_t.append(pos_features[i])
     pos_features_batchs.append(batch_t)
 
     ner_features_batchs = []
@@ -177,8 +177,8 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, pad_t
         ner_features_batchs.append(batch_t)
         cnt += mini_batch_size
     batch_t = []
-    for i in range(cnt, cnt + mini_batch_size):
-            batch_t.append(ner_features[i])
+    for i in range(cnt, len(ner_features)):
+        batch_t.append(ner_features[i])
     ner_features_batchs.append(batch_t)
 
     data_list = [pos_features_batchs, ner_features_batchs]
