@@ -193,6 +193,8 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
     
     args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
 
+    t_total = sum(len(x) for x in train_data_list) // args.gradient_accumulation_steps * args.num_train_epochs
+
     # prepare optimizer and schedule (linear warmup and decay)
     no_decay = ['bias', 'LayerNorm.weight']
     optimizer_grouped_parameters = [
