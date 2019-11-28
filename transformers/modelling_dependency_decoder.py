@@ -147,5 +147,60 @@ class DecoderModel(BertPreTrainedModel):
         self.pad_index = args.pad_index
         self.unk_index = args.unk_index
     
+    def forward(self, input_ids=None, attention_mask=None, token_type_ids=None,
+                position_ids=None, head_mask=None, inputs_embeds=None, arcs=None, rels=None, mask=None):
+
+        outputs = self.bert(input_ids,
+                            attention_mask=attention_mask,
+                            token_type_ids=token_type_ids,
+                            position_ids=position_ids,
+                            head_mask=head_mask,
+                            inputs_embeds=inputs_embeds)
+
+        sequence_output = outputs[0]
+
+        sequence_output = self.embed_dropout(sequence_output)
+        x = sequence_output
+
+        arc_h = self.mlp_arc_h(x)
+        arc_d = self.mlp_arc_d(x)
+        rel_h = self.mlp_rel_h(x)
+        rel_d = self.mlp_rel_d(x)
+
+        # [batch_size, seq_len, seq_len]
+        s_arc = self.arc_attn(arc_d, arc_h)
+        # [batch_size, seq_len, seq_len, n_rels]
+        s_rel = self.rel_attn(rel_d, rel_h).permute(0, 2, 3, 1)
+
+        s_arc.masked_fill_(~mask.unsqueeze(1), float('-inf'))
+
+        if arcs is not None and rels is not None:
+            arc_scores, arcs = s_arc[mask], arcs[mask]
+            rel_scores, rels = s_rel[mask], rels[mask]
+
+            rel_scores = rel_scores[torch.arange(len(arcs)), arcs]
+            arc_loss = self.criterion(arc_scores, arcs)
+            rel_loss = self.criterion(rel_scores, rels)
+            loss = arc_loss + rel_loss
+
+            return loss
+        else:
+            arc_preds = s_arc.argmax(-1)
+            rel_preds = s_rel.argmax(-1)
+            rel_preds = rel_preds.gather(-1, arc_preds.unsqueeze(-1)).squeeze(-1)
+        
+            return arc_preds, rel_preds
+
+
+        
+
+        
+
+
+        
+
+
+
+
 
          
