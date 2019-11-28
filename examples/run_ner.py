@@ -211,7 +211,6 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
     model.eval()
     for batch in tqdm(eval_dataloader, desc="Evaluating"):
         batch = tuple(t.to(args.device) for t in batch)
-
         with torch.no_grad():
             inputs = {"input_ids": batch[0],
                       "attention_mask": batch[1],

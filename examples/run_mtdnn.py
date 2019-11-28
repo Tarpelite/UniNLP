@@ -440,8 +440,6 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
     return results, preds_list
 
 
-
-
 def main():
     parser = argparse.ArgumentParser()
 
@@ -622,6 +620,12 @@ def main():
     # Evaluation
     results = {}
     if args.do_eval and args.local_rank in [-1, 0]:
+
+        # do 2 stage evaluation: finetune , then evaluate
+
+        # step 1: finetune and on ner task
+
+
         tokenizer = tokenizer_class.from_pretrained(args.output_dir, do_lower_case=args.do_lower_case)
         checkpoints = [args.output_dir]
         if args.eval_all_checkpoints:
@@ -630,7 +634,7 @@ def main():
         logger.info("Evaluate the following checkpoints: %s", checkpoints)
         for checkpoint in checkpoints:
             global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
-            model = model_class.from_pretrained(checkpoint)
+            model = model_class.from_pretrained(checkpoint, num_labels_pos=num_labels_pos, num_labels_ner=num_labels_ner)
             model.to(args.device)
             result, _ = evaluate(args, model, tokenizer, labels_pos, labels_ner, pad_token_label_id, mode="dev", prefix=global_step)
             if global_step:
@@ -640,6 +644,8 @@ def main():
         with open(output_eval_file, "w") as writer:
             for key in sorted(results.keys()):
                 writer.write("{} = {}\n".format(key, str(results[key])))
+        
+
 
     if args.do_predict and args.local_rank in [-1, 0]:
         tokenizer = tokenizer_class.from_pretrained(args.output_dir, do_lower_case=args.do_lower_case)
