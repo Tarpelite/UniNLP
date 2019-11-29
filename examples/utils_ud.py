@@ -93,7 +93,7 @@ def convert_examples_to_features(examples,
             word_tokens = tokenizer.tokenize(word)
             tokens.extend(word_tokens)
             tag_ids.extend([label_map[tag]] + [pad_token_label_id] * (len(word_tokens) - 1))
-            head_ids.extend(int(head) + [pad_token_label_id]*(len(word_tokens) - 1))
+            head_ids.extend([int(head)] + [pad_token_label_id]*(len(word_tokens) - 1))
 
 
         # Account for [CLS] and [SEP] with "- 2" and with "- 3" for RoBERTa.
