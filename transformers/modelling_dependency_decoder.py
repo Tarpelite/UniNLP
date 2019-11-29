@@ -80,7 +80,7 @@ class BiAffineParser(BertPreTrainedModel):
     """Biaffine Dependency Parser"""
     def __init__(self, config, mlp_input, mlp_arc_hidden,
                 mlp_lab_hidden, mlp_dropout, 
-                num_labels, criterion, max_len):
+                num_labels, critierion, max_len):
         super(BiAffineParser, self).__init__(config)
         self.bert = BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
@@ -100,7 +100,7 @@ class BiAffineParser(BertPreTrainedModel):
         
 
         # Loss criterion
-        self.criterion = nn.CrossEntropyLoss()
+        self.critierion = nn.CrossEntropyLoss()
     
     def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None, mask_qkv=None, task_idx=None):
         sequence_output, _ = self.bert(
