@@ -49,8 +49,8 @@ def read_examples_from_file(data_dir, mode):
             else:
                 line = line.strip("\n").split("\t")
                 words.append(line[1])
-                tags.append(line[6])
-                heads.append(line[7])
+                tags.append(line[7])
+                heads.append(line[6])
     
         if words:
             examples.append(InputExample(guid="%s-%d".format(mode, guid_index),
