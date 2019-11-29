@@ -58,7 +58,7 @@ class RecurrentEncoder(nn.Module):
                                        bidirectional=True)
         
         self.hidden_init = getattr(torch, "randn")
-        self.train_hidden_init = train_hidden_init
+        self.train_hidden_init = False
     
     def get_hidden(self, batch):
         args = self.num_layers*self.num_directions, batch, self.hidden_size
