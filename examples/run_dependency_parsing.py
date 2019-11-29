@@ -14,7 +14,7 @@ from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, TensorDataset
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
-from utils_pos import convert_examples_to_features, get_labels, read_examples_from_file
+from utils_ud import convert_examples_to_features, get_labels, read_examples_from_file
 import torch.nn as nn
 from torch.optim import Adam
 
@@ -442,13 +442,13 @@ def main():
                                         from_tf=bool(".ckpt" in args.model_name_or_path),
                                         config=config,
                                         cache_dir=args.cache_dir if args.cache_dir else None,
-                                        mlp_input=args.max_length, 
+                                        mlp_input=args.max_seq_length, 
                                         mlp_arc_hidden=1024,
                                         mlp_lab_hidden=1024,
                                         mlp_droput=0.1, 
                                         num_labels=num_labels,
                                         critierion=nn.CrossEntropyLoss(),
-                                        max_len=args.max_len)
+                                        max_len=args.max_seq_length)
 
     if args.local_rank == 0:
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
