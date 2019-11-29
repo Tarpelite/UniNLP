@@ -448,6 +448,74 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
 
     
     args.eval_batch_size = args.per_gpu_eval_batch_size * max(1, args.n_gpu)
+
+    # Eval pos
+    eval_dataset = pos_dataset
+    eval_sampler = SequentialSampler(eval_dataset) if args.local_rank == -1 else DistributedSampler(eval_dataset)
+    eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=args.eval_batch_size)
+
+    # multi-gpu evaluate
+
+    model=model_pos
+    logger.info("***** Running  POS evaluation %s *****", prefix)
+    logger.info("  Num examples = %d", len(eval_dataset))
+    logger.info("  Batch size = %d", args.eval_batch_size)
+    eval_loss = 0.0
+    nb_eval_steps = 0
+    preds = None
+    out_label_ids = None
+    model.eval()
+    for batch in tqdm(eval_dataloader, desc="Evaluating"):
+        batch = tuple(t.to(args.device) for t in batch)
+
+        with torch.no_grad():
+            inputs = {"input_ids": batch[0],
+                      "attention_mask": batch[1],
+                      "labels": batch[3], "task_id":0}
+            if args.model_type != "distilbert":
+                inputs["token_type_ids"]: batch[2] if args.model_type in ["bert", "xlnet"] else None  # XLM and RoBERTa don"t use segment_ids
+            outputs = model(**inputs)
+            tmp_eval_loss, logits = outputs[:2]
+
+            if args.n_gpu > 1:
+                tmp_eval_loss = tmp_eval_loss.mean()  # mean() to average on multi-gpu parallel evaluating
+
+            eval_loss += tmp_eval_loss.item()
+        nb_eval_steps += 1
+        if preds is None:
+            preds = logits.detach().cpu().numpy()
+            out_label_ids = inputs["labels"].detach().cpu().numpy()
+        else:
+            preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
+            out_label_ids = np.append(out_label_ids, inputs["labels"].detach().cpu().numpy(), axis=0)
+
+    eval_loss = eval_loss / nb_eval_steps
+    preds = np.argmax(preds, axis=2)
+
+    label_map = {i: label for i, label in enumerate(pos_labels)}
+
+    out_label_list = [[] for _ in range(out_label_ids.shape[0])]
+    preds_list = [[] for _ in range(out_label_ids.shape[0])]
+
+    for i in range(out_label_ids.shape[0]):
+        for j in range(out_label_ids.shape[1]):
+            if out_label_ids[i, j] != pad_token_label_id:
+                out_label_list[i].append(label_map[out_label_ids[i][j]])
+                preds_list[i].append(label_map[preds[i][j]])
+
+    results["pos_accuracy"] = accuracy_score(out_label_list, preds_list)
+
+
+
+
+
+
+
+
+
+
+
+
     # Note that DistributedSampler samples randomly
     eval_dataset = ner_dataset
     eval_sampler = SequentialSampler(eval_dataset) if args.local_rank == -1 else DistributedSampler(eval_dataset)
@@ -514,63 +582,7 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
         "ner_f1": f1_score(out_label_list, preds_list)
     }
 
-    # Eval pos
-    eval_dataset = pos_dataset
-    eval_sampler = SequentialSampler(eval_dataset) if args.local_rank == -1 else DistributedSampler(eval_dataset)
-    eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=args.eval_batch_size)
-
-    # multi-gpu evaluate
-
-    model=model_pos
-    logger.info("***** Running  POS evaluation %s *****", prefix)
-    logger.info("  Num examples = %d", len(eval_dataset))
-    logger.info("  Batch size = %d", args.eval_batch_size)
-    eval_loss = 0.0
-    nb_eval_steps = 0
-    preds = None
-    out_label_ids = None
-    model.eval()
-    for batch in tqdm(eval_dataloader, desc="Evaluating"):
-        batch = tuple(t.to(args.device) for t in batch)
-
-        with torch.no_grad():
-            inputs = {"input_ids": batch[0],
-                      "attention_mask": batch[1],
-                      "labels": batch[3], "task_id":0}
-            if args.model_type != "distilbert":
-                inputs["token_type_ids"]: batch[2] if args.model_type in ["bert", "xlnet"] else None  # XLM and RoBERTa don"t use segment_ids
-            outputs = model(**inputs)
-            tmp_eval_loss, logits = outputs[:2]
-
-            if args.n_gpu > 1:
-                tmp_eval_loss = tmp_eval_loss.mean()  # mean() to average on multi-gpu parallel evaluating
-
-            eval_loss += tmp_eval_loss.item()
-        nb_eval_steps += 1
-        if preds is None:
-            preds = logits.detach().cpu().numpy()
-            out_label_ids = inputs["labels"].detach().cpu().numpy()
-        else:
-            preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
-            out_label_ids = np.append(out_label_ids, inputs["labels"].detach().cpu().numpy(), axis=0)
-
-    eval_loss = eval_loss / nb_eval_steps
-    preds = np.argmax(preds, axis=2)
-
-    label_map = {i: label for i, label in enumerate(pos_labels)}
-
-    out_label_list = [[] for _ in range(out_label_ids.shape[0])]
-    preds_list = [[] for _ in range(out_label_ids.shape[0])]
-
-    for i in range(out_label_ids.shape[0]):
-        for j in range(out_label_ids.shape[1]):
-            if out_label_ids[i, j] != pad_token_label_id:
-                out_label_list[i].append(label_map[out_label_ids[i][j]])
-                preds_list[i].append(label_map[preds[i][j]])
-
-    results["pos_accuracy"] = accuracy_score(out_label_list, preds_list)
-
-
+    
     logger.info("***** Eval results %s *****", prefix)
     for key in sorted(results.keys()):
         logger.info("  %s = %s", key, str(results[key]))
