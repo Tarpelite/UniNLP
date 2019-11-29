@@ -1147,7 +1147,7 @@ class BertForTokenClassification(BertPreTrainedModel):
         self.bert = BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.classifier = nn.Linear(config.hidden_size, self.num_labels)
-        self.num_pos_labels = num_pos_labels
+        
         self.init_weights()
 
     def forward(self, input_ids=None, attention_mask=None, token_type_ids=None,
@@ -1171,11 +1171,11 @@ class BertForTokenClassification(BertPreTrainedModel):
             # Only keep active parts of the loss
             if attention_mask is not None:
                 active_loss = attention_mask.view(-1) == 1
-                active_logits = logits.view(-1, self.num_pos_labels)[active_loss]
+                active_logits = logits.view(-1, self.num_labels)[active_loss]
                 active_labels = labels.view(-1)[active_loss]
                 loss = loss_fct(active_logits, active_labels)
             else:
-                loss = loss_fct(logits.view(-1, self.num_pos_labels), labels.view(-1))
+                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
             outputs = (loss,) + outputs
 
         return outputs  # (loss), scores, (hidden_states), (attentions)
