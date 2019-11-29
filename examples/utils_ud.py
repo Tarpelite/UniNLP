@@ -176,7 +176,7 @@ def convert_examples_to_features(examples,
 
     return features
 
-def get_tag_labels(path):
+def get_labels(path):
     if path:
         with open(path, "r") as f:
             labels = f.read().splitlines()
