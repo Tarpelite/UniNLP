@@ -502,16 +502,10 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
             if out_label_ids[i, j] != pad_token_label_id:
                 out_label_list[i].append(label_map[out_label_ids[i][j]])
                 preds_list[i].append(label_map[preds[i][j]])
+    
+    results = {}
 
     results["pos_accuracy"] = accuracy_score(out_label_list, preds_list)
-
-
-
-
-
-
-
-
 
 
 
@@ -576,6 +570,7 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
                 preds_list[i].append(label_map[preds[i][j]])
 
     results = {
+        "pos_accuracy":results["pos_accuracy"]
         "ner_loss": eval_loss,
         "ner_precision": precision_score(out_label_list, preds_list),
         "ner_recall": recall_score(out_label_list, preds_list),
