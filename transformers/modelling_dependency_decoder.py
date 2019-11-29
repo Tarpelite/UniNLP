@@ -30,7 +30,7 @@ class MLP(nn.Module):
 class BiAffine(nn.Module):
     """Biaffine attention layer."""
     def __init__(self, input_dim, output_dim):
-        super(BiAffineParser, self).__init__()
+        super(BiAffine, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.U = nn.Parameter(torch.FloatTensor(output_dim, input_dim, input_dim))
