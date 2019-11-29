@@ -1,206 +1,147 @@
 import torch
-import torch.nn as nn
-from modelling_bert import BertModel, BertPreTrainedModel
+from torch import nn
+from torch.autograd import Variable
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+from transformers import BertModel, BertPreTrainedModel
 
-class SharedDropout(nn.Module):
-
-    def __init__(self, p=0.5, batch_first=True):
-        super(SharedDropout, self).__init__()
-
-        self.p = p
-        self.batch_first = batch_first
-    
-    def forward(self, x):
-        if self.training:
-            if self.batch_first:
-                mask = self.get_mask(x[:, 0], self.p)
-            else:
-                mask = self.get_mask(x[0], self.p)
-            x *= mask.unsqueeze(1) if self.batch_first else mask
-
-        return x 
-    @staticmethod
-    def get_mask(x, p):
-        mask = x.new_empty(x.shape).bernoulli_(1 - p)
-        mask = mask / (1 - p)
-
-        return mask
-
-class IndependentDropout(nn.Module):
-
-    def __init__(self, p=0.5):
-        super(IndependentDropout, self).__init__()
-
-        self.p = p
-
-    def extra_repr(self):
-        return f"p={self.p}"
-
-    def forward(self, *items):
-        if self.training:
-            masks = [x.new_empty(x.shape[:2]).bernoulli_(1 - self.p)
-                     for x in items]
-            total = sum(masks)
-            scale = len(items) / total.max(torch.ones_like(total))
-            masks = [mask * scale for mask in masks]
-            items = [item * mask.unsqueeze(dim=-1)
-                     for item, mask in zip(items, masks)]
-
-        return items
-
+PAD_INDEX = nn.CrossEntropyLoss().ignore_index
 
 class MLP(nn.Module):
-    def __init__(self, n_in, n_hidden, dropout=0):
+    """Module for an MLP with dropout"""
+    def __init__(self, input_size, layer_size, depth, activation, dropout):
         super(MLP, self).__init__()
-
-        self.linear = nn.Linear(n_in, n_hidden)
-        self.activation = nn.LeakyReLU(negative_slope=0.1)
-        self.dropout = SharedDropout(p=dropout)
-
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        nn.init.orthogonal_(self.linear.weight)
-        nn.init.zeros_(self.linear.bias)
-
-    def forward(self, x):
-        x = self.linear(x)
-        x = self.activation(x)
-        x = self.dropout(x)
-
-        return x
-
-class Biaffine(nn.Module):
-
-    def __init__(self, n_in, n_out=1, bias_x=True, bias_y=True):
-        super(Biaffine, self).__init__()
-
-        self.n_in = n_in
-        self.n_out = n_out
-        self.bias_x = bias_x
-        self.bias_y = bias_y
-        self.weight = nn.Parameter(torch.Tensor(n_out,
-                                                n_in + bias_x,
-                                                n_in + bias_y))
-        self.reset_parameters()
-
-    def extra_repr(self):
-        s = f"n_in={self.n_in}, n_out={self.n_out}"
-        if self.bias_x:
-            s += f", bias_x={self.bias_x}"
-        if self.bias_y:
-            s += f", bias_y={self.bias_y}"
-
-        return s
-
-    def reset_parameters(self):
-        nn.init.zeros_(self.weight)
-
-    def forward(self, x, y):
-        if self.bias_x:
-            x = torch.cat([x, x.new_ones(x.shape[:-1]).unsqueeze(-1)], -1)
-        if self.bias_y:
-            y = torch.cat([y, y.new_ones(y.shape[:-1]).unsqueeze(-1)], -1)
-        # [batch_size, 1, seq_len, d]
-        x = x.unsqueeze(1)
-        # [batch_size, 1, seq_len, d]
-        y = y.unsqueeze(1)
-        # [batch_size, n_out, seq_len, seq_len]
-        s = x @ self.weight @ y.transpose(-1, -2)
-        # remove dim 1 if n_out == 1
-        s = s.squeeze(1)
-
-        return s
-
-
-class DecoderModel(BertPreTrainedModel):
-
-    def __init__(self, args):
-        super(DecoderModel, self).__init__()
-        self.args = args
-        self.config = args.config
-        self.bert = BertModel(args.config)
-        self.embed_dropout = IndependentDropout(args.embed_dropout)
-
-        
-        # the MLP layer
-        self.mlp_arc_h = MLP(n_in=self.config.hidden_size,
-                             n_hidden=args.n_mlp_arc,
-                             dropout=args.mlp_dropout)
-        self.mlp_arc_d = MLP(n_in=self.config.hidden_size,
-                             n_hidden=args.n_mlp_arc,
-                             dropout=args.mlp_dropout)
-        self.mlp_rel_h = MLP(n_in=self.config.hidden_size,
-                             n_hidden=args.n_mlp_arc,
-                             dropout=args.mlp_dropout)
-        self.mlp_rel_d = MLP(n_in=self.config.hidden_size,
-                             n_hidden=args.n_mlp_arc,
-                             dropout=args.mlp_dropout)
-        
-        # the Biaffine layers
-
-        self.arc_attn = Biaffine(n_in=args.n_mlp_arc,
-                                bias_x=True, bias_y=False)
-        self.arc_attn = Biaffine(n_in=args.n_mlp_arc,
-                                bias_x=True, bias_y=True)
-        
-        self.pad_index = args.pad_index
-        self.unk_index = args.unk_index
+        self.layers = nn.Sequential()
+        act_fn = getattr(nn, activation)
+        for i in range(depth):
+            self.layers.add_module('fc_{}'.format(i),
+                                    nn.Linear(input_size, layer_size))
+            if activation:
+                self.layers.add_module('{}_{}'.format(activation, i),
+                                        act_fn())
+            
+            if dropout:
+                self.layers.add_module('dropout_{}'.format(i),
+                                        nn.Dropout(dropout))
+            input_size = layer_size
     
-    def forward(self, input_ids=None, attention_mask=None, token_type_ids=None,
-                position_ids=None, head_mask=None, inputs_embeds=None, arcs=None, rels=None, mask=None):
+    def forward(self, x):
+        return self.layers(x)
 
-        outputs = self.bert(input_ids,
-                            attention_mask=attention_mask,
-                            token_type_ids=token_type_ids,
-                            position_ids=position_ids,
-                            head_mask=head_mask,
-                            inputs_embeds=inputs_embeds)
+class BiAffine(nn.Module):
+    """Biaffine attention layer."""
+    def __init__(self, input_dim, output_dim):
+        super(BiAffineParser, self).__init__()
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.U = nn.Parameter(torch.FloatTensor(output_dim, input_dim, input_dim))
+        nn.init.xavier_uniform(self.U)
+    
+    def forward(self, Rh, Rd):
+        Rh = Rh.unsqueeze(1)
+        Rd = Rd.unsqueeze(1)
+        S = Rh @ self.U @ Rd.transpose(-1, -2)
+        return S.squeeze(1)
 
-        sequence_output = outputs[0]
+class RecurrentEncoder(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers,
+                batch_first, dropout):
+        
+        super(RecurrentEncoder, self).__init__()
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.num_directions = 2
+        self.batch_first = batch_first
 
-        sequence_output = self.embed_dropout(sequence_output)
+        self.rnn = getattr(nn, 'LSTM')(input_size, hidden_size, num_layers,
+                                       batch_first=batch_first, 
+                                       dropout=dropout, 
+                                       bidirectional=True)
+        
+        self.hidden_init = getattr(torch, "randn")
+        self.train_hidden_init = train_hidden_init
+    
+    def get_hidden(self, batch):
+        args = self.num_layers*self.num_directions, batch, self.hidden_size
+        use_cuda = torch.cuda.is_available()
+        h0 = Variable(self.hidden_init(*args))
+        c0 = Variable(self.hidden_init(*args))
+        if use_cuda:
+            h0, c0 = h0.cuda(), c0.cuda()
+        return h0, c0
+    
+    def forward(self, x, lengths):
+        batch = x.size(0) if self.batch_first else x.size(1)
+        h0 = self.get_hidden(batch)
+        out, _ = self.forward(x, h0)
+        return out
+
+
+class BiAffineParser(BertPreTrainedModel):
+    """Biaffine Dependency Parser"""
+    def __init__(self, config, mlp_input, mlp_arc_hidden,
+                mlp_lab_hidden, mlp_dropout, 
+                num_labels, criterion, max_len):
+        super(BiAffineParser, self).__init__(config)
+        self.bert = BertModel(config)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+
+        self.encoder = RecurrentEncoder(max_len, config.hidden_size, 1, batch_first=True, dropout=config.hidden_dropout_prob)
+        # Arc MLPs
+        self.arc_mlp_h = MLP(mlp_input, mlp_arc_hidden, 2, "ReLU", mlp_dropout)
+        self.arc_mlp_d = MLP(mlp_input, mlp_arc_hidden, 2, "ReLU", mlp_dropout)
+
+        # Label MLPs
+        self.lab_mlp_h = MLP(mlp_input, mlp_lab_hidden, 2, 'ReLU', mlp_dropout)
+        self.lab_mlp_d = MLP(mlp_input, mlp_lab_hidden, 2, 'ReLU', mlp_dropout)
+
+        # BiAffine layers
+        self.arc_biaffine = BiAffine(mlp_arc_hidden, 1)
+        self.lab_biaffine = BiAffine(mlp_lab_hidden, num_labels)
+        
+
+        # Loss criterion
+        self.criterion = nn.CrossEntropyLoss()
+    
+    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None, mask_qkv=None, task_idx=None):
+        sequence_output, _ = self.bert(
+            input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False, mask_qkv=mask_qkv, task_idx=task_idx)
+        sequence_output = self.dropout(sequence_output)
+        
+        words = input_ids
+        aux = (words != PAD_INDEX).long().sum(-1)
+
         x = sequence_output
 
-        arc_h = self.mlp_arc_h(x)
-        arc_d = self.mlp_arc_d(x)
-        rel_h = self.mlp_rel_h(x)
-        rel_d = self.mlp_rel_d(x)
+        h = self.encoder(x, aux)
 
-        # [batch_size, seq_len, seq_len]
-        s_arc = self.arc_attn(arc_d, arc_h)
-        # [batch_size, seq_len, seq_len, n_rels]
-        s_rel = self.rel_attn(rel_d, rel_h).permute(0, 2, 3, 1)
+        arc_h = self.arc_mlp_h(h)
+        arc_d = self.arc_mlp_d(h)
+        lab_h = self.lab_mlp_h(h)
+        lab_d = self.lab_mlp_d(h)
 
-        s_arc.masked_fill_(~mask.unsqueeze(1), float('-inf'))
-
-        if arcs is not None and rels is not None:
-            arc_scores, arcs = s_arc[mask], arcs[mask]
-            rel_scores, rels = s_rel[mask], rels[mask]
-
-            rel_scores = rel_scores[torch.arange(len(arcs)), arcs]
-            arc_loss = self.criterion(arc_scores, arcs)
-            rel_loss = self.criterion(rel_scores, rels)
-            loss = arc_loss + rel_loss
-
-            return loss
-        else:
-            arc_preds = s_arc.argmax(-1)
-            rel_preds = s_rel.argmax(-1)
-            rel_preds = rel_preds.gather(-1, arc_preds.unsqueeze(-1)).squeeze(-1)
-        
-            return arc_preds, rel_preds
+        S_arc = self.arc_biaffine(arc_h, arc_d)
+        S_lab = self.lab_biaffine(lab_h, lab_d)
+        return S_arc, S_lab
+    
+    def arc_loss(self, S_arc, heads):
+        S_arc = S_arc.transpose(-1, -2)
+        S_arc = S_arc.contiguous().view(-1, S_arc.size(-1))
+        heads = heads.view(-1)
+        return self.criterion(S_arc, heads)
+    
+    def lab_loss(self, S_lab, heads, labels):
+        heads = heads.unsqueeze(1).unsqueeze(2)              # [batch, 1, 1, sent_len]
+        heads = heads.expand(-1, S_lab.size(1), -1, -1)      # [batch, n_labels, 1, sent_len]
+        S_lab = torch.gather(S_lab, 2, heads).squeeze(2)     # [batch, n_labels, sent_len]
+        S_lab = S_lab.transpose(-1, -2)                      # [batch, sent_len, n_labels]
+        S_lab = S_lab.contiguous().view(-1, S_lab.size(-1))  # [batch*sent_len, n_labels]
+        labels = labels.view(-1)                             # [batch*sent_len]
+        return self.criterion(S_lab, labels)
 
 
-        
 
-        
 
 
         
 
 
-
-
-
-         
