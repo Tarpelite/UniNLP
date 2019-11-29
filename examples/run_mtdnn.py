@@ -441,6 +441,8 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
         # fine tune ner
         _, _, model_ner = finetune(args, ner_dataset, model_ner, tokenizer, ner_labels, pad_token_label_id)
 
+        assert model_pos != model_ner
+
     
     pos_dataset, ner_dataset = load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_token_label_id, is_ft=False)
 
