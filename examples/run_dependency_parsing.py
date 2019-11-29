@@ -445,7 +445,7 @@ def main():
                                         mlp_input=args.max_seq_length, 
                                         mlp_arc_hidden=1024,
                                         mlp_lab_hidden=1024,
-                                        mlp_droput=0.1, 
+                                        mlp_dropout=0.1, 
                                         num_labels=num_labels,
                                         critierion=nn.CrossEntropyLoss(),
                                         max_len=args.max_seq_length)
