@@ -49,6 +49,9 @@ def read_examples_from_file(data_dir, mode):
             else:
                 line = line.strip("\n").split("\t")
                 words.append(line[1])
+                tag = line[7]
+                if ":" in tag:
+                    tag = tag.split(":")[0]
                 tags.append(line[7])
                 heads.append(line[6])
     
