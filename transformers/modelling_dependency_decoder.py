@@ -130,9 +130,12 @@ class BiAffineParser(BertPreTrainedModel):
         print("check heads")
         print("S_arc", S_arc.shape)
         print("heads", heads.shape)
+        flag = True
         for head in heads:
             if head != -100 and (head < 0 or head >=128):
                 print(head)
+                flag = False
+        print(flag)
         return self.critierion(S_arc, heads)
     
     def lab_loss(self, S_lab, heads, labels):
