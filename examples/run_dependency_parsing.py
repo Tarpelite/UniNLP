@@ -5,6 +5,7 @@ import glob
 import logging
 import os
 import random
+import ipdb
 
 import numpy as np
 import torch
@@ -25,6 +26,7 @@ from transformers import DistilBertConfig, DistilBertForTokenClassification, Dis
 
 logger = logging.getLogger(__name__)
 
+ipdb.set_trace()
 PAD_INDEX= nn.CrossEntropyLoss().ignore_index
 
 ALL_MODELS = sum(
@@ -130,8 +132,8 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
             arc_loss = model.arc_loss(S_arc, batch[4])
             lab_loss = model.lab_loss(S_labels, batch[4], batch[3])
 
-            # loss = arc_loss + lab_loss
-            loss = arc_loss
+            loss = arc_loss + lab_loss
+            
 
             if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel training
