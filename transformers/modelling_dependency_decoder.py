@@ -62,11 +62,9 @@ class RecurrentEncoder(nn.Module):
     
     def get_hidden(self, batch):
         args = self.num_layers*self.num_directions, batch, self.hidden_size
-        use_cuda = torch.cuda.is_available()
         h0 = Variable(self.hidden_init(*args))
         c0 = Variable(self.hidden_init(*args))
-        if use_cuda:
-            h0, c0 = h0.cuda(), c0.cuda()
+        h0, c0 = h0.cuda(), c0.cuda()
         return h0, c0
     
     def forward(self, x, lengths):
