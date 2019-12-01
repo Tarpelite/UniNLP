@@ -100,7 +100,7 @@ class BiAffineParser(BertPreTrainedModel):
         
 
         # Loss criterion
-        self.critierion = nn.CrossEntropyLoss(ignore_index=-100, size_averaged=True)
+        self.critierion = nn.CrossEntropyLoss(ignore_index=-100, size_average=True)
     
     def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None, mask_qkv=None, task_idx=None):
         sequence_output, _ = self.bert(
