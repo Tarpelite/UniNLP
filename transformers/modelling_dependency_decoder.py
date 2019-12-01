@@ -60,16 +60,16 @@ class RecurrentEncoder(nn.Module):
         
         self.train_hidden_init = False
     
-    def get_hidden(self, batch):
-        args = self.num_layers*self.num_directions, batch, self.hidden_size
-        h0 = torch.randn(*args)
-        c0 = torch.randn(*args)
-        h0, c0 = h0.cuda(), c0.cuda()
-        return h0, c0
+    # def get_hidden(self, batch):
+    #     args = self.num_layers*self.num_directions, batch, self.hidden_size
+    #     h0 = torch.randn(*args)
+    #     c0 = torch.randn(*args)
+    #     h0, c0 = h0.cuda(), c0.cuda()
+    #     return h0, c0
     
     def forward(self, x, lengths):
         batch = x.size(0) if self.batch_first else x.size(1)
-        h0 = self.get_hidden(batch)
+        h0 = torch.randn(self.num_layers*self.num_directions, batch, self.hidden_size)
         out, _ = self.forward(x, h0)
         return out
 
