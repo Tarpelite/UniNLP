@@ -104,7 +104,7 @@ class BiAffineParser(BertPreTrainedModel):
     
     def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None, mask_qkv=None, task_idx=None):
         sequence_output, _ = self.bert(
-            input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False, mask_qkv=mask_qkv, task_idx=task_idx)
+            input_ids, token_type_ids, attention_mask, mask_qkv=mask_qkv, task_idx=task_idx)
         sequence_output = self.dropout(sequence_output)
         
         words = input_ids
