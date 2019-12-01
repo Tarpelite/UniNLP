@@ -6,6 +6,14 @@ import os
 from io import open
 
 logger = logging.getLogger(__name__)
+tag_list = ["acl", "advcl", "advmod", "amod", "appos",
+                "aux", "case", "cc", "ccomp", "clf", 
+                "compound", "conj", "cop", "csubj", "dep",
+                "det", "discourse", "dislocated", "expl", "fixed",
+                "flat", "goeswith", "iobj", "list", "mark",
+                "nmod", "nsubj", "nummod", "obj", "obl",
+                "orphan", "parataxis", "punct", "reparandum", "root",
+                "vocative", "xcomp"]
 
 class InputExample(object):
 
@@ -95,7 +103,11 @@ def convert_examples_to_features(examples,
         for word, tag, head in zip(example.words, example.tags, example.heads):
             word_tokens = tokenizer.tokenize(word)
             tokens.extend(word_tokens)
-            tag_ids.extend([label_map[tag]] + [pad_token_label_id] * (len(word_tokens) - 1))
+            if tag in label_map:
+                tag_id = label_map[tag]
+            else:
+                tag_id = pad_token_label_id
+            tag_ids.extend([tag_id] + [pad_token_label_id] * (len(word_tokens) - 1))
             head_ids.extend([int(head)] + [pad_token_label_id]*(len(word_tokens) - 1))
 
 
