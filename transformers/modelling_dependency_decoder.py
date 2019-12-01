@@ -57,13 +57,13 @@ class RecurrentEncoder(nn.Module):
                                        dropout=dropout, 
                                        bidirectional=True)
         
-        self.hidden_init = getattr(torch, "randn")
+        
         self.train_hidden_init = False
     
     def get_hidden(self, batch):
         args = self.num_layers*self.num_directions, batch, self.hidden_size
-        h0 = Variable(self.hidden_init(*args))
-        c0 = Variable(self.hidden_init(*args))
+        h0 = Variable(torch.randn(*args))
+        c0 = Variable(torch.randn(*args))
         h0, c0 = h0.cuda(), c0.cuda()
         return h0, c0
     
