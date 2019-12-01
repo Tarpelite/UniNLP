@@ -126,7 +126,7 @@ class BiAffineParser(BertPreTrainedModel):
         S_arc = S_arc.transpose(-1, -2)
         S_arc = S_arc.contiguous().view(-1, S_arc.size(-1))
         heads = heads.view(-1)
-        return self.criterion(S_arc, heads)
+        return self.critierion(S_arc, heads)
     
     def lab_loss(self, S_lab, heads, labels):
         heads = heads.unsqueeze(1).unsqueeze(2)              # [batch, 1, 1, sent_len]
@@ -135,7 +135,7 @@ class BiAffineParser(BertPreTrainedModel):
         S_lab = S_lab.transpose(-1, -2)                      # [batch, sent_len, n_labels]
         S_lab = S_lab.contiguous().view(-1, S_lab.size(-1))  # [batch*sent_len, n_labels]
         labels = labels.view(-1)                             # [batch*sent_len]
-        return self.criterion(S_lab, labels)
+        return self.critierion(S_lab, labels)
 
 
 
