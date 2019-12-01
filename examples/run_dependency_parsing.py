@@ -125,8 +125,8 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
             S_arc.to(args.device)
             S_labels.to(args.device)
 
-            arc_loss = model.arc_loss(S_arc, inputs[4])
-            lab_loss = model.lab_loss(S_labels, inputs[4], inputs[3])
+            arc_loss = model.arc_loss(S_arc, batch[4])
+            lab_loss = model.lab_loss(S_labels, batch[4], batch[3])
 
             loss = arc_loss + lab_loss
 
