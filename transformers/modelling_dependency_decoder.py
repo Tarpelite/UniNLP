@@ -86,12 +86,12 @@ class BiAffineParser(BertPreTrainedModel):
 
         self.encoder = RecurrentEncoder(config.hidden_size, mlp_input, 1, batch_first=True, dropout=config.hidden_dropout_prob)
         # Arc MLPs
-        self.arc_mlp_h = MLP(mlp_input, mlp_arc_hidden, 2, "ReLU", mlp_dropout)
-        self.arc_mlp_d = MLP(mlp_input, mlp_arc_hidden, 2, "ReLU", mlp_dropout)
+        self.arc_mlp_h = MLP(mlp_input*2, mlp_arc_hidden, 2, "ReLU", mlp_dropout)
+        self.arc_mlp_d = MLP(mlp_input*2, mlp_arc_hidden, 2, "ReLU", mlp_dropout)
 
         # Label MLPs
-        self.lab_mlp_h = MLP(mlp_input, mlp_lab_hidden, 2, 'ReLU', mlp_dropout)
-        self.lab_mlp_d = MLP(mlp_input, mlp_lab_hidden, 2, 'ReLU', mlp_dropout)
+        self.lab_mlp_h = MLP(mlp_input*2, mlp_lab_hidden, 2, 'ReLU', mlp_dropout)
+        self.lab_mlp_d = MLP(mlp_input*2, mlp_lab_hidden, 2, 'ReLU', mlp_dropout)
 
         # BiAffine layers
         self.arc_biaffine = BiAffine(mlp_arc_hidden, 1)
