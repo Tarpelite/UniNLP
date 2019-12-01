@@ -128,6 +128,8 @@ class BiAffineParser(BertPreTrainedModel):
         heads = heads.view(-1)
         print("heads", heads)
         print("check heads")
+        print("S_arc", S_arc.shape)
+        print("heads", heads.shape)
         for head in heads:
             if head != -100 and (head < 0 or head >=128):
                 print(head)
