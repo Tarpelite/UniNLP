@@ -60,6 +60,8 @@ def read_examples_from_file(data_dir, mode):
                 tag = line[7]
                 if ":" in tag:
                     tag = tag.split(":")[0]
+                if tag not in tag_list:
+                    print(tag)
                 tags.append(tag)
                 heads.append(line[6])
     
