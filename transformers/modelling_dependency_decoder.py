@@ -126,6 +126,7 @@ class BiAffineParser(BertPreTrainedModel):
         S_arc = S_arc.transpose(-1, -2)
         S_arc = S_arc.contiguous().view(-1, S_arc.size(-1))
         heads = heads.view(-1)
+        print("heads", heads)
         return self.critierion(S_arc, heads)
     
     def lab_loss(self, S_lab, heads, labels):
