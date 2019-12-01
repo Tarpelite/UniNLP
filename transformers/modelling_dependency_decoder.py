@@ -69,8 +69,8 @@ class RecurrentEncoder(nn.Module):
     
     def forward(self, x, lengths):
         batch = x.size(0) if self.batch_first else x.size(1)
-        h0 = torch.randn(self.num_layers*self.num_directions, batch, self.hidden_size)
-        c0 = torch.randn(self.num_layers*self.num_directions, batch, self.hidden_size)
+        h0 = torch.randn(self.num_layers*self.num_directions, batch, self.hidden_size).cuda()
+        c0 = torch.randn(self.num_layers*self.num_directions, batch, self.hidden_size).cuda()
         out, _ = self.rnn(x, (h0, c0))
         return out
 
