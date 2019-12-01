@@ -62,8 +62,6 @@ def read_examples_from_file(data_dir, mode):
                     tag = tag.split(":")[0]
                 
                 head = line[6]
-                if tag == "_" or head == "_":
-                    continue
                 tags.append(tag)
                 heads.append(head)
     
@@ -111,8 +109,12 @@ def convert_examples_to_features(examples,
                 tag_id = label_map[tag]
             else:
                 tag_id = pad_token_label_id
+            if head == "_":
+                head_id = pad_token_label_id
+            else:
+                head_id = int(head)
             tag_ids.extend([tag_id] + [pad_token_label_id] * (len(word_tokens) - 1))
-            head_ids.extend([int(head)] + [pad_token_label_id]*(len(word_tokens) - 1))
+            head_ids.extend([head_id] + [pad_token_label_id]*(len(word_tokens) - 1))
 
 
         # Account for [CLS] and [SEP] with "- 2" and with "- 3" for RoBERTa.
