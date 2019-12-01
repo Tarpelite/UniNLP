@@ -127,6 +127,10 @@ class BiAffineParser(BertPreTrainedModel):
         S_arc = S_arc.contiguous().view(-1, S_arc.size(-1))
         heads = heads.view(-1)
         print("heads", heads)
+        print("check heads")
+        for head in heads:
+            if head != -100 and (head < 0 or head >=128):
+                print(head)
         return self.critierion(S_arc, heads)
     
     def lab_loss(self, S_lab, heads, labels):
