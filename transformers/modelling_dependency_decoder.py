@@ -84,7 +84,7 @@ class BiAffineParser(BertPreTrainedModel):
         self.bert = BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
-        self.encoder = RecurrentEncoder(config.hidden_size, config.hidden_size*2, 1, batch_first=True, dropout=config.hidden_dropout_prob)
+        self.encoder = RecurrentEncoder(config.hidden_size, mlp_input, 1, batch_first=True, dropout=config.hidden_dropout_prob)
         # Arc MLPs
         self.arc_mlp_h = MLP(mlp_input, mlp_arc_hidden, 2, "ReLU", mlp_dropout)
         self.arc_mlp_d = MLP(mlp_input, mlp_arc_hidden, 2, "ReLU", mlp_dropout)
