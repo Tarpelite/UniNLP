@@ -4,6 +4,7 @@ from torch.autograd import Variable
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from transformers import BertModel, BertPreTrainedModel
 
+
 PAD_INDEX = nn.CrossEntropyLoss().ignore_index
 
 class MLP(nn.Module):
@@ -99,7 +100,7 @@ class BiAffineParser(BertPreTrainedModel):
         
 
         # Loss criterion
-        self.critierion = nn.CrossEntropyLoss(ignore_index=-100)
+        self.critierion = nn.CrossEntropyLoss(ignore_index=-100, size_averaged=True)
     
     def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None, mask_qkv=None, task_idx=None):
         sequence_output, _ = self.bert(
