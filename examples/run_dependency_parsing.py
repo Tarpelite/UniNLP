@@ -26,7 +26,7 @@ from transformers import DistilBertConfig, DistilBertForTokenClassification, Dis
 
 logger = logging.getLogger(__name__)
 
-ipdb.set_trace()
+
 PAD_INDEX= nn.CrossEntropyLoss().ignore_index
 
 ALL_MODELS = sum(
