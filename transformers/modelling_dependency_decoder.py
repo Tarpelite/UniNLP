@@ -132,9 +132,9 @@ class BiAffineParser(BertPreTrainedModel):
         # print("S_arc", S_arc.shape)
         # print("heads", heads.shape)
         flag = True
-        for head in heads:
-            print(head)
-        print(flag)
+        # for head in heads:
+        #     print(head)
+        # print(flag)
         return self.critierion(S_arc, heads)
     
     def lab_loss(self, S_lab, heads, labels):
