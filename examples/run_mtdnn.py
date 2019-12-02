@@ -455,8 +455,8 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
     eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=args.eval_batch_size)
 
     # multi-gpu evaluate
-
-    model=model_pos
+    if do_ft:
+        model=model_pos
     logger.info("***** Running  POS evaluation %s *****", prefix)
     logger.info("  Num examples = %d", len(eval_dataset))
     logger.info("  Batch size = %d", args.eval_batch_size)
@@ -527,7 +527,8 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
     nb_eval_steps = 0
     preds = None
     out_label_ids = None
-    model = model_ner
+    if do_ft:
+        model = model_ner
     model.eval()
     for batch in tqdm(eval_dataloader, desc="Evaluating"):
         batch = tuple(t.to(args.device) for t in batch)
