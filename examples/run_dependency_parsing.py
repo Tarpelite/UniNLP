@@ -132,8 +132,7 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
             heads = batch[4]
             labels = batch[3]
             arc_loss = model.arc_loss(S_arc, heads)
-            mask = heads != -100
-            heads = heads*mask
+            heads.masked_fill_(heads==-100, 0)
             lab_loss = model.lab_loss(S_labels, heads, labels)
 
             loss = arc_loss + lab_loss
