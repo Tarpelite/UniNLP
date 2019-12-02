@@ -234,7 +234,7 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
             S_arc, S_lab = model(**inputs)
 
             _, pred = S_arc.max(dim=-2)
-            heads = inputs[4]
+            heads = batch[4]
             mask = (heads != PAD_INDEX).float()
             total_words += torch.sum(heads != PAD_INDEX)
             hits += torch.sum(pred == heads).float()
