@@ -429,7 +429,11 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
     return global_step, tr_loss / global_step, model
 
 def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, mode, prefix=" ", task="pos"):
-    
+
+    if torch.cuda.device_count() > 0:
+        eval_batch_size = torch.cuda.device_count() * args.per_gpu_eval_batch_size
+    else:
+        eval_batch_size = args.per_gpu_eval_batch_size
     eval_sampler = SequentialSampler(eval_dataset) if args.local_rank == -1 else DistributedSampler(eval_dataset)
     eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=args.eval_batch_size)
 
