@@ -34,8 +34,6 @@ from transformers import DistilBertConfig, DistilBertForTokenClassification, Dis
 
 
 logger = logging.getLogger(__name__)
-num_labels_pos = 0
-num_labels_ner = 0
 
 ALL_MODELS = sum(
     (tuple(conf.pretrained_config_archive_map.keys()) for conf in (BertConfig, RobertaConfig, DistilBertConfig)),
@@ -433,18 +431,17 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
 def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id, mode, prefix="", do_ft = True):
 
     if do_ft:
-        source_dict = model.state_dict()
         pos_dataset, ner_dataset = load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_token_label_id, is_ft=True)
-    
+        model_pos = copy.deepcopy(model)
+        model_ner = model
 
         # fine_tune pos
-        _, _, model = finetune(args, pos_dataset, model, tokenizer, pos_labels, pad_token_label_id)
-        pos_state_dict = model.state_dict()
+        _, _, model_pos = finetune(args, pos_dataset, model_pos, tokenizer, pos_labels, pad_token_label_id)
+
         # fine tune ner
-        model.load_state_dict(source_dict)
-        _, _, model_ner = finetune(args, ner_dataset, model, tokenizer, ner_labels, pad_token_label_id)
-        ner_state_dict = model.state_dict()
-        assert pos_state_dict != ner_state_dict
+        _, _, model_ner = finetune(args, ner_dataset, model_ner, tokenizer, ner_labels, pad_token_label_id)
+
+        assert model_pos != model_ner
 
     
     pos_dataset, ner_dataset = load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_token_label_id, is_ft=False)
@@ -459,7 +456,7 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
 
     # multi-gpu evaluate
     if do_ft:
-        model.load_state_dict(pos_state_dict)
+        model=model_pos
     logger.info("***** Running  POS evaluation %s *****", prefix)
     logger.info("  Num examples = %d", len(eval_dataset))
     logger.info("  Batch size = %d", args.eval_batch_size)
@@ -467,7 +464,6 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
     nb_eval_steps = 0
     preds = None
     out_label_ids = None
-    model.to(args.device)
     model.eval()
     for batch in tqdm(eval_dataloader, desc="Evaluating"):
         batch = tuple(t.to(args.device) for t in batch)
@@ -512,8 +508,9 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
     results["pos_accuracy"] = accuracy_score(out_label_list, preds_list)
 
 
-    if do_ft:
-        model = model.load_state_dict(ner_state_dict)
+
+
+    # Note that DistributedSampler samples randomly
     eval_dataset = ner_dataset
     eval_sampler = SequentialSampler(eval_dataset) if args.local_rank == -1 else DistributedSampler(eval_dataset)
     eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=args.eval_batch_size)
@@ -523,7 +520,6 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
         model = torch.nn.DataParallel(model)
 
     # Eval!
-    model.to(args.device)
     logger.info("***** Running  NER evaluation %s *****", prefix)
     logger.info("  Num examples = %d", len(eval_dataset))
     logger.info("  Batch size = %d", args.eval_batch_size)
@@ -531,7 +527,8 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
     nb_eval_steps = 0
     preds = None
     out_label_ids = None
-
+    if do_ft:
+        model = model_ner
     model.eval()
     for batch in tqdm(eval_dataloader, desc="Evaluating"):
         batch = tuple(t.to(args.device) for t in batch)
@@ -574,7 +571,7 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
                 preds_list[i].append(label_map[preds[i][j]])
 
     results = {
-        "pos_accuracy":results["pos_accuracy"], 
+        "pos_accuracy":results["pos_accuracy"]
         "ner_loss": eval_loss,
         "ner_precision": precision_score(out_label_list, preds_list),
         "ner_recall": recall_score(out_label_list, preds_list),
