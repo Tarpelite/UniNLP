@@ -431,9 +431,10 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
 def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id, mode, prefix="", do_ft = True):
 
     if do_ft:
+        source_dict = model.state_dict()
         pos_dataset, ner_dataset = load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_token_label_id, is_ft=True)
-        model_pos = copy.deepcopy(model)
-        model_ner = copy.deepcopy(model)
+        model_pos = type(model)().load_state_dict(source_dict)
+        model_ner = type(model)().load_state_dict(source_dict)
 
         # fine_tune pos
         _, _, model_pos = finetune(args, pos_dataset, model_pos, tokenizer, pos_labels, pad_token_label_id)
@@ -464,6 +465,7 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
     nb_eval_steps = 0
     preds = None
     out_label_ids = None
+    model.to(args.device)
     model.eval()
     for batch in tqdm(eval_dataloader, desc="Evaluating"):
         batch = tuple(t.to(args.device) for t in batch)
@@ -519,6 +521,7 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
         model = torch.nn.DataParallel(model)
 
     # Eval!
+    model.to(args.device)
     logger.info("***** Running  NER evaluation %s *****", prefix)
     logger.info("  Num examples = %d", len(eval_dataset))
     logger.info("  Batch size = %d", args.eval_batch_size)
