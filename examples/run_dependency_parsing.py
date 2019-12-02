@@ -255,7 +255,7 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
         # "precision": precision_score(out_label_list, preds_list),
         # "recall": recall_score(out_label_list, preds_list),
         # "f1": f1_score(out_label_list, preds_list)
-        "UAS": hits*1.0000 / total_words 
+        "UAS": (hits*1.0000 / total_words).detach().cpu().numpy() 
     }
 
     logger.info("***** Eval results %s *****", prefix)
