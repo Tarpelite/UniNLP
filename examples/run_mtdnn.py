@@ -441,6 +441,7 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
         _, _, model = finetune(args, pos_dataset, model, tokenizer, pos_labels, pad_token_label_id)
         pos_state_dict = model.state_dict()
         # fine tune ner
+        model.load_state_dict(source_dict)
         _, _, model_ner = finetune(args, ner_dataset, model, tokenizer, ner_labels, pad_token_label_id)
         ner_state_dict = model.state_dict()
         assert pos_state_dict != ner_state_dict
