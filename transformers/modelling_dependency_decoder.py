@@ -140,6 +140,8 @@ class BiAffineParser(BertPreTrainedModel):
     def lab_loss(self, S_lab, heads, labels):
         heads = heads.unsqueeze(1).unsqueeze(2)              # [batch, 1, 1, sent_len]
         heads = heads.expand(-1, S_lab.size(1), -1, -1)      # [batch, n_labels, 1, sent_len]
+        print("heads", heads.shape)
+        print("S_labels", S_labels.shape)
         S_lab = torch.gather(S_lab, 2, heads).squeeze(2)     # [batch, n_labels, sent_len]
         S_lab = S_lab.transpose(-1, -2)                      # [batch, sent_len, n_labels]
         S_lab = S_lab.contiguous().view(-1, S_lab.size(-1))  # [batch*sent_len, n_labels]
