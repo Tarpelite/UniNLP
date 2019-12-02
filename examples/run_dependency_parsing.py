@@ -512,10 +512,10 @@ def main():
                                         critierion=nn.CrossEntropyLoss(),
                                         max_len=args.max_seq_length)
             model.to(args.device)
-            result, _ = evaluate(args, model, tokenizer, labels, pad_token_label_id, mode="dev", prefix=global_step)
+            result = evaluate(args, model, tokenizer, labels, pad_token_label_id, mode="dev", prefix=global_step)
             if global_step:
                 result = {"{}_{}".format(global_step, k): v for k, v in result.items()}
-            results.update(result)
+            results = result
         output_eval_file = os.path.join(args.output_dir, "eval_results.txt")
         with open(output_eval_file, "w") as writer:
             for key in sorted(results.keys()):
