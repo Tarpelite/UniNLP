@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 PAD_INDEX= nn.CrossEntropyLoss().ignore_index
+torch.autograd.set_detect_anomaly(True)
 
 ALL_MODELS = sum(
     (tuple(conf.pretrained_config_archive_map.keys()) for conf in (BertConfig, RobertaConfig, DistilBertConfig)),
