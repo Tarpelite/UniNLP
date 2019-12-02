@@ -391,6 +391,7 @@ def main():
                         help="For distributed training: local_rank")
     parser.add_argument("--server_ip", type=str, default="", help="For distant debugging.")
     parser.add_argument("--server_port", type=str, default="", help="For distant debugging.")
+    parser.add_argument("--lstm_layers", type=int, default=1)
     args = parser.parse_args()
 
     if os.path.exists(args.output_dir) and os.listdir(
@@ -456,6 +457,7 @@ def main():
                                         mlp_lab_hidden=1024,
                                         mlp_dropout=0.1, 
                                         num_labels=num_labels,
+                                        lstm_layers=args.lstm_layers,
                                         critierion=nn.CrossEntropyLoss(),
                                         max_len=args.max_seq_length)
 
@@ -508,6 +510,7 @@ def main():
                                         mlp_arc_hidden=1024,
                                         mlp_lab_hidden=1024,
                                         mlp_dropout=0.1, 
+                                        lstm_layers=args.lstm_layers,
                                         num_labels=num_labels,
                                         critierion=nn.CrossEntropyLoss(),
                                         max_len=args.max_seq_length)

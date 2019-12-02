@@ -79,13 +79,13 @@ class RecurrentEncoder(nn.Module):
 class BiAffineParser(BertPreTrainedModel):
     """Biaffine Dependency Parser"""
     def __init__(self, config, mlp_input, mlp_arc_hidden,
-                mlp_lab_hidden, mlp_dropout, 
+                mlp_lab_hidden, mlp_dropout, lstm_layers, 
                 num_labels, critierion, max_len):
         super(BiAffineParser, self).__init__(config)
         self.bert = BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
-        self.encoder = RecurrentEncoder(config.hidden_size, mlp_input, 4, batch_first=True, dropout=0.1)
+        self.encoder = RecurrentEncoder(config.hidden_size, mlp_input, lstm_layers, batch_first=True, dropout=0.1)
         # Arc MLPs
         self.arc_mlp_h = MLP(mlp_input*2, mlp_arc_hidden, 2, "ReLU", mlp_dropout)
         self.arc_mlp_d = MLP(mlp_input*2, mlp_arc_hidden, 2, "ReLU", mlp_dropout)

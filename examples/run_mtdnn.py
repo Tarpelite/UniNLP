@@ -430,7 +430,6 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
 
 def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, mode, prefix=" ", task="pos"):
     
-    eval_dataset = pos_dataset
     eval_sampler = SequentialSampler(eval_dataset) if args.local_rank == -1 else DistributedSampler(eval_dataset)
     eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=args.eval_batch_size)
 
@@ -860,10 +859,10 @@ def main():
             pos_dataset, ner_dataset = load_and_cache_dev_examples(args, tokenizer, labels_pos, labels_ner, pad_token_label_id, is_ft=False)
             model_pos = copy.deepcopy(model)
             _, _, model_pos = finetune(args, pos_dataset_ft, model_pos, tokenizer, labels_pos, pad_token_label_id)
-            result, _ = evaluate(arga, model, tokenizer, pos_dataset, labels_pos, pad_token_label_id, mode="dev", prefix=global_step, task="pos")
+            result, _ = evaluate(args, model, tokenizer, pos_dataset, labels_pos, pad_token_label_id, mode="dev", prefix=global_step, task="pos")
 
             _, _, model_ner = finetune(args, ner_dataset_ft, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id)
-            result, _ = evaluate(arga, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner")
+            result, _ = evaluate(args, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner")
            
         output_eval_file = os.path.join(args.output_dir, "eval_results.txt")
         with open(output_eval_file, "w") as writer:
