@@ -239,7 +239,7 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
             total_words += torch.sum(heads != PAD_INDEX)
             hits += torch.sum(pred == heads).float()
 
-            tmp_loss = model.arc_loss(S_arc, heads)
+            tmp_eval_loss = model.arc_loss(S_arc, heads)
 
             if args.n_gpu > 1:
                 tmp_eval_loss = tmp_eval_loss.mean()  # mean() to average on multi-gpu parallel evaluating
