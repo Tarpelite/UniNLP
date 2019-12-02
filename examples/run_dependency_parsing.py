@@ -147,7 +147,6 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
                 with amp.scale_loss(loss, optimizer) as scaled_loss:
                     scaled_loss.backward()
             else:
-                ipdb.set_trace()
                 loss.backward()
 
             tr_loss += loss.item()
