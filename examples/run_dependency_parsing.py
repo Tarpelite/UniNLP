@@ -128,8 +128,8 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
             S_arc.to(args.device)
             S_labels.to(args.device)
 
-            print("S_arc", S_arc.shape)
-            print("S_labels", S_labels.shape)
+            # print("S_arc", S_arc.shape)
+            # print("S_labels", S_labels.shape)
             heads = batch[4]
             labels = batch[3]
             arc_loss = model.arc_loss(S_arc, heads)
@@ -154,6 +154,7 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
                 loss.backward()
 
             tr_loss += loss.item()
+            print("loss", loss.item())
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 if args.fp16:
                     torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), args.max_grad_norm)
