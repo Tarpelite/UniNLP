@@ -433,8 +433,8 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
     if do_ft:
         source_dict = model.state_dict()
         pos_dataset, ner_dataset = load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_token_label_id, is_ft=True)
-        model_pos = type(model)().load_state_dict(source_dict)
-        model_ner = type(model)().load_state_dict(source_dict)
+        model_pos = copy.deepcopy(model)
+        model_ner = copy.deepcopy(model)
 
         # fine_tune pos
         _, _, model_pos = finetune(args, pos_dataset, model_pos, tokenizer, pos_labels, pad_token_label_id)
