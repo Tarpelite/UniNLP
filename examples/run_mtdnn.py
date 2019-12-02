@@ -34,6 +34,8 @@ from transformers import DistilBertConfig, DistilBertForTokenClassification, Dis
 
 
 logger = logging.getLogger(__name__)
+num_labels_pos = 0
+num_labels_ner = 0
 
 ALL_MODELS = sum(
     (tuple(conf.pretrained_config_archive_map.keys()) for conf in (BertConfig, RobertaConfig, DistilBertConfig)),
@@ -433,16 +435,15 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
     if do_ft:
         source_dict = model.state_dict()
         pos_dataset, ner_dataset = load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_token_label_id, is_ft=True)
-        model_pos = copy.deepcopy(model)
-        model_ner = copy.deepcopy(model)
+    
 
         # fine_tune pos
-        _, _, model_pos = finetune(args, pos_dataset, model_pos, tokenizer, pos_labels, pad_token_label_id)
-
+        _, _, model = finetune(args, pos_dataset, model, tokenizer, pos_labels, pad_token_label_id)
+        pos_state_dict = model.state_dict()
         # fine tune ner
-        _, _, model_ner = finetune(args, ner_dataset, model_ner, tokenizer, ner_labels, pad_token_label_id)
-
-        assert model_pos != model_ner
+        _, _, model_ner = finetune(args, ner_dataset, model, tokenizer, ner_labels, pad_token_label_id)
+        ner_state_dict = model.state_dict()
+        assert pos_state_dict != ner_state_dict
 
     
     pos_dataset, ner_dataset = load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_token_label_id, is_ft=False)
@@ -457,7 +458,7 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
 
     # multi-gpu evaluate
     if do_ft:
-        model=model_pos
+        model.load_state_dict(pos_state_dict)
     logger.info("***** Running  POS evaluation %s *****", prefix)
     logger.info("  Num examples = %d", len(eval_dataset))
     logger.info("  Batch size = %d", args.eval_batch_size)
@@ -511,7 +512,7 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
 
 
     if do_ft:
-        model = model_ner
+        model = model.load_state_dict(ner_state_dict)
     eval_dataset = ner_dataset
     eval_sampler = SequentialSampler(eval_dataset) if args.local_rank == -1 else DistributedSampler(eval_dataset)
     eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=args.eval_batch_size)
