@@ -865,7 +865,7 @@ def main():
             _, _, model_pos = finetune(args, pos_dataset_ft, model_pos, tokenizer, labels_pos, pad_token_label_id)
             result, _ = evaluate(args, model, tokenizer, pos_dataset, labels_pos, pad_token_label_id, mode="dev", prefix=global_step, task="pos")
 
-            _, _, model_ner = finetune(args, ner_dataset_ft, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id)
+            _, _, model_ner = finetune(args, ner_dataset_ft, model, tokenizer,  labels_ner, pad_token_label_id)
             result, _ = evaluate(args, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner")
            
         output_eval_file = os.path.join(args.output_dir, "eval_results.txt")
