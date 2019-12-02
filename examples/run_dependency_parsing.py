@@ -504,7 +504,17 @@ def main():
         logger.info("Evaluate the following checkpoints: %s", checkpoints)
         for checkpoint in checkpoints:
             global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
-            model = model_class.from_pretrained(checkpoint)
+            model = model_class.from_pretraine(checkpoint,
+                                        from_tf=bool(".ckpt" in args.model_name_or_path),
+                                        config=config,
+                                        cache_dir=args.cache_dir if args.cache_dir else None,
+                                        mlp_input=args.max_seq_length, 
+                                        mlp_arc_hidden=1024,
+                                        mlp_lab_hidden=1024,
+                                        mlp_dropout=0.1, 
+                                        num_labels=num_labels,
+                                        critierion=nn.CrossEntropyLoss(),
+                                        max_len=args.max_seq_length)
             model.to(args.device)
             result, _ = evaluate(args, model, tokenizer, labels, pad_token_label_id, mode="dev", prefix=global_step)
             if global_step:
