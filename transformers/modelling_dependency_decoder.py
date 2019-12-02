@@ -58,9 +58,6 @@ class RecurrentEncoder(nn.Module):
                                        dropout=dropout, 
                                        bidirectional=True)
         
-        self.h0 = torch.zeros(self.num_layers*self.num_directions, batch, self.hidden_size)
-        self.c0 = torch.zeros(self.num_layers*self.num_directions, batch, self.hidden_size)
-        
         
         self.train_hidden_init = False
     
@@ -73,7 +70,9 @@ class RecurrentEncoder(nn.Module):
     
     def forward(self, x, lengths):
         batch = x.size(0) if self.batch_first else x.size(1)
-        out, _ = self.rnn(x, (self.h0, self.c0))
+        h0 = torch.zeros(self.num_layers*self.num_directions, batch, self.hidden_size)
+        c0 = torch.zeros(self.num_layers*self.num_directions, batch, self.hidden_size)
+        out, _ = self.rnn(x, (h0, c0))
         return out
 
 
