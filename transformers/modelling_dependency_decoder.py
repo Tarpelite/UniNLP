@@ -12,7 +12,7 @@ class MLP(nn.Module):
     def __init__(self, input_size, layer_size, depth, activation, dropout):
         super(MLP, self).__init__()
         self.layers = nn.Sequential()
-        act_fn = getattr(nn, activation)
+        act_fn = getattr(nn, activation, inPlace=False)
         for i in range(depth):
             self.layers.add_module('fc_{}'.format(i),
                                     nn.Linear(input_size, layer_size))
