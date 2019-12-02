@@ -439,7 +439,7 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
 
     logger.info("***** Running  {} evaluation  *****".format(task))
     logger.info("  Num examples = %d", len(eval_dataset))
-    logger.info("  Batch size = %d", args.eval_batch_size)
+    logger.info("  Batch size = %d", eval_batch_size)
     eval_loss = 0.0
     nb_eval_steps = 0
     preds = None
