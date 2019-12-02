@@ -433,7 +433,7 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
     if do_ft:
         pos_dataset, ner_dataset = load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, pad_token_label_id, is_ft=True)
         model_pos = copy.deepcopy(model)
-        model_ner = model
+        model_ner = copy.deepcopy(model)
 
         # fine_tune pos
         _, _, model_pos = finetune(args, pos_dataset, model_pos, tokenizer, pos_labels, pad_token_label_id)
@@ -508,9 +508,8 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
     results["pos_accuracy"] = accuracy_score(out_label_list, preds_list)
 
 
-
-
-    # Note that DistributedSampler samples randomly
+    if do_ft:
+        model = model_ner
     eval_dataset = ner_dataset
     eval_sampler = SequentialSampler(eval_dataset) if args.local_rank == -1 else DistributedSampler(eval_dataset)
     eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=args.eval_batch_size)
@@ -527,8 +526,7 @@ def evaluate(args, model, tokenizer, pos_labels, ner_labels, pad_token_label_id,
     nb_eval_steps = 0
     preds = None
     out_label_ids = None
-    if do_ft:
-        model = model_ner
+
     model.eval()
     for batch in tqdm(eval_dataloader, desc="Evaluating"):
         batch = tuple(t.to(args.device) for t in batch)
