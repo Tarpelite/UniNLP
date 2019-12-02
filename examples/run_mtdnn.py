@@ -435,7 +435,7 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
     else:
         eval_batch_size = args.per_gpu_eval_batch_size
     eval_sampler = SequentialSampler(eval_dataset) if args.local_rank == -1 else DistributedSampler(eval_dataset)
-    eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=args.eval_batch_size)
+    eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=eval_batch_size)
 
     logger.info("***** Running  {} evaluation  *****".format(task))
     logger.info("  Num examples = %d", len(eval_dataset))
