@@ -1277,7 +1277,7 @@ class MTDNNModel(BertPreTrainedModel):
         super(MTDNNModel, self).__init__(config)
 
 
-        self.bert = BertModel(config, output_hidden_states=True)
+        self.bert = BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
         self.classifier_pos = nn.Linear(config.hidden_size, num_labels_pos)
