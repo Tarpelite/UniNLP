@@ -1303,8 +1303,8 @@ class MTDNNModel(BertPreTrainedModel):
         sequence_output = outputs[0]
 
         hidden_states = outputs[-1]
-
-        print(hidden_states.shape)
+        print(len(outputs))
+        # print(hidden_states.shape)
         sequence_output = hidden_states[layer_id]
 
         sequence_output = self.dropout(sequence_output)
