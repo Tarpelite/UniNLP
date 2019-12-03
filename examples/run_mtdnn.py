@@ -876,7 +876,7 @@ def main():
             _, _, model = finetune(args, pos_dataset_ft, model, tokenizer, labels_pos, pad_token_label_id)
             result, _ = evaluate(args, model, tokenizer, pos_dataset, labels_pos, pad_token_label_id, mode="dev", prefix=global_step, task="pos")
             
-            # model = torch.load("source_model.pl")
+            model = torch.load("source_model.pl")
             _, _, model = finetune(args, ner_dataset_ft, model, tokenizer,  labels_ner, pad_token_label_id)
             result, _ = evaluate(args, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner")
            
