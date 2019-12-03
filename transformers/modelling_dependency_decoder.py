@@ -35,7 +35,7 @@ class BiAffine(nn.Module):
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.U = nn.Parameter(torch.FloatTensor(output_dim, input_dim, input_dim))
-        nn.init.xavier_uniform(self.U)
+        nn.init.xavier_uniform_(self.U)
     
     def forward(self, Rh, Rd):
         Rh = Rh.unsqueeze(1)
@@ -100,7 +100,7 @@ class BiAffineParser(BertPreTrainedModel):
         
 
         # Loss criterion
-        self.critierion = nn.CrossEntropyLoss(ignore_index=-100, size_average=True)
+        self.critierion = nn.CrossEntropyLoss(ignore_index=-100)
     
     def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None, mask_qkv=None, task_idx=None):
         sequence_output, _ = self.bert(

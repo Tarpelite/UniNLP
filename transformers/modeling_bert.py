@@ -1277,7 +1277,7 @@ class MTDNNModel(BertPreTrainedModel):
         super(MTDNNModel, self).__init__(config)
 
 
-        self.bert = BertModel(config)
+        self.bert = BertModel(config, output_hidden_states=True)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
         self.classifier_pos = nn.Linear(config.hidden_size, num_labels_pos)
@@ -1289,8 +1289,10 @@ class MTDNNModel(BertPreTrainedModel):
         self.init_weights()
     
     def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, 
-                position_ids=None, head_mask=None, inputs_embeds=None, labels=None, task_id=0):
+                position_ids=None, head_mask=None, inputs_embeds=None, labels=None, task_id=0, layer_id=-1):
         
+        
+
         outputs = self.bert(input_ids,
                             attention_mask=attention_mask,
                             token_type_ids=token_type_ids,
@@ -1299,6 +1301,10 @@ class MTDNNModel(BertPreTrainedModel):
                             inputs_embeds=inputs_embeds)
 
         sequence_output = outputs[0]
+
+        hidden_states = outputs[-1]
+
+        sequence_output = hidden_states[layer_id]
 
         sequence_output = self.dropout(sequence_output)
 
