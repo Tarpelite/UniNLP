@@ -50,7 +50,7 @@ def set_seed(args):
     if args.n_gpu > 0:
         torch.cuda.manual_seed_all(args.seed)
 
-def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
+def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, task="pos"):
     """ Train the model """
     if args.local_rank in [-1, 0]:
         tb_writer = SummaryWriter()
@@ -107,6 +107,12 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
     model.zero_grad()
     train_iterator = trange(int(args.num_train_epochs), desc="Epoch", disable=args.local_rank not in [-1, 0])
     set_seed(args)  # Added here for reproductibility (even between python 2 and 3)
+    if task == "pos":
+        task_id = 0
+        layer_id = args.layer_id_pos
+    else:
+        task_id = 1
+        layer_id = args.layer_id_ner
     for _ in train_iterator:
         epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
         for step, batch in enumerate(epoch_iterator):
@@ -114,7 +120,9 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
             batch = tuple(t.to(args.device) for t in batch)
             inputs = {"input_ids": batch[0],
                       "attention_mask": batch[1],
-                      "labels": batch[3]}
+                      "labels": batch[3], 
+                      "task_id": task_id,
+                      "layer_id":layer_id}
             if args.model_type != "distilbert":
                 inputs["token_type_ids"]: batch[2] if args.model_type in ["bert", "xlnet"] else None  # XLM and RoBERTa don"t use segment_ids
 
@@ -728,11 +736,11 @@ def main():
 
             torch.save(model, "source_model.pl")    
             logger.info("Finetuning and Evaluate")
-            _, _, model = finetune(args, pos_dataset_ft, model, tokenizer, labels_pos, pad_token_label_id)
+            _, _, model = finetune(args, pos_dataset_ft, model, tokenizer, labels_pos, pad_token_label_id, task="pos")
             result, _ = evaluate(args, model, tokenizer, pos_dataset, labels_pos, pad_token_label_id, mode="dev", prefix=global_step, task="pos")
             
             model = torch.load("source_model.pl")
-            _, _, model = finetune(args, ner_dataset_ft, model, tokenizer,  labels_ner, pad_token_label_id)
+            _, _, model = finetune(args, ner_dataset_ft, model, tokenizer,  labels_ner, pad_token_label_id, task="ner")
             result, _ = evaluate(args, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner")
            
         output_eval_file = os.path.join(args.output_dir, "eval_results.txt")
