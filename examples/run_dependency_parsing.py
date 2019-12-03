@@ -40,6 +40,8 @@ MODEL_CLASSES = {
     "distilbert": (DistilBertConfig, DistilBertForTokenClassification, DistilBertTokenizer)
 }
 
+LossFunc = nn.CrossEntropyLoss()
+
 
 def set_seed(args):
     random.seed(args.seed)
@@ -54,6 +56,21 @@ def UAS(preds, trues):
         if pred == tr:
             hits += 1
     return hits*1.0000/len(preds)
+
+def arc_loss(S_arc, heads):
+    S_arc = S_arc.transpose(-1, -2)
+    S_arc = S_arc.contiguous().view(-1, S_arc.size(-1))
+    heads = heads.view(-1)
+    return LossFunc(S_arc, heads)
+
+def lab_loss(S_lab, heads, labels):
+    heads = heads.unsqueeze(1).unsqueeze(2)
+    heads = heads.expand(-1, S_lab.size(1), -1, -1)
+    S_lab = torch.gather(S_lab, 2, heads).squeeze(2)     # [batch, n_labels, sent_len]
+    S_lab = S_lab.transpose(-1, -2)                      # [batch, sent_len, n_labels]
+    S_lab = S_lab.contiguous().view(-1, S_lab.size(-1))  # [batch*sent_len, n_labels]
+    labels = labels.view(-1)
+    return LossFunc(S_lab, labels)
 
 
 def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
@@ -132,12 +149,12 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
             # print("S_labels", S_labels.shape)
             heads = batch[4]
             labels = batch[3]
-            arc_loss = model.arc_loss(S_arc, heads)
+            arc_loss = arc_loss(S_arc, heads)
             heads_mask = torch.clone(heads)
             heads_mask.masked_fill_(heads==-100, 0)
             heads_mask.masked_fill_(heads>-100, 1)
             heads = heads*heads_mask
-            lab_loss = model.lab_loss(S_labels, heads, labels)
+            lab_loss = lab_loss(S_labels, heads, labels)
 
             loss = arc_loss + lab_loss
             
