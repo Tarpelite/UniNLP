@@ -581,12 +581,13 @@ def main():
     parser.add_argument("--seed", type=int, default=42,
                         help="random seed for initialization")
     
-    parser.add_argument("layer_id_pos", type=int, default=-1)
-    parser.add_argument("layer_id_ner", type=int, default=-1)
+    
     
     parser.add_argument("--pos_data_dir", type=str, default="")
     parser.add_argument("--ner_data_dir", type=str, default="")
     parser.add_argument("--ft_before_eval", action="store_true")
+    parser.add_argument("--layer_id_pos", type=int, default=-1)
+    parser.add_argument("--layer_id_ner", type=int, default=-1)
 
     parser.add_argument("--fp16", action="store_true",
                         help="Whether to use 16-bit (mixed) precision (through NVIDIA apex) instead of 32-bit")
