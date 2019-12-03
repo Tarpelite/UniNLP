@@ -493,7 +493,6 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
         results["pos_accuracy"] = accuracy_score(out_label_list, preds_list)
     elif task == "ner":
         results = {
-        "pos_accuracy":results["pos_accuracy"],
         "ner_loss": eval_loss,
         "ner_precision": precision_score(out_label_list, preds_list),
         "ner_recall": recall_score(out_label_list, preds_list),
