@@ -861,6 +861,7 @@ def main():
             global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
             model = model_class.from_pretrained(checkpoint, num_labels_pos=num_labels_pos, num_labels_ner=num_labels_ner)
             model.to(args.device)
+        
 
             pos_dataset_ft, ner_dataset_ft = load_and_cache_dev_examples(args, tokenizer, labels_pos, labels_ner, pad_token_label_id, is_ft=True)
             pos_dataset, ner_dataset = load_and_cache_dev_examples(args, tokenizer, labels_pos, labels_ner, pad_token_label_id, is_ft=False)
@@ -870,12 +871,14 @@ def main():
             result, _ = evaluate(args, model, tokenizer, pos_dataset, labels_pos, pad_token_label_id, mode="dev", prefix=global_step, task="pos")
             result, _ = evaluate(args, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner")
 
-            model_pos = copy.deepcopy(model)
-            _, _, model_pos = finetune(args, pos_dataset_ft, model_pos, tokenizer, labels_pos, pad_token_label_id)
-            result, _ = evaluate(args, model_pos, tokenizer, pos_dataset, labels_pos, pad_token_label_id, mode="dev", prefix=global_step, task="pos")
-
-            _, _, model_ner = finetune(args, ner_dataset_ft, model, tokenizer,  labels_ner, pad_token_label_id)
-            result, _ = evaluate(args, model_ner, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner")
+            torch.save(model, "source_model.pl")    
+            logger.info("Finetuning and Evaluate")
+            _, _, model = finetune(args, pos_dataset_ft, model, tokenizer, labels_pos, pad_token_label_id)
+            result, _ = evaluate(args, model, tokenizer, pos_dataset, labels_pos, pad_token_label_id, mode="dev", prefix=global_step, task="pos")
+            
+            model = torch.load("source_model.pl")
+            _, _, model = finetune(args, ner_dataset_ft, model, tokenizer,  labels_ner, pad_token_label_id)
+            result, _ = evaluate(args, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner")
            
         output_eval_file = os.path.join(args.output_dir, "eval_results.txt")
         with open(output_eval_file, "w") as writer:
