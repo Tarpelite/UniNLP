@@ -647,7 +647,7 @@ def main():
     parser.add_argument("--alpha_learning_rate", type=float, default=1e-3)
 
     parser.add_argument("--do_alpha", action="store_true")
-    parser.add_argument("ft_with_last_layer", action="store_true")
+    parser.add_argument("--ft_with_last_layer", action="store_true")
 
     parser.add_argument("--fp16", action="store_true",
                         help="Whether to use 16-bit (mixed) precision (through NVIDIA apex) instead of 32-bit")
