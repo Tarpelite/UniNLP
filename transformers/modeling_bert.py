@@ -1289,6 +1289,8 @@ class MTDNNModel(BertPreTrainedModel):
         self.num_labels_pos = num_labels_pos
         self.num_labels_ner = num_labels_ner
 
+        self.softmax = nn.Softmax(dim=0)
+
         self.init_weights()
     
     def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, 
@@ -1322,6 +1324,7 @@ class MTDNNModel(BertPreTrainedModel):
             alpha = self.alpha_ner
 
         if do_alpha:
+            alpha = self.softmax(alpha)
             hidden_states = hidden_states[1:]
             hidden_states = torch.stack(hidden_states)   # [12, batch_size, seq_len, hidden_size]
             hidden_states = hidden_states.permute(1,2,3,0)  # [batch_size, seq_len, hidden_size, 12]
@@ -1344,7 +1347,9 @@ class MTDNNModel(BertPreTrainedModel):
             else:
                 loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
             outputs = (loss,) + outputs
-
+        
+        if do_alpha:
+            outputs = outputs + alpha
         return outputs  # (loss), scores, (hidden_states), (attentions)
         
 
