@@ -1325,7 +1325,7 @@ class MTDNNModel(BertPreTrainedModel):
             hidden_states = hidden_states[1:]
             hidden_states = torch.stack(hidden_states)   # [12, batch_size, seq_len, hidden_size]
             hidden_states = hidden_states.permute(1,2,3,0)  # [batch_size, seq_len, hidden_size, 12]
-            sequence_output = torch.matmul(hidden_states, alpha) # [batch_size, seq_len, hidden_size]
+            sequence_output = torch.matmul(hidden_states, alpha).squeeze(-1) # [batch_size, seq_len, hidden_size]
 
         sequence_output = self.dropout(sequence_output)
         logits = classifier(sequence_output)
