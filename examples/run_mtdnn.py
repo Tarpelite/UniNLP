@@ -129,11 +129,17 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
 
             outputs = model(**inputs)
             loss = outputs[0]  # model outputs are always tuple in pytorch-transformers (see doc)
+            if args.do_alpha:
+                alpha = outputs[-1]
 
             if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel training
+                if args.do_alpha:
+                    alpha = alpha.mean()
+
             if args.gradient_accumulation_steps > 1:
                 loss = loss / args.gradient_accumulation_steps
+                alpha = alpha / args.gradient_accumulation_steps
 
             if args.fp16:
                 with amp.scale_loss(loss, optimizer) as scaled_loss:
@@ -141,6 +147,10 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
             else:
                 loss.backward()
 
+            if args.do_alpha:
+                print()
+                print("alpha", alpha.item())
+                print("loss", loss.item())
             tr_loss += loss.item()
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 if args.fp16:
