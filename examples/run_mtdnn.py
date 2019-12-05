@@ -149,7 +149,7 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
             else:
                 loss.backward()
 
-            if (step + 1) % 10 == 0:
+            if (step + 1) % 100 == 0:
                 print("loss", loss.item())
                 print("task_id", task_id)
                 print("alpha", alpha)
@@ -420,7 +420,7 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
             tr_loss += loss.item()
             # print("loss", loss.item())
 
-            if (step + 1 ) % 10 == 0:
+            if (step + 1 ) % 100 == 0:
                 print("loss", loss.item())
                 print("task_id", task_id)
                 print("alpha", alpha)
