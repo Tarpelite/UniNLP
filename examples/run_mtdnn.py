@@ -122,7 +122,8 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
                       "attention_mask": batch[1],
                       "labels": batch[3], 
                       "task_id": task_id,
-                      "layer_id":layer_id}
+                      "layer_id":layer_id,
+                      "do_alpha": args.do_alpha}
             if args.model_type != "distilbert":
                 inputs["token_type_ids"]: batch[2] if args.model_type in ["bert", "xlnet"] else None  # XLM and RoBERTa don"t use segment_ids
 
@@ -380,7 +381,12 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
                 layer_id = args.layer_id_pos
             else:
                 layer_id = args.layer_id_ner
-            inputs = {"input_ids":input_ids, "attention_mask":input_mask, "labels":label_ids, "task_id":task_id, "layer_id":layer_id}
+            inputs = {"input_ids":input_ids, 
+                      "attention_mask":input_mask, 
+                      "labels":label_ids, 
+                      "task_id":task_id, 
+                      "layer_id":layer_id,
+                      "do_alpha":args.do_alpha}
             outputs = model(**inputs)
             loss = outputs[0]     
 
@@ -470,7 +476,10 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
         with torch.no_grad():
             inputs = {"input_ids": batch[0],
                       "attention_mask": batch[1],
-                      "labels": batch[3], "task_id":task_id, "layer_id": layer_id}
+                      "labels": batch[3], 
+                      "task_id":task_id, 
+                      "layer_id": layer_id,
+                      "do_alpha": args.do_alpha}
             if args.model_type != "distilbert":
                 inputs["token_type_ids"]: batch[2] if args.model_type in ["bert", "xlnet"] else None  # XLM and RoBERTa don"t use segment_ids
             outputs = model(**inputs)
