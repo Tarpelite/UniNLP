@@ -1349,7 +1349,7 @@ class MTDNNModel(BertPreTrainedModel):
             outputs = (loss,) + outputs
         
         if do_alpha:
-            return outputs, alpha
+            outputs = (alpha) + outputs
         return outputs  # (loss), scores, (hidden_states), (attentions)
         
 

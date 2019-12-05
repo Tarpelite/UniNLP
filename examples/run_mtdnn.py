@@ -130,7 +130,8 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
             outputs = model(**inputs)
             loss = outputs[0]  # model outputs are always tuple in pytorch-transformers (see doc)
             if args.do_alpha:
-                alpha = outputs[-1]
+                alpha = outputs[0]
+                loss = outputs[1]
 
             if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel training
@@ -398,8 +399,11 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
                       "layer_id":layer_id,
                       "do_alpha":args.do_alpha}
             outputs = model(**inputs)
-            loss = outputs[0]     
+            loss = outputs[0]
 
+            if args.do_alpha:
+                loss = outputs[1]
+                alpha = outputs[0]     
             # scale loss
             if args.n_gpu > 1:
                 loss = loss.mean()
@@ -493,6 +497,9 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
             if args.model_type != "distilbert":
                 inputs["token_type_ids"]: batch[2] if args.model_type in ["bert", "xlnet"] else None  # XLM and RoBERTa don"t use segment_ids
             outputs = model(**inputs)
+            if args.do_alpha:
+                alpha = outputs[0]
+                outputs = outputs[1:]
             tmp_eval_loss, logits = outputs[:2]
 
             if args.n_gpu > 1:
