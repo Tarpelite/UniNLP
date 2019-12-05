@@ -599,6 +599,8 @@ def main():
     parser.add_argument("--layer_id_pos", type=int, default=-1)
     parser.add_argument("--layer_id_ner", type=int, default=-1)
 
+    parser.add_argument("--do_alpha", action="store_true")
+
     parser.add_argument("--fp16", action="store_true",
                         help="Whether to use 16-bit (mixed) precision (through NVIDIA apex) instead of 32-bit")
     parser.add_argument("--fp16_opt_level", type=str, default="O1",

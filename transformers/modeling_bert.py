@@ -1283,13 +1283,16 @@ class MTDNNModel(BertPreTrainedModel):
         self.classifier_pos = nn.Linear(config.hidden_size, num_labels_pos)
         self.classifier_ner = nn.Linear(config.hidden_size, num_labels_ner)
 
+        self.alpha_pos = torch.nn.Parameter(torch.rand(12, 1), requires_grad=True)
+        self.alpha_ner = torch.nn.Parameter(torch.rand(12, 1), requires_grad=True)
+
         self.num_labels_pos = num_labels_pos
         self.num_labels_ner = num_labels_ner
 
         self.init_weights()
     
     def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, 
-                position_ids=None, head_mask=None, inputs_embeds=None, labels=None, task_id=0, layer_id=-1):
+                position_ids=None, head_mask=None, inputs_embeds=None, labels=None, task_id=0, layer_id=-1, do_alpha=False):
         
         
 
@@ -1307,15 +1310,24 @@ class MTDNNModel(BertPreTrainedModel):
         # print(hidden_states.shape)
         sequence_output = hidden_states[layer_id]
 
-        sequence_output = self.dropout(sequence_output)
+        
 
         if task_id == 0:
             classifier = self.classifier_pos
             num_labels = self.num_labels_pos
+            alpha = self.alpha_pos
         else:
             classifier = self.classifier_ner
             num_labels = self.num_labels_ner
+            alpha = self.alpha_ner
 
+        if do_alpha:
+            hidden_states = hidden_states[1:]
+            hidden_states = torch.stack(hidden_states)   # [12, batch_size, seq_len, hidden_size]
+            hidden_states = hidden_states.permute(1,2,3,0)  # [batch_size, seq_len, hidden_size, 12]
+            sequence_output = torch.matmul(hidden_states, alpha) # [batch_size, seq_len, hidden_size]
+
+        sequence_output = self.dropout(sequence_output)
         logits = classifier(sequence_output)
 
         outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here
