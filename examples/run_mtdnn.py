@@ -68,8 +68,9 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
     # Prepare optimizer and schedule (linear warmup and decay)
     no_decay = ["bias", "LayerNorm.weight"]
     alpha_sets = ["alpha_pos", "alpha_ner"]
+
     optimizer_grouped_parameters = [
-        {"params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
+        {"params": [p for n, p in model.named_parameters() if not any(nd in n for nd in (no_decay + alpha_sets))],
          "weight_decay": args.weight_decay},
         {"params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], "weight_decay": 0.0},
         {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in alpha_sets)], 'lr': 1e-3}
@@ -343,7 +344,7 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
     no_decay = ['bias', 'LayerNorm.weight']
     alpha_sets = ['alpha_pos', 'alpha_ner']
     optimizer_grouped_parameters = [
-        {'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)], 'weight_decay': args.weight_decay},
+        {'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in (no_decay + alpha_sets))], 'weight_decay': args.weight_decay},
         {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.0},
         {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in alpha_sets)], 'lr':1e-3}
         ]
