@@ -459,8 +459,10 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
     model.eval()
     if task == "pos":
         task_id = 0
+        layer_id = args.layer_id_pos
     elif task == "ner":
         task_id = 1
+        layer_id = args.layer_id_ner
 
     for batch in tqdm(eval_dataloader, desc="Evaluating"):
         batch = tuple(t.to(args.device) for t in batch)
@@ -468,7 +470,7 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
         with torch.no_grad():
             inputs = {"input_ids": batch[0],
                       "attention_mask": batch[1],
-                      "labels": batch[3], "task_id":task_id}
+                      "labels": batch[3], "task_id":task_id, "layer_id": layer_id}
             if args.model_type != "distilbert":
                 inputs["token_type_ids"]: batch[2] if args.model_type in ["bert", "xlnet"] else None  # XLM and RoBERTa don"t use segment_ids
             outputs = model(**inputs)
