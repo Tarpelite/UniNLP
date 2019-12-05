@@ -135,8 +135,8 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
 
             if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel training
-                if args.do_alpha:
-                    alpha = alpha.mean()
+                # if args.do_alpha:
+                #     alpha = alpha.mean()
 
             if args.gradient_accumulation_steps > 1:
                 loss = loss / args.gradient_accumulation_steps
@@ -149,10 +149,10 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
             else:
                 loss.backward()
 
-            if args.do_alpha:
-                print()
-                print("alpha", alpha.item())
+            if (step + 1) % 100 == 0:
                 print("loss", loss.item())
+                print("pos alpha", model.alpha_pos)
+                print("ner alpha", model.alpha_ner)
             tr_loss += loss.item()
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 if args.fp16:
@@ -419,6 +419,11 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
             
             tr_loss += loss.item()
             # print("loss", loss.item())
+
+            if (step + 1 ) % 100 == 0:
+                print("loss", loss.item())
+                print("pos_alpha", model.alpha_pos)
+                print("ner alpha", model.alpha_ner)
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 if args.fp16:
                     torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), args.max_grad_norm)
