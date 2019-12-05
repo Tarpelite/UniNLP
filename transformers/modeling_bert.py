@@ -1325,6 +1325,7 @@ class MTDNNModel(BertPreTrainedModel):
 
         if do_alpha:
             alpha = self.softmax(alpha)
+            print("alpha shape", alpha.shape)
             hidden_states = hidden_states[1:]
             hidden_states = torch.stack(hidden_states)   # [num_hidden_layers, batch_size, seq_len, hidden_size]
             hidden_states = hidden_states.permute(1,2,3,0)  # [batch_size, seq_len, hidden_size, num_hidden_layers]

@@ -140,7 +140,8 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
 
             if args.gradient_accumulation_steps > 1:
                 loss = loss / args.gradient_accumulation_steps
-                alpha = alpha / args.gradient_accumulation_steps
+                if args.do_alpha:
+                    alpha = alpha / args.gradient_accumulation_steps
 
             if args.fp16:
                 with amp.scale_loss(loss, optimizer) as scaled_loss:
