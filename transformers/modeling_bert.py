@@ -1283,8 +1283,8 @@ class MTDNNModel(BertPreTrainedModel):
         self.classifier_pos = nn.Linear(config.hidden_size, num_labels_pos)
         self.classifier_ner = nn.Linear(config.hidden_size, num_labels_ner)
 
-        self.alpha_pos = torch.nn.Parameter(torch.rand(12, 1), requires_grad=True)
-        self.alpha_ner = torch.nn.Parameter(torch.rand(12, 1), requires_grad=True)
+        self.alpha_pos = torch.nn.Parameter(torch.rand(config.num_hidden_layers, 1), requires_grad=True)
+        self.alpha_ner = torch.nn.Parameter(torch.rand(config.num_hidden_layers, 1), requires_grad=True)
 
         self.num_labels_pos = num_labels_pos
         self.num_labels_ner = num_labels_ner
@@ -1326,8 +1326,8 @@ class MTDNNModel(BertPreTrainedModel):
         if do_alpha:
             alpha = self.softmax(alpha)
             hidden_states = hidden_states[1:]
-            hidden_states = torch.stack(hidden_states)   # [12, batch_size, seq_len, hidden_size]
-            hidden_states = hidden_states.permute(1,2,3,0)  # [batch_size, seq_len, hidden_size, 12]
+            hidden_states = torch.stack(hidden_states)   # [num_hidden_layers, batch_size, seq_len, hidden_size]
+            hidden_states = hidden_states.permute(1,2,3,0)  # [batch_size, seq_len, hidden_size, num_hidden_layers]
             sequence_output = torch.matmul(hidden_states, alpha).squeeze(-1) # [batch_size, seq_len, hidden_size]
 
         sequence_output = self.dropout(sequence_output)
