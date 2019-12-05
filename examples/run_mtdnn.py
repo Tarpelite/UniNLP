@@ -73,7 +73,7 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
         {"params": [p for n, p in model.named_parameters() if not any(nd in n for nd in (no_decay + alpha_sets))],
          "weight_decay": args.weight_decay},
         {"params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], "weight_decay": 0.0},
-        {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in alpha_sets)], 'lr': 1e-3}
+        {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in alpha_sets)], 'lr': args.alpha_learning_rate}
     ]
     optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_total)
@@ -95,7 +95,7 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
                                                           find_unused_parameters=True)
 
     # Train!
-    logger.info("***** Running training *****")
+    logger.info("***** Running task-specific finetune *****")
     logger.info("  Num examples = %d", len(train_dataset))
     logger.info("  Num Epochs = %d", args.num_train_epochs)
     logger.info("  Instantaneous batch size per GPU = %d", args.per_gpu_train_batch_size)
@@ -105,17 +105,25 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
     logger.info("  Gradient Accumulation steps = %d", args.gradient_accumulation_steps)
     logger.info("  Total optimization steps = %d", t_total)
 
+
     global_step = 0
     tr_loss, logging_loss = 0.0, 0.0
     model.zero_grad()
     train_iterator = trange(int(args.num_train_epochs), desc="Epoch", disable=args.local_rank not in [-1, 0])
     set_seed(args)  # Added here for reproductibility (even between python 2 and 3)
+    
+    do_alpha = args.do_alpha
     if task == "pos":
         task_id = 0
         layer_id = args.layer_id_pos
     else:
         task_id = 1
         layer_id = args.layer_id_ner
+    
+    if args.ft_with_last_layer:
+        do_alpha=False
+        layer_id = -1
+
     for _ in train_iterator:
         epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
         for step, batch in enumerate(epoch_iterator):
@@ -126,13 +134,13 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
                       "labels": batch[3], 
                       "task_id": task_id,
                       "layer_id":layer_id,
-                      "do_alpha": args.do_alpha}
+                      "do_alpha": do_alpha}
             if args.model_type != "distilbert":
                 inputs["token_type_ids"]: batch[2] if args.model_type in ["bert", "xlnet"] else None  # XLM and RoBERTa don"t use segment_ids
 
             outputs = model(**inputs)
             loss = outputs[0]  # model outputs are always tuple in pytorch-transformers (see doc)
-            if args.do_alpha:
+            if do_alpha:
                 alpha = outputs[0]
                 loss = outputs[1]
 
@@ -143,8 +151,8 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
 
             if args.gradient_accumulation_steps > 1:
                 loss = loss / args.gradient_accumulation_steps
-                if args.do_alpha:
-                    alpha = alpha / args.gradient_accumulation_steps
+                # if args.do_alpha:
+                #     alpha = alpha / args.gradient_accumulation_steps
 
             if args.fp16:
                 with amp.scale_loss(loss, optimizer) as scaled_loss:
@@ -152,7 +160,7 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
             else:
                 loss.backward()
 
-            if (step + 1) % 100 == 0:
+            if (step + 1) % 100 == 0 and do_alpha:
                 print("loss", loss.item())
                 print("task_id", task_id)
                 print("alpha", alpha)
@@ -346,7 +354,7 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
     optimizer_grouped_parameters = [
         {'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in (no_decay + alpha_sets))], 'weight_decay': args.weight_decay},
         {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.0},
-        {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in alpha_sets)], 'lr':1e-3}
+        {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in alpha_sets)], 'lr':args.alpha_learning_rate}
         ]
     
     optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
@@ -636,8 +644,10 @@ def main():
     parser.add_argument("--ft_before_eval", action="store_true")
     parser.add_argument("--layer_id_pos", type=int, default=-1)
     parser.add_argument("--layer_id_ner", type=int, default=-1)
+    parser.add_argument("--alpha_learning_rate", type=float, default=1e-3)
 
     parser.add_argument("--do_alpha", action="store_true")
+    parser.add_argument("ft_with_last_layer", action="store_true")
 
     parser.add_argument("--fp16", action="store_true",
                         help="Whether to use 16-bit (mixed) precision (through NVIDIA apex) instead of 32-bit")
@@ -648,6 +658,7 @@ def main():
                         help="For distributed training: local_rank")
     parser.add_argument("--server_ip", type=str, default="", help="For distant debugging.")
     parser.add_argument("--server_port", type=str, default="", help="For distant debugging.")
+    
     args = parser.parse_args()
 
 
