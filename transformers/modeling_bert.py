@@ -1283,7 +1283,7 @@ class MTDNNModel(BertPreTrainedModel):
         self.classifier_pos = nn.Linear(config.hidden_size, num_labels_pos)
         self.classifier_ner = nn.Linear(config.hidden_size, num_labels_ner)
 
-        init_valus_pos = torch.zeros(config.num_hidden_layers, 1)
+        init_value_pos = torch.zeros(config.num_hidden_layers, 1)
         init_value_ner = torch.zeros(config.num_hidden_layers, 1)
 
         if init_last:
