@@ -1286,9 +1286,11 @@ class MTDNNModel(BertPreTrainedModel):
         init_value_pos = torch.zeros(config.num_hidden_layers, 1)
         init_value_ner = torch.zeros(config.num_hidden_layers, 1)
 
+        inf_value = 100
+
         if init_last:
-            init_value_pos[-1] = 1
-            init_value_ner[-1] = 1
+            init_value_pos[-1] = inf_value
+            init_value_ner[-1] = inf_value
         else:
             init_value_pos = torch.rand(config.num_hidden_layers, 1)
             init_value_ner = torch.rand(config.num_hidden_layers, 1)
