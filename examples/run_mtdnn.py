@@ -645,6 +645,7 @@ def main():
     parser.add_argument("--layer_id_pos", type=int, default=-1)
     parser.add_argument("--layer_id_ner", type=int, default=-1)
     parser.add_argument("--alpha_learning_rate", type=float, default=1e-3)
+    parser.add_argument("--init_last", action="store_true")
 
     parser.add_argument("--do_alpha", action="store_true")
     parser.add_argument("--ft_with_last_layer", action="store_true")
@@ -725,7 +726,8 @@ def main():
     model = model_class.from_pretrained(args.model_name_or_path,
                                         from_tf=bool(".ckpt" in args.model_name_or_path),
                                         config=config, num_labels_pos=num_labels_pos, num_labels_ner=num_labels_ner,
-                                        cache_dir=args.cache_dir if args.cache_dir else None)
+                                        cache_dir=args.cache_dir if args.cache_dir else None,
+                                        init_last=args.init_last)
 
     if args.local_rank == 0:
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab

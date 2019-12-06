@@ -1273,7 +1273,7 @@ class BertForQuestionAnswering(BertPreTrainedModel):
         return outputs  # (loss), start_logits, end_logits, (hidden_states), (attentions)
 
 class MTDNNModel(BertPreTrainedModel):
-    def __init__(self, config, num_labels_pos, num_labels_ner):
+    def __init__(self, config, num_labels_pos, num_labels_ner, init_last=False):
         super(MTDNNModel, self).__init__(config)
 
 
@@ -1283,8 +1283,16 @@ class MTDNNModel(BertPreTrainedModel):
         self.classifier_pos = nn.Linear(config.hidden_size, num_labels_pos)
         self.classifier_ner = nn.Linear(config.hidden_size, num_labels_ner)
 
-        self.alpha_pos = torch.nn.Parameter(torch.rand(config.num_hidden_layers, 1), requires_grad=True)
-        self.alpha_ner = torch.nn.Parameter(torch.rand(config.num_hidden_layers, 1), requires_grad=True)
+        if init_last:
+            self.alpha_pos = torch.nn.Parameter(torch.zeros(config.num_hidden_layers, 1), requires_grad=True)
+            self.alpha_ner = torch.nn.Parameter(torch.zeros(config.num_hidden_layers, 1), requires_grad=True)
+            self.alpha_pos[-1] = 1
+            self.alpha_ner[-1] = 1
+
+        else:
+            self.alpha_pos = torch.nn.Parameter(torch.rand(config.num_hidden_layers, 1), requires_grad=True)
+            self.alpha_ner = torch.nn.Parameter(torch.rand(config.num_hidden_layers, 1), requires_grad=True)
+
 
         self.num_labels_pos = num_labels_pos
         self.num_labels_ner = num_labels_ner
