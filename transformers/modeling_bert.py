@@ -1283,15 +1283,18 @@ class MTDNNModel(BertPreTrainedModel):
         self.classifier_pos = nn.Linear(config.hidden_size, num_labels_pos)
         self.classifier_ner = nn.Linear(config.hidden_size, num_labels_ner)
 
-        if init_last:
-            self.alpha_pos = torch.nn.Parameter(torch.zeros(config.num_hidden_layers, 1), requires_grad=True)
-            self.alpha_ner = torch.nn.Parameter(torch.zeros(config.num_hidden_layers, 1), requires_grad=True)
-            self.alpha_pos[-1] = 1
-            self.alpha_ner[-1] = 1
+        init_valus_pos = torch.zeros(config.num_hidden_layers, 1)
+        init_value_ner = torch.zeros(config.num_hidden_layers, 1)
 
+        if init_last:
+            init_value_pos[-1] = 1
+            init_value_ner[-1] = 1
         else:
-            self.alpha_pos = torch.nn.Parameter(torch.rand(config.num_hidden_layers, 1), requires_grad=True)
-            self.alpha_ner = torch.nn.Parameter(torch.rand(config.num_hidden_layers, 1), requires_grad=True)
+            init_value_pos = torch.rand(config.num_hidden_layers, 1)
+            init_value_ner = torch.rand(config.num_hidden_layers, 1)
+        
+        self.alpha_pos = torch.nn.Parameter(init_value_pos, requires_grad=True)
+        self.alpha_ner = torch.nn.Parameter(init_value_ner, requires_grad=True)
 
 
         self.num_labels_pos = num_labels_pos
