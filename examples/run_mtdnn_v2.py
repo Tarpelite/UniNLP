@@ -409,7 +409,7 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunk
     return data_list
 
 
-def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_token_label_id):
+def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, labels_chunking, pad_token_label_id):
     """ Train the model """ 
     if args.local_rank in [-1, 0]:
         tb_writer = SummaryWriter()
