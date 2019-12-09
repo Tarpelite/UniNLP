@@ -370,14 +370,23 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
         for i in range(num_layers):
             params = []
             for param in all_parameters:
-                if str(i) in param and (param not in used_params):
+                layer_ids  = list(params.split("."))
+                if len(layer_ids) < 4:
+                    continue
+                else:
+                    layer_id = layer_ids[3]
+                if str(i) == layer_id and (param not in used_params):
                     params.append(param)
                     used_params.append(param)
             
             param_dict = {'params':[p for n, p in model.named_parameters() if any(nd in n for nd in params)], 'weight_decay':0.0, 'layer_id': i}
             optimizer_grouped_parameters.append(param_dict)
         print(used_params)
-        assert len(used_params)  == len(optimizer_grouped_parameters)
+        try:
+            assert len(used_params)  == len(optimizer_grouped_parameters)
+        except Exception as e:
+            print(len(used_params))
+            print(len(optimizer_grouped_parameters))
 
     optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_total)
