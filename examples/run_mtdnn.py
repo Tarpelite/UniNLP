@@ -383,10 +383,10 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
             optimizer_grouped_parameters.append(param_dict)
         print(used_params)
         try:
-            assert len(used_params)  == len(optimizer_grouped_parameters)
+            assert len(used_params)  == len(all_parameters)
         except Exception as e:
             print(len(used_params))
-            print(len(optimizer_grouped_parameters))
+            print(len(all_parameters))
 
     optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_total)
