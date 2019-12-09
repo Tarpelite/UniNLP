@@ -31,7 +31,7 @@ from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, TensorDataset
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
-from utils_ner import convert_examples_to_features, get_labels, read_examples_from_file
+from utils_chunking import convert_examples_to_features, get_labels, read_examples_from_file
 import torch.nn as nn
 from torch.optim import Adam
 
