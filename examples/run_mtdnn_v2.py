@@ -25,7 +25,7 @@ from utils_pos import read_examples_from_file as read_examples_from_file_pos
 
 from utils_chunking import convert_examples_to_features as convert_examples_to_features_chunking
 from utils_chunking import get_labels as get_labels_chunking
-from utils_chunking import read_examples_from_file_chunking as read_examples_from_file_chunking
+from utils_chunking import read_examples_from_file as read_examples_from_file_chunking
 
 import torch.nn as nn
 from torch.optim import Adam
