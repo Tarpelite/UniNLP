@@ -694,7 +694,7 @@ def main():
                         help="For distributed training: local_rank")
     parser.add_argument("--server_ip", type=str, default="", help="For distant debugging.")
     parser.add_argument("--server_port", type=str, default="", help="For distant debugging.")
-    parser.add_arguemnt("--adjust_learning_rate", action="store_true")
+    parser.add_argument("--adjust_learning_rate", action="store_true")
     
     args = parser.parse_args()
 
