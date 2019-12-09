@@ -357,42 +357,6 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
         {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in alpha_sets)], 'lr':args.alpha_learning_rate}
         ]
     
-    if args.adjust_learning_rate:
-        num_layers = model.alpha_pos.size(0)
-        all_parameters = [n for n, p in model.named_parameters() if not any(nd in n for nd in (no_decay + alpha_sets))]
-
-        optimzer_grouped_parameters = [
-            {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.0},
-            {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in alpha_sets)], 'lr':args.alpha_learning_rate}
-        ]
-
-        used_params = no_decay + alpha_sets
-        for i in range(num_layers):
-            params = []
-            for param in all_parameters:
-                layer_ids  = list(param.split("."))
-                if len(layer_ids) < 4:
-                    continue
-                else:
-                    layer_id = layer_ids[3]
-                if str(i) == layer_id and (param not in used_params):
-                    params.append(param)
-                    used_params.append(param)
-                else:
-                    pass
-            
-            param_dict = {'params':[p for n, p in model.named_parameters() if n in params], 'weight_decay':0.0, 'layer_id': i}
-            optimizer_grouped_parameters.append(param_dict)
-
-        print(used_params)
-        unused_params = [p for p in all_parameters if p not in used_params]
-        param_dict = {'params':[p for n, p in model.named_parameters() if n in used_params], 'weight_decay':0.0}
-        used_params = used_params + unused_params
-        try:
-            assert len(used_params)  == len(all_parameters)
-        except Exception as e:
-            print(len(used_params))
-            print(len(all_parameters))
 
     optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_total)
@@ -423,15 +387,6 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
     model.zero_grad()
     set_seed(args)
     train_iterator = trange(int(args.num_train_epochs), desc="Epoch", disable=args.local_rank not in [-1, 0])
-    if args.adjust_learning_rate:
-        named_parameters = []
-        alpha_dict = {}
-        alpha_len = model.alpha_pos.size(0)
-        for i in range(alpha_len):
-            alpha_dict[i] = 1
-        for n,v in model.named_parameters():
-            named_parameters.append(n)
-
 
     # for each epoch, 1. merge all the datasets, 2. shuffle
     step = 0
@@ -480,13 +435,6 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
             
             tr_loss += loss.item()
             # print("loss", loss.item())
-
-            if args.adjust_learning_rate:
-                alpha_v = alpha.view(-1)[:len(alpha_dict)].detach().cpu().numpy()
-                for cnt, v in alpha_v:
-                    for param_group in optimizer.param_groups:
-                        if param_group['layer_id'] == cnt:
-                            param_group['lr'] = v
 
             if (step + 1 ) % 100 == 0:
                 print("loss", loss.item())
@@ -713,7 +661,6 @@ def main():
                         help="For distributed training: local_rank")
     parser.add_argument("--server_ip", type=str, default="", help="For distant debugging.")
     parser.add_argument("--server_port", type=str, default="", help="For distant debugging.")
-    parser.add_argument("--adjust_learning_rate", action="store_true")
     
     args = parser.parse_args()
 
