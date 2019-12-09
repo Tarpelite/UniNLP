@@ -464,7 +464,7 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
         train_data_list = [sorted(t, key=lambda k:random.random()) for t in train_data_list]
         all_iters = [iter(item) for item in train_data_list]
         all_indices = []
-        all_indices = [0]*len(train_data_list[0]) + [1]*len(train_data_list[1])
+        all_indices = [0]*len(train_data_list[0]) + [1]*len(train_data_list[1]) + [2]*len(train_data_list[2])
         random.shuffle(all_indices)
         model.train()
         epoch_iterator = tqdm(all_indices, desc="Iteration", disable=args.local_rank not in [-1, 0])
@@ -511,8 +511,9 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
 
             if (step + 1 ) % 100 == 0:
                 print("loss", loss.item())
-                print("task_id", task_id)
-                print("alpha", alpha)
+                if args.do_alpha:
+                    print("task_id", task_id)
+                    print("alpha", alpha)
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 if args.fp16:
                     torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), args.max_grad_norm)
