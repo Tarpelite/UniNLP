@@ -229,4 +229,4 @@ def get_labels(path):
     else:
         return ["O", "B-NP", "B-VP",  "B-PP", "B-ADVP", "B-SBAR", "B-ADJP", "B-PRT", "B_CONJP",
                 "B-INTJ", "B-LST", "B-UCP", "I-NP", "I-VP", "I-PP", "I-ADVP", "I-SBAR", "I-ADJP",
-                "I-PRT", "I-CONJP", "I_INTJ", "I-LST", "I-UCP"]
+                "I-PRT", "I-CONJP", "I-INTJ", "I-LST", "I-UCP"]
