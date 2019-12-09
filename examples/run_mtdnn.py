@@ -378,17 +378,21 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
                 if str(i) == layer_id and (param not in used_params):
                     params.append(param)
                     used_params.append(param)
+                else:
+                    pass
             
-            param_dict = {'params':[p for n, p in model.named_parameters() if any(nd in n for nd in params)], 'weight_decay':0.0, 'layer_id': i}
+            param_dict = {'params':[p for n, p in model.named_parameters() if n in params], 'weight_decay':0.0, 'layer_id': i}
             optimizer_grouped_parameters.append(param_dict)
 
         print(used_params)
+        unused_params = [p for p in all_parameters if p not in used_params]
+        param_dict = {'params':[p for n, p in model.named_parameters() if n in used_params], 'weight_decay':0.0}
+        used_params = used_params + unused_params
         try:
             assert len(used_params)  == len(all_parameters)
         except Exception as e:
             print(len(used_params))
             print(len(all_parameters))
-            print(optimizer_grouped_parameters)
 
     optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_total)
