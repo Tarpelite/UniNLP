@@ -370,7 +370,7 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
         for i in range(num_layers):
             params = []
             for param in all_parameters:
-                layer_ids  = list(params.split("."))
+                layer_ids  = list(param.split("."))
                 if len(layer_ids) < 4:
                     continue
                 else:
