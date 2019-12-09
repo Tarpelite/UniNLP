@@ -896,7 +896,7 @@ def main():
            
             # Chunking
             model = torch.load("source_model.pl")
-            _, _, model = finetune(args, ner_dataset_ft, model, tokenizer,  labels_chunking, pad_token_label_id, task="chunking")
+            _, _, model = finetune(args, chunking_dataset_ft, model, tokenizer,  labels_chunking, pad_token_label_id, task="chunking")
             result, _ = evaluate(args, model, tokenizer, chunking_dataset, labels_chunking, pad_token_label_id, mode="dev", prefix=global_step, task="chunking")
         
 
