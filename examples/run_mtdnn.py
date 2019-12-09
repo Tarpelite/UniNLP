@@ -366,11 +366,13 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, pad_t
             {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in alpha_sets)], 'lr':args.alpha_learning_rate}
         ]
 
+        used_params = []
         for i in range(num_layers):
             params = []
             for param in all_parameters:
-                if str(i) in param:
+                if str(i) in param and param not in used_params:
                     params.append(param)
+                    used_params.append(param)
             
             param_dict = {'params':[p for n, p in model.named_parameters() if any(nd in n for nd in params)], 'weight_decay':0.0, 'layer_id': i}
             optimizer_grouped_parameters.append(param_dict)
