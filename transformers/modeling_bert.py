@@ -1485,12 +1485,15 @@ class AdapterLayer(nn.Module):
         self.Nonlinear = nn.Sigmoid()
         self.FeedForwardupProject = nn.Linear(adapter_size, config.intermediate_size)
     
-    def forward(self, hidden_states):
+    def forward(self, hidden_states, skip=False):
         # add skip layer
-        hidden_states_inner = self.FeedForwardupProject(hidden_states)
-        hidden_states_inner = self.Nonlinear(hidden_states_inner)
-        hidden_states_inner = self.FeedForwardupProject(hidden_states_inner)
-        return hidden_states_inner + hidden_states  
+        if skip:
+            return hidden_states
+        else:
+            hidden_states_inner = self.FeedForwardupProject(hidden_states)
+            hidden_states_inner = self.Nonlinear(hidden_states_inner)
+            hidden_states_inner = self.FeedForwardupProject(hidden_states_inner)
+            return hidden_states_inner
 
 class AdapterBertLayer(nn.Module):
     def __init__(self, config):
@@ -1503,7 +1506,7 @@ class AdapterBertLayer(nn.Module):
         self.adapter = AdapterLayer(config)
         self.output = BertOutput(config)
     
-    def forward(self, hidden_states, attention_mask=None, head_mask=None, encoder_hidden_states=None, encoder_attention_mask=None):
+    def forward(self, hidden_states, attention_mask=None, head_mask=None, encoder_hidden_states=None, encoder_attention_mask=None, skip=False):
         self_attention_outputs = self.attention(hidden_states, attention_mask, head_mask, encoder_hidden_states)
         attention_output = self_attention_outputs[0]
         outputs = self_attention_outputs[1:]
@@ -1514,7 +1517,8 @@ class AdapterBertLayer(nn.Module):
             outputs = outputs + cross_attention_outputs[1:]  # add cross attentions if we output attention weights
         
         intermediate_output = self.intermediate(attention_output)
-        layer_output = self.output(intermediate_output, attention_output)
+        adapter_output = self.adapter(intermediate_output, skip)
+        layer_output = self.output(adapter_output, attention_output)
         outputs = (layer_output, ) + outputs
         return outputs
 
@@ -1525,14 +1529,14 @@ class AdapterBertEncoder(nn.Module):
         self.output_hidden_states = config.output_hidden_states
         self.layer = nn.ModuleList([AdapterBertLayer(config) for _ in range(config.num_hidden_layers)])
     
-    def forward(self, hidden_states, attention_mask=None, head_mask=None, encoder_hidden_states=None, encoder_attention_mask=None):
+    def forward(self, hidden_states, attention_mask=None, head_mask=None, encoder_hidden_states=None, encoder_attention_mask=None, skip=False):
         all_hidden_states = ()
         all_attentions = ()
         for i, layer_module in enumerate(self.layer):
             if self.output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states,)
             
-            layer_outputs = layer_module(hidden_states, attention_mask, head_mask[i], encoder_hidden_states, encoder_attention_mask)
+            layer_outputs = layer_module(hidden_states, attention_mask, head_mask[i], encoder_hidden_states, encoder_attention_mask, skip)
             hidden_states = layer_outputs[0]
 
             if self.output_attentions:
@@ -1576,7 +1580,7 @@ class AdapterBertModel(BertPreTrainedModel):
             self.encoder.layer[layer].attention.prune_heads(heads)
 
     def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, position_ids=None,
-                head_mask=None, inputs_embeds=None, encoder_hidden_states=None, encoder_attention_mask=None):
+                head_mask=None, inputs_embeds=None, encoder_hidden_states=None, encoder_attention_mask=None, skip=False):
         """ Forward pass on the Model.
 
         The model can behave as an encoder (with only self-attention) as well
@@ -1665,7 +1669,8 @@ class AdapterBertModel(BertPreTrainedModel):
                                        attention_mask=extended_attention_mask,
                                        head_mask=head_mask,
                                        encoder_hidden_states=encoder_hidden_states,
-                                       encoder_attention_mask=encoder_extended_attention_mask)
+                                       encoder_attention_mask=encoder_extended_attention_mask,
+                                       skip=skip)
         sequence_output = encoder_outputs[0]
         pooled_output = self.pooler(sequence_output)
 
@@ -1690,14 +1695,15 @@ class AdapterMTDNNModel(BertPreTrainedModel):
         self.init_weights()
     
     def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, 
-                position_ids=None, head_mask=None, inputs_embeds=None, labels=None, task_id=0, layer_id=-1):
+                position_ids=None, head_mask=None, inputs_embeds=None, labels=None, task_id=0, layer_id=-1, skip=False):
         
         outputs = self.bert(input_ids,
                             attention_mask=attention_mask,
                             token_type_ids=token_type_ids,
                             position_ids=position_ids,
                             head_mask=head_mask,
-                            inputs_embeds=inputs_embeds)
+                            inputs_embeds=inputs_embeds,
+                            skip=skip)
 
         sequence_output = outputs[0]
 
@@ -1706,8 +1712,6 @@ class AdapterMTDNNModel(BertPreTrainedModel):
         # print(hidden_states.shape)
         if layer_id != -1:
             sequence_output = hidden_states[layer_id]
-
-        
 
         if task_id == 0:
             classifier = self.classifier_pos
@@ -1740,6 +1744,8 @@ class AdapterMTDNNModel(BertPreTrainedModel):
             outputs = (loss,) + outputs
 
         return outputs  # (loss), scores, (hidden_states), (attentions)
+    
+
 
 
 

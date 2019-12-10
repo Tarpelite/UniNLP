@@ -59,6 +59,22 @@ def set_seed(args):
     if args.n_gpu > 0:
         torch.cuda.manual_seed_all(args.seed)
 
+def save_adapter_state(model, task_id):
+    state_dict = model.state_dict()
+    adapter_state_dict = copy.deepcopy(state_dict)
+    for key, value in adapter_state_dict.items():
+        if 'adapter' not in key:
+            del adapter_state_dict[key]
+    
+    torch.save(adapter_state_dict, "{}.ad".format(task_id))
+
+def load_adapter_state(model, task_id):
+    adapter_state_dict = torch.load("{}.ad".format(task_id))
+    model_state_dict = model.state_dict()
+    model_state_dict.update(adapter_state_dict)
+    model.load_state_dict(model_state_dict)
+    return model
+
 def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, task="pos"):
     """ Train the model """
     if args.local_rank in [-1, 0]:
@@ -132,7 +148,6 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
         task_id = 2
         layer_id = args.layer_id_chunking
     
-
     if args.ft_with_last_layer:
         do_alpha=False
         layer_id = -1
@@ -147,6 +162,7 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
                       "labels": batch[3], 
                       "task_id": task_id,
                       "layer_id":layer_id,
+                      "skip": False
                     }
             if args.model_type != "distilbert":
                 inputs["token_type_ids"]: batch[2] if args.model_type in ["bert", "xlnet"] else None  # XLM and RoBERTa don"t use segment_ids
@@ -420,7 +436,7 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
     t_total = sum(len(x) for x in train_data_list) // args.gradient_accumulation_steps * args.num_train_epochs
 
     # prepare optimizer and schedule (linear warmup and decay)
-    no_decay = ['bias', 'LayerNorm.weight']
+    no_decay = ['bias', 'LayerNorm.weight', 'adapter']
     alpha_sets = ['alpha_pos', 'alpha_ner', 'alpha_chunking']
     optimizer_grouped_parameters = [
         {'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in (no_decay + alpha_sets))], 'weight_decay': args.weight_decay},
@@ -487,7 +503,8 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
                       "attention_mask":input_mask, 
                       "labels":label_ids, 
                       "task_id":task_id, 
-                      "layer_id":layer_id
+                      "layer_id":layer_id,
+                      "skip":True
                       }
             outputs = model(**inputs)
             loss = outputs[0]
@@ -557,7 +574,7 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
 
     return global_step, tr_loss / global_step, model
 
-def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, mode, prefix=" ", task="pos"):
+def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, mode, prefix=" ", task="pos", skip=True):
 
     if torch.cuda.device_count() > 0:
         eval_batch_size = torch.cuda.device_count() * args.per_gpu_eval_batch_size
@@ -593,6 +610,7 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
                       "labels": batch[3], 
                       "task_id":task_id, 
                       "layer_id": layer_id,
+                      "skip": skip
                       }
             if args.model_type != "distilbert":
                 inputs["token_type_ids"]: batch[2] if args.model_type in ["bert", "xlnet"] else None  # XLM and RoBERTa don"t use segment_ids
