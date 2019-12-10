@@ -1758,10 +1758,12 @@ class MTDNNModelTaskEmbedding(BertPreTrainedModel):
         self.classifier_pos = nn.Linear(config.hidden_size, num_labels_pos)
         self.classifier_ner = nn.Linear(config.hidden_size, num_labels_ner)
         self.classifier_chunking = nn.Linear(config.hidden_size, num_labels_chunking)
-
-        self.task_embedding_pos = torch.nn.Parameter(torch.randn(config.hidden_size), requires_grad=True)
-        self.task_embedding_ner = torch.nn.Parameter(torch.randn(config.hidden_size), requires_grad=True)
-        self.task_embedding_chunking = torch.nn.Parameter(torch.randn(config.hidden_size), requires_grad=True)
+        
+        num_tasks = 3
+        self.task_embedding = nn.Embedding(num_tasks, config.hidden_size)
+        # self.task_embedding_pos = torch.nn.Parameter(torch.randn(config.hidden_size), requires_grad=True)
+        # self.task_embedding_ner = torch.nn.Parameter(torch.randn(config.hidden_size), requires_grad=True)
+        # self.task_embedding_chunking = torch.nn.Parameter(torch.randn(config.hidden_size), requires_grad=True)
 
         self.w1 = nn.Linear(config.hidden_size, 1)
         self.w2 = nn.Linear(config.hidden_size, 1)
@@ -1797,18 +1799,16 @@ class MTDNNModelTaskEmbedding(BertPreTrainedModel):
         if task_id == 0:
             classifier = self.classifier_pos
             num_labels = self.num_labels_pos
-            task_embedding = self.task_embedding_pos
 
         elif task_id == 1:
             classifier = self.classifier_ner
             num_labels = self.num_labels_ner
-            task_embedding = self.task_embedding_ner
 
         elif task_id == 2:
             classifier = self.classifier_chunking
             num_labels = self.num_labels_chunking
-            task_embedding = self.task_embedding_chunking
 
+        task_embedding = self.task_embedding(torch.tensor([task_id])).view(-1)
         hidden_states = hidden_states[1:]
         hidden_states = torch.stack(hidden_states)   # [num_hidden_layers, batch_size, seq_len, hidden_size]
 
