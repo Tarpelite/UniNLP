@@ -1480,9 +1480,10 @@ class MTDNNModelv2(BertPreTrainedModel):
 class AdapterLayer(nn.Module):
     def __init__(self,config):
         super(AdapterLayer, self).__init__()
-        self.FeedForwarddownProject = nn.Linear(config.intermediate_size, config.adapter_size)
+        adapter_size = int(config.intermediate_size/2)
+        self.FeedForwarddownProject = nn.Linear(config.intermediate_size, adapter_size)
         self.Nonlinear = nn.Sigmoid()
-        self.FeedForwardupProject = nn.Linear(config.adpater_size, config.intermediate_size)
+        self.FeedForwardupProject = nn.Linear(adapter_size, config.intermediate_size)
     
     def forward(self, hidden_states):
         # add skip layer
