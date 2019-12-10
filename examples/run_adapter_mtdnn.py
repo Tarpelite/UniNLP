@@ -147,7 +147,7 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
                       "labels": batch[3], 
                       "task_id": task_id,
                       "layer_id":layer_id,
-                      "do_alpha": do_alpha}
+                    }
             if args.model_type != "distilbert":
                 inputs["token_type_ids"]: batch[2] if args.model_type in ["bert", "xlnet"] else None  # XLM and RoBERTa don"t use segment_ids
 
@@ -487,8 +487,8 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
                       "attention_mask":input_mask, 
                       "labels":label_ids, 
                       "task_id":task_id, 
-                      "layer_id":layer_id,
-                      "do_alpha":args.do_alpha}
+                      "layer_id":layer_id
+                      }
             outputs = model(**inputs)
             loss = outputs[0]
 
@@ -593,7 +593,7 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
                       "labels": batch[3], 
                       "task_id":task_id, 
                       "layer_id": layer_id,
-                      "do_alpha": args.do_alpha}
+                      }
             if args.model_type != "distilbert":
                 inputs["token_type_ids"]: batch[2] if args.model_type in ["bert", "xlnet"] else None  # XLM and RoBERTa don"t use segment_ids
             outputs = model(**inputs)
@@ -809,7 +809,8 @@ def main():
     config = config_class.from_pretrained(args.config_name if args.config_name else args.model_name_or_path,
                                           num_labels=num_labels_ner,
                                           cache_dir=args.cache_dir if args.cache_dir else None,
-                                          output_hidden_states=True)
+                                          output_hidden_states=True,
+                                          )
     tokenizer = tokenizer_class.from_pretrained(args.tokenizer_name if args.tokenizer_name else args.model_name_or_path,
                                                 do_lower_case=args.do_lower_case,
                                                 cache_dir=args.cache_dir if args.cache_dir else None)
