@@ -34,6 +34,7 @@ import copy
 from transformers import AdamW, get_linear_schedule_with_warmup
 from transformers import WEIGHTS_NAME, BertConfig, BertForTokenClassification, BertTokenizer
 from transformers import MTDNNModelv2 as MTDNNModel
+from transformers import AdapterMTDNNModel 
 from transformers import RobertaConfig, RobertaForTokenClassification, RobertaTokenizer
 from transformers import DistilBertConfig, DistilBertForTokenClassification, DistilBertTokenizer
 
@@ -744,13 +745,18 @@ def main():
                         help="For distributed training: local_rank")
     parser.add_argument("--server_ip", type=str, default="", help="For distant debugging.")
     parser.add_argument("--server_port", type=str, default="", help="For distant debugging.")
-    
+    parser.add_argument("--use_adapter", action="store_true")
     args = parser.parse_args()
 
 
     layer_id_pos = args.layer_id_pos
     layer_id_ner = args.layer_id_ner
     layer_id_chunking = args.layer_id_chunking
+
+    if args.use_adapter:
+        MODEL_CLASSES = {
+            "bert":(BertConfig, AdapterMTDNNModel, BertTokenizer)
+        }
 
     if os.path.exists(args.output_dir) and os.listdir(
             args.output_dir) and args.do_train and not args.overwrite_output_dir:
