@@ -40,8 +40,7 @@ from transformers import DistilBertConfig, DistilBertForTokenClassification, Dis
 
 
 
-
-
+softmax = nn.Softmax(dim=0)
 
 logger = logging.getLogger(__name__)
 
@@ -175,8 +174,11 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
                 loss.backward()
 
             if (step + 1) % 100 == 0 and do_alpha:
+                alpha_pos = model.alpha_pos
+                alpha_ner = model.alpha_ner
+                alpha_chunking = model.alpha_chunking
                 print("loss", loss.item())
-                print("task_id", task_id)
+                print("alpha_pos", task_id)
                 print("alpha", alpha)
             tr_loss += loss.item()
             if (step + 1) % args.gradient_accumulation_steps == 0:

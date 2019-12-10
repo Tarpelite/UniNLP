@@ -1808,7 +1808,7 @@ class MTDNNModelTaskEmbedding(BertPreTrainedModel):
             classifier = self.classifier_chunking
             num_labels = self.num_labels_chunking
 
-        task_embedding = self.task_embedding(torch.tensor([task_id])).view(-1)
+        task_embedding = self.task_embedding(torch.tensor([task_id]).cuda()).view(-1)
         hidden_states = hidden_states[1:]
         hidden_states = torch.stack(hidden_states)   # [num_hidden_layers, batch_size, seq_len, hidden_size]
 
