@@ -25,6 +25,7 @@ import sys
 import torch
 from torch import nn
 from torch.nn import CrossEntropyLoss, MSELoss
+import copy
 
 from .modeling_utils import PreTrainedModel, prune_linear_layer, AverageMeter
 from .configuration_bert import BertConfig
@@ -1822,6 +1823,8 @@ class MTDNNModelTaskEmbedding(BertPreTrainedModel):
         
         alpha = self.softmax(alpha).permute(1, 0) #[batch_size, num_hidden_layers]
 
+        alpha_vis = copy.deepcopy(alpha)
+
         hidden_states = hidden_states.permute(1,0,2,3)  # [batch_size, num_hidden_layers, seq_len, hidden_size]
 
         alpha = alpha.view(alpha.size() + (1,)).expand(alpha.size() + (hidden_states.size(2), )) #[batch_size, num_hidden_layers, seq_len]
@@ -1850,7 +1853,8 @@ class MTDNNModelTaskEmbedding(BertPreTrainedModel):
             outputs = (loss,) + outputs
         
         if do_alpha:
-            outputs = (alpha,) + outputs
+            alpha_vis = torch.mean(alpha_vis, dim=-1)
+            outputs = (alpha_vis,) + outputs
         return outputs  # (loss), scores, (hidden_states), (attentions)
 
 
