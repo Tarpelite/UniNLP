@@ -189,10 +189,11 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
             else:
                 loss.backward()
 
-            if (step + 1) % 100 == 0 and do_alpha:
+            if (step + 1) % 100 == 0:
                 print("loss", loss.item())
                 print("task_id", task_id)
-                print("alpha", alpha)
+                if do_alpha:
+                    print("alpha", alpha)
             tr_loss += loss.item()
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 if args.fp16:
