@@ -504,7 +504,7 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
                       "labels":label_ids, 
                       "task_id":task_id, 
                       "layer_id":layer_id,
-                      "skip":True
+                      "skip":False
                       }
             outputs = model(**inputs)
             loss = outputs[0]

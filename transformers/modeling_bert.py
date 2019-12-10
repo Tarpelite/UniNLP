@@ -1490,7 +1490,7 @@ class AdapterLayer(nn.Module):
         if skip:
             return hidden_states
         else:
-            hidden_states_inner = self.FeedForwardupProject(hidden_states)
+            hidden_states_inner = self.FeedForwarddownProject(hidden_states)
             hidden_states_inner = self.Nonlinear(hidden_states_inner)
             hidden_states_inner = self.FeedForwardupProject(hidden_states_inner)
             return hidden_states_inner
