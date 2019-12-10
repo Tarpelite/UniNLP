@@ -49,7 +49,7 @@ ALL_MODELS = sum(
     ())
 
 MODEL_CLASSES = {
-    "bert":(BertConfig, MTDNNModel, BertTokenizer)
+    "bert":(BertConfig, AdapterMTDNNModel, BertTokenizer)
 }
 
 def set_seed(args):
