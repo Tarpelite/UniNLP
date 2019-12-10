@@ -1554,7 +1554,7 @@ class AdapterBertModel(BertPreTrainedModel):
         super(AdapterBertModel, self).__init__(config)
         self.config = config
 
-        self.embeddings = BertEmbeddins(config)
+        self.embeddings = BertEmbeddings(config)
         self.encoder = AdapterBertEncoder(config)
         self.pooler = BertPooler(config)
 
