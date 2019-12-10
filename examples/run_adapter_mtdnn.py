@@ -899,26 +899,26 @@ def main():
             
             logger.info("Evaluate before finetune")
 
-            result, _ = evaluate(args, model, tokenizer, pos_dataset, labels_pos, pad_token_label_id, mode="dev", prefix=global_step, task="pos")
-            result, _ = evaluate(args, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner")
-            result, _ = evaluate(args, model, tokenizer, chunking_dataset, labels_chunking, pad_token_label_id, mode="dev", prefix=global_step, task="chunking")
+            result, _ = evaluate(args, model, tokenizer, pos_dataset, labels_pos, pad_token_label_id, mode="dev", prefix=global_step, task="pos", skip=True)
+            result, _ = evaluate(args, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner", skip=True)
+            result, _ = evaluate(args, model, tokenizer, chunking_dataset, labels_chunking, pad_token_label_id, mode="dev", prefix=global_step, task="chunking", skip=True)
 
             torch.save(model, "source_model.pl")    
             logger.info("Finetuning and Evaluate")
 
             # POS tag
             _, _, model = finetune(args, pos_dataset_ft, model, tokenizer, labels_pos, pad_token_label_id, task="pos")
-            result, _ = evaluate(args, model, tokenizer, pos_dataset, labels_pos, pad_token_label_id, mode="dev", prefix=global_step, task="pos")
+            result, _ = evaluate(args, model, tokenizer, pos_dataset, labels_pos, pad_token_label_id, mode="dev", prefix=global_step, task="pos", skip=False)
             
             # NER
             model = torch.load("source_model.pl")
             _, _, model = finetune(args, ner_dataset_ft, model, tokenizer,  labels_ner, pad_token_label_id, task="ner")
-            result, _ = evaluate(args, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner")
+            result, _ = evaluate(args, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner", skip=False)
            
             # Chunking
             model = torch.load("source_model.pl")
             _, _, model = finetune(args, chunking_dataset_ft, model, tokenizer,  labels_chunking, pad_token_label_id, task="chunking")
-            result, _ = evaluate(args, model, tokenizer, chunking_dataset, labels_chunking, pad_token_label_id, mode="dev", prefix=global_step, task="chunking")
+            result, _ = evaluate(args, model, tokenizer, chunking_dataset, labels_chunking, pad_token_label_id, mode="dev", prefix=global_step, task="chunking", skip=False)
         
 
         output_eval_file = os.path.join(args.output_dir, "eval_results.txt")
