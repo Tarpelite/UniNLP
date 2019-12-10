@@ -44,6 +44,8 @@ from transformers import DistilBertConfig, DistilBertForTokenClassification, Dis
 
 logger = logging.getLogger(__name__)
 
+function_softmax = nn.Softmax(dim=0)
+
 ALL_MODELS = sum(
     (tuple(conf.pretrained_config_archive_map.keys()) for conf in (BertConfig, RobertaConfig, DistilBertConfig)),
     ())
@@ -513,9 +515,10 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
             if (step + 1 ) % 100 == 0:
                 print("loss", loss.item())
                 if args.do_alpha:
+                    alpha = alpha[:12]
                     print("task_id", task_id)
                     print("alpha", alpha)
-                    print("alpha shape", alpha.shape)
+                    
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 if args.fp16:
                     torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), args.max_grad_norm)
