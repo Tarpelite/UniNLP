@@ -1499,7 +1499,7 @@ class AdapterBertLayer(nn.Module):
         if self.is_decoder:
             self.crossattention = BertAttention(config)
         self.intermediate = BertIntermediate(config)
-        self.adapter = AdapterBertLayer(config)
+        self.adapter = AdapterLayer(config)
         self.output = BertOutput(config)
     
     def forward(self, hidden_states, attention_mask=None, head_mask=None, encoder_hidden_states=None, encoder_attention_mask=None):
