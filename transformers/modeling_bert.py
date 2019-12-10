@@ -1823,12 +1823,12 @@ class MTDNNModelTaskEmbedding(BertPreTrainedModel):
         alpha = self.softmax(alpha).permute(1, 0) #[batch_size, num_hidden_layers]
 
         hidden_states = hidden_states.permute(1,0,2,3)  # [batch_size, num_hidden_layers, seq_len, hidden_size]
-        
-        alpha = alpha.view(alpha.size(), (1,)).expand(alpha.size(), hidden_states.size(2)) #[batch_size, num_hidden_layers, seq_len]
-        alpha = alpha.view(alpha.size(), (1,)).expand(alpha.size(), hidden_states.size(3)) #[batch_size, num_hidden_layers, seq_len, hidden_size]
+
+        alpha = alpha.view(alpha.size() + (1,)).expand(alpha.size() + (hidden_states.size(2), )) #[batch_size, num_hidden_layers, seq_len]
+        alpha = alpha.view(alpha.size() + (1,)).expand(alpha.size() + (hidden_states.size(3), )) #[batch_size, num_hidden_layers, seq_len, hidden_size]
 
         
-        sequence_output = torch.sum(alpha*hidden_states, dim=1)
+        sequence_output = torch.sum(alpha*hidden_states, dim=1) #[batch_size, seq_len, hidden_size]
 
 
         sequence_output = self.dropout(sequence_output)
