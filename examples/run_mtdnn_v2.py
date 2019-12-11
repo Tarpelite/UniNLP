@@ -122,8 +122,7 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
     set_seed(args)  # Added here for reproductibility (even between python 2 and 3)
     
     do_alpha = args.do_alpha
-    alpha_log = "alpha.log.training"
-    alpha_log_f = open(alpha_log, "w+", encoding="utf-8")
+    
     if task == "pos":
         task_id = 0
         layer_id = args.layer_id_pos
@@ -184,12 +183,6 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
                 print("alpha_ner", alpha_ner)
                 print("alpha_chunking", alpha_chunking)
 
-                alpha_log_f.write(str(step+1))
-                alpha_log_f.write(" ".join([str(x) for x in alpha_pos]) + "\n")
-                alpha_log_f.write(" ".join([str(x) for x in alpha_ner]) + "\n")
-                alpha_log_f.write(" ".join([str(x) for x in alpha_chunking] + "\n"))
-                alpha_log_f.write('\n')
-
             tr_loss += loss.item()
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 if args.fp16:
@@ -231,7 +224,7 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
 
     if args.local_rank in [-1, 0]:
         tb_writer.close()
-    alpha_log.close()
+  
     return global_step, tr_loss / global_step, model
 
 
@@ -471,6 +464,8 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
     model.zero_grad()
     set_seed(args)
     train_iterator = trange(int(args.num_train_epochs), desc="Epoch", disable=args.local_rank not in [-1, 0])
+    alpha_log = "alpha.log.training"
+    alpha_log_f = open(alpha_log, "w+", encoding="utf-8")
 
     # for each epoch, 1. merge all the datasets, 2. shuffle
     step = 0
@@ -524,10 +519,19 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
             # print("loss", loss.item())
 
             if (step + 1 ) % 100 == 0:
+                alpha_pos = softmax(model.alpha_pos).detach().cpu().numpy()[:12]
+                alpha_ner = softmax(model.alpha_ner).detach().cpu().numpy()[:12]
+                alpha_chunking = softmax(model.alpha_chunking).detach().cpu().numpy()[:12]
                 print("loss", loss.item())
-                if args.do_alpha:
-                    print("task_id", task_id)
-                    print("alpha", alpha)
+                print("alpha_pos", alpha_pos)
+                print("alpha_ner", alpha_ner)
+                print("alpha_chunking", alpha_chunking)
+
+                alpha_log_f.write(str(step+1))
+                alpha_log_f.write(" ".join([str(x) for x in alpha_pos]) + "\n")
+                alpha_log_f.write(" ".join([str(x) for x in alpha_ner]) + "\n")
+                alpha_log_f.write(" ".join([str(x) for x in alpha_chunking] + "\n"))
+                alpha_log_f.write('\n')
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 if args.fp16:
                     torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), args.max_grad_norm)
@@ -568,6 +572,7 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
     if args.local_rank in [-1, 0]:
         tb_writer.close()
 
+    alpha_log_f.close()
     return global_step, tr_loss / global_step, model
 
 def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, mode, prefix=" ", task="pos"):
