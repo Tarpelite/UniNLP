@@ -122,6 +122,7 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
     set_seed(args)  # Added here for reproductibility (even between python 2 and 3)
     
     do_alpha = args.do_alpha
+    mtdnn_training_alpha_log = ""
     if task == "pos":
         task_id = 0
         layer_id = args.layer_id_pos
@@ -178,8 +179,10 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
                 alpha_ner = model.alpha_ner
                 alpha_chunking = model.alpha_chunking
                 print("loss", loss.item())
-                print("alpha_pos", task_id)
-                print("alpha", alpha)
+                print("alpha_pos", )
+                print("alpha_ner", softmax(alpha_ner)[:12])
+                print("alpha_chunking", softmax(alpha_chunking)[:12])
+
             tr_loss += loss.item()
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 if args.fp16:

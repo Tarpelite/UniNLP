@@ -1818,19 +1818,16 @@ class MTDNNModelTaskEmbedding(BertPreTrainedModel):
         out1 = self.w1(hidden_states) #[num_hidden_layers, batch_size, seq_len, 1]
         task_embedding = task_embedding.expand(hidden_states.size(0), hidden_states.size(1), task_embedding.size(0)) # [num_hidden_layers, batch_size, hidden_size]
         out2 = self.w2(task_embedding) # [num_hidden_layers, batch_size, 1]
-        out = out1.squeeze(-1) + out2 # [num_hidden_layers, batch_size, seq_len]
-        alpha = torch.mean(out, dim=-1) #[num_hidden_layers, batch_size]
+        alpha = out1.squeeze(-1) + out2 # [num_hidden_layers, batch_size, seq_len]
         
-        alpha = self.softmax(alpha).permute(1, 0) #[batch_size, num_hidden_layers]
+        alpha = self.softmax(alpha).permute(1, 0, 2) #[batch_size, num_hidden_layers, seq_len]
 
         alpha_vis = torch.mean(alpha, dim=0)
 
         hidden_states = hidden_states.permute(1,0,2,3)  # [batch_size, num_hidden_layers, seq_len, hidden_size]
 
-        alpha = alpha.view(alpha.size() + (1,)).expand(alpha.size() + (hidden_states.size(2), )) #[batch_size, num_hidden_layers, seq_len]
         alpha = alpha.view(alpha.size() + (1,)).expand(alpha.size() + (hidden_states.size(3), )) #[batch_size, num_hidden_layers, seq_len, hidden_size]
 
-        
         sequence_output = torch.sum(alpha*hidden_states, dim=1) #[batch_size, seq_len, hidden_size]
 
 
@@ -1855,10 +1852,6 @@ class MTDNNModelTaskEmbedding(BertPreTrainedModel):
         if do_alpha:
             outputs = (alpha_vis,) + outputs
         return outputs  # (loss), scores, (hidden_states), (attentions)
-
-
-    
-
 
 
 
