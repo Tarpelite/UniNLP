@@ -528,9 +528,9 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
                 print("alpha_chunking", alpha_chunking)
 
                 alpha_log_f.write(str(step+1))
-                alpha_log_f.write(" ".join([str(x) for x in alpha_pos]) + "\n")
-                alpha_log_f.write(" ".join([str(x) for x in alpha_ner]) + "\n")
-                alpha_log_f.write(" ".join([str(x) for x in alpha_chunking] + "\n"))
+                alpha_log_f.write(" ".join([str(x) for x in alpha_pos.reshape(12)]) + "\n")
+                alpha_log_f.write(" ".join([str(x) for x in alpha_ner.reshape(12)]) + "\n")
+                alpha_log_f.write(" ".join([str(x) for x in alpha_chunking.reshape(12)]) + "\n")
                 alpha_log_f.write('\n')
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 if args.fp16:
