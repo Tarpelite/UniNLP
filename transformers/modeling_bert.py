@@ -1852,9 +1852,3 @@ class MTDNNModelTaskEmbedding(BertPreTrainedModel):
         if do_alpha:
             outputs = (alpha_vis,) + outputs
         return outputs  # (loss), scores, (hidden_states), (attentions)
-
-
-
-
-
-        
