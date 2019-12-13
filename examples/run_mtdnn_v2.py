@@ -175,9 +175,9 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
                 loss.backward()
 
             if (step + 1) % 100 == 0 and do_alpha:
-                alpha_pos = softmax(model.alpha_pos).detach().cpu().numpy()[:12]
-                alpha_ner = softmax(model.alpha_ner).detach().cpu().numpy()[:12]
-                alpha_chunking = softmax(model.alpha_chunking).detach().cpu().numpy()[:12]
+                alpha_pos = softmax(model.module.alpha_pos).detach().cpu().numpy()[:12]
+                alpha_ner = softmax(model.module.alpha_ner).detach().cpu().numpy()[:12]
+                alpha_chunking = softmax(model.module.alpha_chunking).detach().cpu().numpy()[:12]
                 print("loss", loss.item())
                 print("alpha_pos", alpha_pos)
                 print("alpha_ner", alpha_ner)
