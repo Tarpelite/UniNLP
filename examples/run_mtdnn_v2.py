@@ -175,13 +175,16 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
                 loss.backward()
 
             if (step + 1) % 100 == 0 and do_alpha:
-                alpha_pos = softmax(model.module.alpha_pos).detach().cpu().numpy()[:12]
-                alpha_ner = softmax(model.module.alpha_ner).detach().cpu().numpy()[:12]
-                alpha_chunking = softmax(model.module.alpha_chunking).detach().cpu().numpy()[:12]
+
+                
                 print("loss", loss.item())
-                print("alpha_pos", alpha_pos)
-                print("alpha_ner", alpha_ner)
-                print("alpha_chunking", alpha_chunking)
+                if args.do_alpha:
+                    alpha_pos = softmax(model.module.alpha_pos).detach().cpu().numpy()[:12]
+                    alpha_ner = softmax(model.module.alpha_ner).detach().cpu().numpy()[:12]
+                    alpha_chunking = softmax(model.module.alpha_chunking).detach().cpu().numpy()[:12]
+                    print("alpha_pos", alpha_pos)
+                    print("alpha_ner", alpha_ner)
+                    print("alpha_chunking", alpha_chunking)
 
             tr_loss += loss.item()
             if (step + 1) % args.gradient_accumulation_steps == 0:
@@ -519,19 +522,22 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
             # print("loss", loss.item())
 
             if (step + 1 ) % 100 == 0:
-                alpha_pos = softmax(model.module.alpha_pos).detach().cpu().numpy()[:12]
-                alpha_ner = softmax(model.module.alpha_ner).detach().cpu().numpy()[:12]
-                alpha_chunking = softmax(model.module.alpha_chunking).detach().cpu().numpy()[:12]
+                
                 print("loss", loss.item())
-                print("alpha_pos", alpha_pos)
-                print("alpha_ner", alpha_ner)
-                print("alpha_chunking", alpha_chunking)
 
-                alpha_log_f.write(str(step+1))
-                alpha_log_f.write(" ".join([str(x) for x in alpha_pos.reshape(12)]) + "\n")
-                alpha_log_f.write(" ".join([str(x) for x in alpha_ner.reshape(12)]) + "\n")
-                alpha_log_f.write(" ".join([str(x) for x in alpha_chunking.reshape(12)]) + "\n")
-                alpha_log_f.write('\n')
+                if args.do_alpha:
+                    alpha_pos = softmax(model.module.alpha_pos).detach().cpu().numpy()[:12]
+                    alpha_ner = softmax(model.module.alpha_ner).detach().cpu().numpy()[:12]
+                    alpha_chunking = softmax(model.module.alpha_chunking).detach().cpu().numpy()[:12]
+                    print("alpha_pos", alpha_pos)
+                    print("alpha_ner", alpha_ner)
+                    print("alpha_chunking", alpha_chunking)
+
+                    alpha_log_f.write(str(step+1))
+                    alpha_log_f.write(" ".join([str(x) for x in alpha_pos.reshape(12)]) + "\n")
+                    alpha_log_f.write(" ".join([str(x) for x in alpha_ner.reshape(12)]) + "\n")
+                    alpha_log_f.write(" ".join([str(x) for x in alpha_chunking.reshape(12)]) + "\n")
+                    alpha_log_f.write('\n')
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 if args.fp16:
                     torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), args.max_grad_norm)
