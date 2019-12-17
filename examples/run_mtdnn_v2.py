@@ -41,6 +41,7 @@ from transformers import DistilBertConfig, DistilBertForTokenClassification, Dis
 
 
 softmax = nn.Softmax(dim=0)
+num_layers = 12
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +123,7 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
     set_seed(args)  # Added here for reproductibility (even between python 2 and 3)
     
     do_alpha = args.do_alpha
+
     
     if task == "pos":
         task_id = 0
@@ -179,9 +181,9 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
                 
                 print("loss", loss.item())
                 if args.do_alpha:
-                    alpha_pos = softmax(model.module.alpha_pos).detach().cpu().numpy()[:12]
-                    alpha_ner = softmax(model.module.alpha_ner).detach().cpu().numpy()[:12]
-                    alpha_chunking = softmax(model.module.alpha_chunking).detach().cpu().numpy()[:12]
+                    alpha_pos = softmax(model.module.alpha_pos).detach().cpu().numpy()[:num_layers]
+                    alpha_ner = softmax(model.module.alpha_ner).detach().cpu().numpy()[:num_layers]
+                    alpha_chunking = softmax(model.module.alpha_chunking).detach().cpu().numpy()[:num_layers]
                     print("alpha_pos", alpha_pos)
                     print("alpha_ner", alpha_ner)
                     print("alpha_chunking", alpha_chunking)
@@ -846,7 +848,7 @@ def main():
                                         num_labels_chunking=num_labels_chunking,
                                         cache_dir=args.cache_dir if args.cache_dir else None,
                                         init_last=args.init_last)
-
+    num_layers = config.num_hidden_layers
     if args.local_rank == 0:
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
 
