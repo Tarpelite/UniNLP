@@ -528,9 +528,9 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
                 print("loss", loss.item())
 
                 if args.do_alpha:
-                    alpha_pos = softmax(model.module.alpha_pos).detach().cpu().numpy()[:12]
-                    alpha_ner = softmax(model.module.alpha_ner).detach().cpu().numpy()[:12]
-                    alpha_chunking = softmax(model.module.alpha_chunking).detach().cpu().numpy()[:12]
+                    alpha_pos = softmax(model.module.alpha_pos).detach().cpu().numpy()[:num_layers]
+                    alpha_ner = softmax(model.module.alpha_ner).detach().cpu().numpy()[:num_layers]
+                    alpha_chunking = softmax(model.module.alpha_chunking).detach().cpu().numpy()[:num_layers]
                     print("alpha_pos", alpha_pos)
                     print("alpha_ner", alpha_ner)
                     print("alpha_chunking", alpha_chunking)
