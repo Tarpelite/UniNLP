@@ -87,7 +87,7 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
         {"params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], "weight_decay": 0.0},
         {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in alpha_sets)], 'lr': args.alpha_learning_rate}
     ]
-    optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
+    optimizer = AdamW(optimizer_grouped_parameters, lr=args.ft_learning_rate, eps=args.adam_epsilon)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_total)
     if args.fp16:
         try:
@@ -737,6 +737,7 @@ def main():
     parser.add_argument("--layer_id_chunking", type=int, default=-1)
     parser.add_argument("--alpha_learning_rate", type=float, default=1e-3)
     parser.add_argument("--init_last", action="store_true")
+    parser.add_argument("--ft_learning_rate", type=float, default=5e-5)
 
     parser.add_argument("--do_alpha", action="store_true")
     parser.add_argument("--ft_with_last_layer", action="store_true")
