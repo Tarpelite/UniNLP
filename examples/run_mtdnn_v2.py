@@ -124,7 +124,7 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
     
     do_alpha = args.do_alpha
 
-    
+
     if task == "pos":
         task_id = 0
         layer_id = args.layer_id_pos
@@ -536,9 +536,9 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
                     print("alpha_chunking", alpha_chunking)
 
                     alpha_log_f.write(str(step+1))
-                    alpha_log_f.write(" ".join([str(x) for x in alpha_pos.reshape(num_layers)]) + "\n")
-                    alpha_log_f.write(" ".join([str(x) for x in alpha_ner.reshape(num_layers)]) + "\n")
-                    alpha_log_f.write(" ".join([str(x) for x in alpha_chunking.reshape(num_layers)]) + "\n")
+                    alpha_log_f.write(" ".join([str(x) for x in alpha_pos.reshape(len(alpha_pos))]) + "\n")
+                    alpha_log_f.write(" ".join([str(x) for x in alpha_ner.reshape(len(alpha_ner))]) + "\n")
+                    alpha_log_f.write(" ".join([str(x) for x in alpha_chunking.reshape(len(alpha_chunking))]) + "\n")
                     alpha_log_f.write('\n')
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 if args.fp16:
