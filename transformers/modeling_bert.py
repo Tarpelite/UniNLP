@@ -1968,9 +1968,9 @@ class BertForSRL(BertPreTrainedModel):
         self.num_labels= config.num_labels
 
         self.bert = BertModel(config)
-        self.dropout = config.Dropout(config.hidden_dropout_prob)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
-        self.classifier = nn.Linear(config.hidden_size, 1, self.num_labels)
+        self.classifier = nn.Bilinear(config.hidden_size, 1, self.num_labels)
 
         self.init_weights()
     
