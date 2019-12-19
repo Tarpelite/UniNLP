@@ -36,7 +36,7 @@ import torch.nn as nn
 from torch.optim import Adam
 
 from transformers import AdamW, get_linear_schedule_with_warmup
-from transformers import WEIGHTS_NAME, BertConfig, BertForTokenClassification, BertTokenizer
+from transformers import WEIGHTS_NAME, BertConfig, BertForTokenClassification, BertTokenizer, BertForSRL
 from transformers import RobertaConfig, RobertaForTokenClassification, RobertaTokenizer
 from transformers import DistilBertConfig, DistilBertForTokenClassification, DistilBertTokenizer
 
@@ -47,7 +47,7 @@ ALL_MODELS = sum(
     ())
 
 MODEL_CLASSES = {
-    "bert": (BertConfig, BertForTokenClassification, BertTokenizer),
+    "bert": (BertConfig, BertForSRL, BertTokenizer),
     "roberta": (RobertaConfig, RobertaForTokenClassification, RobertaTokenizer),
     "distilbert": (DistilBertConfig, DistilBertForTokenClassification, DistilBertTokenizer)
 }

@@ -66,7 +66,7 @@ if is_torch_available():
                                 AutoModelWithLMHead)
 
     from .modeling_bert import (BertPreTrainedModel, BertModel, BertForPreTraining,
-                                BertForMaskedLM, BertForNextSentencePrediction,
+                                BertForMaskedLM, BertForNextSentencePrediction, BertForSRL,
                                 BertForSequenceClassification, BertForMultipleChoice, MTDNNModel, MTDNNModelv2, AdapterMTDNNModel, MTDNNModelTaskEmbedding,
                                 BertForTokenClassification, BertForQuestionAnswering,
                                 load_tf_weights_in_bert, BERT_PRETRAINED_MODEL_ARCHIVE_MAP)
