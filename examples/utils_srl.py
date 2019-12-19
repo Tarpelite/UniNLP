@@ -234,6 +234,7 @@ def get_labels(path):
     if path:
         with open(path, "r") as f:
             labels = f.read().splitlines()
+            labels = [x for x in labels if len(x) > 0]
         if "O" not in labels:
             labels = ["O"] + labels
         return labels
