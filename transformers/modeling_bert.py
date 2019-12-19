@@ -1987,9 +1987,9 @@ class BertForSRL(BertPreTrainedModel):
         sequence_output = outputs[0]
 
         sequence_output = self.dropout(sequence_output)
-        print("sequence_output", sequence_output.shape)
-        print("verb_seq_ids", verb_seq_ids.shape)
-        logits = self.classifier(sequence_output, verb_seq_ids)
+        # print("sequence_output", sequence_output.shape)
+        # print("verb_seq_ids", verb_seq_ids.shape)
+        logits = self.classifier(sequence_output, verb_seq_ids.expand(verb_seq_ids.shape + (,1)))
 
         outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here
         if labels is not None:
