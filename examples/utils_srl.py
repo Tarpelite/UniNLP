@@ -61,7 +61,7 @@ def read_examples_from_file(data_dir, mode):
         words = []
         labels = []
         verb_seq = []
-        for line in f:
+        for line in f.readlines():
             inputs = line.strip().strip("\n").split("|||")
             lefthand_input = inputs[0].strip().split()
             righthand_input = inputs[1].strip().split() if len(inputs) > 1 else ['O' for _ in lefthand_input]
@@ -73,7 +73,6 @@ def read_examples_from_file(data_dir, mode):
 
             assert len(words) == len(labels) == len(verb_seq)
 
-        if words:
             examples.append(InputExample(guid="%s-%d".format(mode, guid_index),
                                          words=words,
                                          labels=labels, 
