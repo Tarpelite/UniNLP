@@ -151,7 +151,7 @@ def convert_examples_to_features(examples,
     cnt_counts = []
     # last_tokens = []
     # last_label_ids = []
-    for (ex_index, example) in tqdm(enumerate(examples)):
+    for (ex_index, example) in enumerate(tqdm(examples)):
         if ex_index % 10000 == 0:
             logger.info("Writing example %d of %d", ex_index, len(examples))
 
