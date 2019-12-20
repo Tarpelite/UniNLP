@@ -631,7 +631,7 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
             if args.do_alpha:
                 alpha = outputs[0]
                 outputs = outputs[1:]
-            tmp_eval_loss, logits = outputs[:2]
+            tmp_eval_loss, logits = outputs[1:3]
 
             if args.n_gpu > 1:
                 tmp_eval_loss = tmp_eval_loss.mean()  # mean() to average on multi-gpu parallel evaluating
