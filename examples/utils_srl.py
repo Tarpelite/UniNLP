@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 class InputExample(object):
     """A single training/test example for token classification."""
 
-    def __init__(self, guid, words, labels, verb_seq):
+    def __init__(self, guid, words, labels, verb_seq, labels_BIO, labels_CRO, labels_SRL):
         """Constructs a InputExample.
 
         Args:
@@ -39,18 +39,24 @@ class InputExample(object):
         self.guid = guid
         self.words = words
         self.labels = labels
+        self.labels_BIO = labels_BIO
+        self.labels_CRO = labels_CRO
+        self.labels_SRL = labels_SRL
         self.verb_seq = verb_seq # one-hot sequence
 
 
 class InputFeatures(object):
     """A single set of features of data."""
 
-    def __init__(self, input_ids, verb_seq_ids, input_mask, segment_ids, label_ids):
+    def __init__(self, input_ids, verb_seq_ids, input_mask, segment_ids, label_ids, label_BIO_ids, label_CRO_ids, label_SRL_ids):
         self.input_ids = input_ids
         self.verb_seq_ids = verb_seq_ids
         self.input_mask = input_mask
         self.segment_ids = segment_ids
         self.label_ids = label_ids
+        self.label_BIO_ids = label_BIO_ids
+        self.label_CRO_ids = label_CRO_ids
+        self.label_SRL_ids = label_SRL_ids
 
 
 def read_examples_from_file(data_dir, mode):
@@ -60,6 +66,9 @@ def read_examples_from_file(data_dir, mode):
     with open(file_path, encoding="utf-8") as f:
         words = []
         labels = []
+        labels_BIO = [] # ["B", "I", "O"]
+        labels_CRO = [] # ["R", "C", "O"]
+        labels_SRL = [] # ["A0", "A1", ...]
         verb_seq = []
         for line in f.readlines():
             inputs = line.strip().strip("\n").split("|||")
@@ -70,12 +79,35 @@ def read_examples_from_file(data_dir, mode):
             labels = righthand_input
             verb_seq = [0]*(len(words))
             verb_seq[int(lefthand_input[0])] = 1
+            for x in labels:
+                if "B-" in x or "I-" in x:
+                    BIO_label = x[0]
+                    x = x[2:]
+                else:
+                    BIO_label = "O"
+                if "C-" in x or "R-" in x:
+                    CRO_label = x[0]
+                    x = x[2:]
+                else:
+                    CRO_label = "O"
+                
+                if len(x) > 0 and x != "O":
+                    SRL_label = x
+                else:
+                    SRL_label = "O"
+               
+                labels_BIO.append(BIO_label)
+                labels_CRO.append(CRO_label)
+                labels_SRL.append(SRL_label)
 
-            assert len(words) == len(labels) == len(verb_seq)
+            assert len(words) == len(labels) == len(verb_seq) == len(labels_BIO) == len(labels_CRO) == len(labels_SRL) 
 
             examples.append(InputExample(guid="%s-%d".format(mode, guid_index),
                                          words=words,
-                                         labels=labels, 
+                                         labels=labels,
+                                         labels_BIO=labels_BIO,
+                                         labels_CRO=labels_CRO,
+                                         labels_SRL=labels_SRL, 
                                          verb_seq=verb_seq))
             guid_index += 1
 
@@ -104,7 +136,13 @@ def convert_examples_to_features(examples,
         `cls_token_segment_id` define the segment id associated to the CLS token (0 for BERT, 2 for XLNet)
     """
 
+    SRL_labels = ["A0", "A1", "A2", "A3", "A4", "A5","AA", "AM", "V",
+                  "AM-ADV", "AM-CAU", "AM-DIR", "AM-DIS", "AM-EXT", "AM-LOC", 
+                  "AM-MNR", "AM-MOD", "AM-NEG", "AM-PNC", "AM-PRD", "AM-REC", "AM-TMP"]
     label_map = {label: i for i, label in enumerate(label_list)}
+    label_BIO_map = {label: i for i, label in enumerate(["B", "I", "O"])}
+    label_CRO_map = {label: i for i, label in enumerate(["C", "R", "O"])}
+    label_SRL_map = {label: i for i, label in enumerate(SRL_labels)}
 
     features = []
     cnt_counts = []
@@ -116,13 +154,24 @@ def convert_examples_to_features(examples,
 
         tokens = []
         label_ids = []
+        label_BIO_ids = []
+        label_CRO_ids = []
+        label_SRL_ids = []
+
         verb_seq_ids = []
-        for word, IsVerb, label in zip(example.words, example.verb_seq, example.labels):
+        for word, IsVerb, label, label_BIO, label_CRO, label_SRL in zip(example.words, example.verb_seq, example.labels, example.labels_BIO, example.labels_CRO, example.labels_SRL):
             word_tokens = tokenizer.tokenize(word)
             tokens.extend(word_tokens)
             # Use the real label id for the first token of the word, and padding ids for the remaining tokens
             label_ids.extend([label_map[label]] + [pad_token_label_id] * (len(word_tokens) - 1))
             verb_seq_ids.extend([IsVerb] + [IsVerb]*(len(word_tokens) - 1))
+            BIO_id = label_BIO_map[label_BIO]
+            label_BIO_ids.extend([BIO_id] + [BIO_id]*(len(word_tokens) - 1))
+            CRO_id = label_CRO_map[label_CRO]
+            label_CRO_ids.extend([CRO_id] + [CRO_id]*(len(word_tokens) - 1))
+            SRL_id = label_SRL_map[label_SRL]
+            label_SRL_ids.extend([SRL_id] + [SRL_id]*(len(word_tokens) - 1))
+
         # if ex_index == 0:
         #     last_tokens = tokens[-64:]
         #     last_label_ids = label_ids[-64:]
@@ -140,6 +189,9 @@ def convert_examples_to_features(examples,
             tokens = tokens[:(max_seq_length - special_tokens_count)]
             label_ids = label_ids[:(max_seq_length - special_tokens_count)]
             verb_seq_ids = verb_seq_ids[:(max_seq_length - special_tokens_count)]
+            label_BIO_ids = label_BIO_ids[:(max_seq_length - special_tokens_count)]
+            label_CRO_ids = label_CRO_ids[:(max_seq_length - special_tokens_count)]
+            label_SRL_ids = label_SRL_ids[:(max_seq_length - special_tokens_count)]
 
         # The convention in BERT is:
         # (a) For sequence pairs:
@@ -167,16 +219,25 @@ def convert_examples_to_features(examples,
             tokens += [sep_token]
             label_ids += [pad_token_label_id]
             verb_seq_ids += [0]
+            label_BIO_ids += [pad_token_label_id]
+            label_CRO_ids += [pad_token_label_id]
+            label_SRL_ids += [pad_token_label_id]
         segment_ids = [sequence_a_segment_id] * len(tokens)
 
         if cls_token_at_end:
             tokens += [cls_token]
             label_ids += [pad_token_label_id]
             verb_seq_ids += [0]
+            label_BIO_ids += [pad_token_label_id]
+            label_CRO_ids += [pad_token_label_id]
+            label_SRL_ids += [pad_token_label_id]
             segment_ids += [cls_token_segment_id]
         else:
             tokens = [cls_token] + tokens
             label_ids = [pad_token_label_id] + label_ids
+            label_BIO_ids = [pad_token_label_id] + label_BIO_ids
+            label_CRO_ids = [pad_token_label_id] + label_CRO_ids
+            label_SRL_ids = [pad_token_label_id] + label_SRL_ids
             verb_seq_ids = [0] + verb_seq_ids
             segment_ids = [cls_token_segment_id] + segment_ids
 
@@ -193,12 +254,18 @@ def convert_examples_to_features(examples,
             input_mask = ([0 if mask_padding_with_zero else 1] * padding_length) + input_mask
             segment_ids = ([pad_token_segment_id] * padding_length) + segment_ids
             label_ids = ([pad_token_label_id] * padding_length) + label_ids
+            label_BIO_ids = ([pad_token_label_id] * padding_length) + label_BIO_ids
+            label_CRO_ids = ([pad_token_label_id] * padding_length) + label_CRO_ids
+            label_SRL_ids = ([pad_token_label_id] * padding_length) + label_SRL_ids
             verb_seq_ids = ([0] * padding_length) + verb_seq_ids
         else:
             input_ids += ([pad_token] * padding_length)
             input_mask += ([0 if mask_padding_with_zero else 1] * padding_length)
             segment_ids += ([pad_token_segment_id] * padding_length)
             label_ids += ([pad_token_label_id] * padding_length)
+            label_BIO_ids += ([pad_token_label_id] * padding_length)
+            label_CRO_ids += ([pad_token_label_id] * padding_length)
+            label_SRL_ids += ([pad_token_label_id] * padding_length)
             verb_seq_ids += ([0] * padding_length)
 
         assert len(input_ids) == max_seq_length
@@ -206,6 +273,9 @@ def convert_examples_to_features(examples,
         assert len(segment_ids) == max_seq_length
         assert len(label_ids) == max_seq_length
         assert len(verb_seq_ids) == max_seq_length
+        assert len(label_BIO_ids) == max_seq_length
+        assert len(label_CRO_ids) == max_seq_length
+        assert len(label_SRL_ids) == max_seq_length
 
         if ex_index < 5:
             logger.info("*** Example ***")
@@ -222,7 +292,10 @@ def convert_examples_to_features(examples,
                               input_mask=input_mask,
                               verb_seq_ids=verb_seq_ids,
                               segment_ids=segment_ids,
-                              label_ids=label_ids))
+                              label_ids=label_ids, 
+                              label_BIO_ids = label_BIO_ids,
+                              label_CRO_ids = label_CRO_ids,
+                              label_SRL_ids=label_SRL_ids))
     
     logger.info("*** Statistics ***")
     logger.info("*** max_len:{}  min_len:{} avg_len:{}***".format(max(cnt_counts), min(cnt_counts), sum(cnt_counts) / len(cnt_counts)))

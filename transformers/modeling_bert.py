@@ -1973,17 +1973,22 @@ class BertForSRL(BertPreTrainedModel):
     def __init__(self, config):
         super(BertForSRL, self).__init__(config)
         self.num_labels= config.num_labels
-
+        self.num_BIO_labels = 3
+        self.num_CRO_labels = 3
+        self.num_SRL_labels = 22
         self.bert = BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
-        self.verb_embedding = nn.Linear(1, config.hidden_size)
 
-        self.classifier = nn.Linear(config.hidden_size, self.num_labels)
+        self.BIO_classifier = nn.Bilinear(config.hidden_size, 1, self.num_BIO_labels)
+        self.CRO_classifier = nn.Bilinear(config.hidden_size, self.num_BIO_labels, self.num_CRO_labels)
+        self.SRL_classifier = nn.Bilinear(config.hidden_size, self.CRO_classifier, self.num_SRL_labels)
+        self.label_classifier = nn.Bilinear(config.hidden_size, self.num_SRL_labels, self.num_labels)
+        # self.classifier = nn.Linear(config.hidden_size, self.num_labels)
 
         self.init_weights()
     
-    def forward(self, input_ids=None, verb_seq_ids=None, attention_mask=None, token_type_ids=None,
+    def forward(self, input_ids=None, verb_seq_ids=None, label_BIO_ids=None, label_CRO_ids=None, label_SRL_ids=None, attention_mask=None, token_type_ids=None,
                 position_ids=None, head_mask=None, inputs_embeds=None, labels=None):
         
         outputs = self.bert(input_ids,
@@ -1999,12 +2004,21 @@ class BertForSRL(BertPreTrainedModel):
         # print("sequence_output", sequence_output.shape)
         # print("verb_seq_ids", verb_seq_ids.shape)
 
-        verb_logits = self.verb_embedding(verb_seq_ids.unsqueeze(-1).float())
-        logits = self.classifier(sequence_output+ verb_logits)
+        # verb_logits = self.verb_embedding(verb_seq_ids.unsqueeze(-1).float())
+        
+        BIO_logits = self.BIO_classifier(sequence_output, verb_seq_ids.unsqueeze(-1).float())
+        CRO_logits = self.CRO_classifier(sequence_output, BIO_logits)
+        SRL_logits = self.SRL_classifier(sequence_output, CRO_logits)
+
+        logits = self.label_classifier(sequence_output, SRL_logits)
+
 
         outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here
         if labels is not None:
             loss_fct = CrossEntropyLoss()
+            loss_BIO = loss_fct(BIO_logits.view(-1, self.num_BIO_labels), label_BIO_ids.view(-1))
+            loss_CRO = loss_fct(CRO_logits.view(-1, self.num_CRO_labels), label_CRO_ids.view(-1))
+            loss_SRL = loss_fct(SRL_logits.view(-1, self.num_SRL_labels), label_SRL_ids.view(-1))
             # Only keep active parts of the loss
             if attention_mask is not None:
                 active_loss = attention_mask.view(-1) == 1
@@ -2012,7 +2026,9 @@ class BertForSRL(BertPreTrainedModel):
                 active_labels = labels.view(-1)[active_loss]
                 loss = loss_fct(active_logits, active_labels)
             else:
+                
                 loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+            loss = loss + loss_BIO + loss_CRO + loss_SRL
             outputs = (loss,) + outputs
 
         return outputs  # (loss), scores, (hidden_states), (attentions)

@@ -126,7 +126,11 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
             inputs = {"input_ids": batch[0],
                       "verb_seq_ids":batch[1],
                       "attention_mask": batch[2],
-                      "labels": batch[4]}
+                      "labels": batch[4],
+                      "label_BIO_ids":batch[5], 
+                      "label_CRO_ids":batch[6], 
+                      "label_SRL_ids": batch[7]
+                      }
             if args.model_type != "distilbert":
                 inputs["token_type_ids"]: batch[2] if args.model_type in ["bert", "xlnet"] else None  # XLM and RoBERTa don"t use segment_ids
 
@@ -304,8 +308,11 @@ def load_and_cache_examples(args, tokenizer, labels, pad_token_label_id, mode):
     all_input_mask = torch.tensor([f.input_mask for f in features], dtype=torch.long)
     all_segment_ids = torch.tensor([f.segment_ids for f in features], dtype=torch.long)
     all_label_ids = torch.tensor([f.label_ids for f in features], dtype=torch.long)
+    all_label_BIO_ids = torch.tensor([f.label_BIO_ids for f in features], dtype=torch.long)
+    all_label_CRO_ids = torch.tensor([f.label_CRO_ids for f in features], dtype=torch.long)
+    all_label_SRL_ids = torch.tensor([f.label_SRL_ids for f in features], dtype=torch.long)
 
-    dataset = TensorDataset(all_input_ids, all_verb_seq_ids, all_input_mask, all_segment_ids, all_label_ids)
+    dataset = TensorDataset(all_input_ids, all_verb_seq_ids, all_input_mask, all_segment_ids, all_label_ids, all_label_BIO_ids, all_label_CRO_ids, all_label_SRL_ids)
     return dataset
 
 
