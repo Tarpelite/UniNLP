@@ -176,7 +176,7 @@ def convert_examples_to_features(examples,
         # the entire model is fine-tuned.
         tokens_a_len = len(tokens)
         tokens += [sep_token] + verb_tokens + [sep_token]
-        label_ids += [pad_token_label_id] + [pad_token_label_id]*len(verb_tokens) + [sep_token]
+        label_ids += [pad_token_label_id] + [pad_token_label_id]*len(verb_tokens) + [pad_token_label_id]
         
         if sep_token_extra:
             # roberta uses an extra separator b/w pairs of sentences
