@@ -1411,7 +1411,7 @@ class MTDNNModelv2(BertPreTrainedModel):
         
 
         self.softmax = nn.Softmax(dim=0)
-        self.similarity = nn.CosineSimilarity(dim=0)
+        # self.similarity = nn.CosineSimilarity(dim=0)
 
 
 
@@ -1479,10 +1479,10 @@ class MTDNNModelv2(BertPreTrainedModel):
             outputs = (loss,) + outputs
         
         if do_alpha:
-            alpha_loss_func = nn.MSELoss()
-            alpha_sim = self.similarity(self.alpha_pos, self.alpha_ner) + self.similarity(self.alpha_pos, self.alpha_chunking) + self.similarity(self.alpha_ner, self.alpha_chunking)
-            alpha_loss = alpha_loss_func(alpha_sim, torch.tensor([0]).float().cuda())
-            outputs = (alpha, alpha_loss) + outputs
+            # alpha_loss_func = nn.MSELoss()
+            # alpha_sim = self.similarity(self.alpha_pos, self.alpha_ner) + self.similarity(self.alpha_pos, self.alpha_chunking) + self.similarity(self.alpha_ner, self.alpha_chunking)
+            # alpha_loss = alpha_loss_func(alpha_sim, torch.tensor([0]).float().cuda())
+            outputs = (alpha, ) + outputs
         return outputs  # (loss), scores, (hidden_states), (attentions)
         
 class AdapterLayer(nn.Module):
@@ -1977,7 +1977,9 @@ class BertForSRL(BertPreTrainedModel):
         self.bert = BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
-        self.classifier = nn.Bilinear(config.hidden_size, 1, self.num_labels)
+        self.verb_embedding = nn.Linear(1, config.hidden_size)
+
+        self.classifier = nn.Linear(config.hidden_size, self.num_labels)
 
         self.init_weights()
     
@@ -1996,7 +1998,9 @@ class BertForSRL(BertPreTrainedModel):
         sequence_output = self.dropout(sequence_output)
         # print("sequence_output", sequence_output.shape)
         # print("verb_seq_ids", verb_seq_ids.shape)
-        logits = self.classifier(sequence_output, verb_seq_ids.unsqueeze(-1).float())
+
+        verb_logits = self.verb_embedding(verb_seq_ids.unsqueeze(-1).float())
+        logits = self.classifier(sequence_output+ verb_logits)
 
         outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here
         if labels is not None:

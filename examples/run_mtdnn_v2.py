@@ -158,10 +158,10 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
             loss = outputs[0]  # model outputs are always tuple in pytorch-transformers (see doc)
             if do_alpha:
                 alpha = outputs[0]
-                alpha_loss = outputs[1]
-                loss = outputs[2]
+                # alpha_loss = outputs[1]
+                loss = outputs[1]
 
-                loss = loss + alpha_loss
+                # loss = loss + alpha_loss
 
             if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel training
@@ -509,10 +509,10 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
             loss = outputs[0]
 
             if args.do_alpha:
-                loss = outputs[2]
-                alpha_loss = outputs[1]
+                loss = outputs[1]
+                # alpha_loss = outputs[1]
                 alpha = outputs[0]     
-                loss = loss + alpha_loss
+                # loss = loss + alpha_loss
             # scale loss
             if args.n_gpu > 1:
                 loss = loss.mean()
@@ -631,7 +631,7 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
             if args.do_alpha:
                 alpha = outputs[0]
                 outputs = outputs[1:]
-            tmp_eval_loss, logits = outputs[1:3]
+            tmp_eval_loss, logits = outputs[:2]
 
             if args.n_gpu > 1:
                 tmp_eval_loss = tmp_eval_loss.mean()  # mean() to average on multi-gpu parallel evaluating
