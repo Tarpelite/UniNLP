@@ -140,7 +140,7 @@ def convert_examples_to_features(examples,
     """
 
     SRL_labels = ["A0", "A1", "A2", "A3", "A4", "A5","AA", "AM", "V", "O", 
-                  "AM-ADV", "AM-CAU", "AM-DIR", "AM-DIS", "AM-EXT", "AM-LOC", 
+                  "AM-ADV", "AM-CAU", "AM-DIR", "AM-DIS", "AM-EXT", "AM-LOC", "AM-TM",
                   "AM-MNR", "AM-MOD", "AM-NEG", "AM-PNC", "AM-PRD", "AM-REC", "AM-TMP"]
     label_map = {label: i for i, label in enumerate(label_list)}
     label_BIO_map = {label: i for i, label in enumerate(["B", "I", "O"])}
