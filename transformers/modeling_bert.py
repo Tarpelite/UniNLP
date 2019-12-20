@@ -1481,7 +1481,7 @@ class MTDNNModelv2(BertPreTrainedModel):
         if do_alpha:
             alpha_loss_func = nn.MSELoss()
             alpha_sim = self.similarity(self.alpha_pos, self.alpha_ner) + self.similarity(self.alpha_pos, self.alpha_chunking) + self.similarity(self.alpha_ner, self.alpha_chunking)
-            alpha_loss = alpha_loss_func(alpha_sim, torch.tensor([0]).float())
+            alpha_loss = alpha_loss_func(alpha_sim, torch.tensor([0]).float().cuda())
             outputs = (alpha, alpha_loss) + outputs
         return outputs  # (loss), scores, (hidden_states), (attentions)
         
