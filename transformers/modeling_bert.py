@@ -2015,6 +2015,15 @@ class BertForSRL(BertPreTrainedModel):
         print("logits shape", logits.shape)
         print("num_labels", self.num_labels)
 
+        print("BIO logits shape", BIO_logits.shape)
+        print("num_BIO_labels", self.num_BIO_labels)
+
+        print("CRO logits shape", CRO_logits.shape)
+        print("num_CRO_labels", self.num_CRO_labels)
+
+        print("SRL logits shape", SRL_logits.shape)
+        print("num_SRL_labels", self.num_SRL_labels)
+
         outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here
         if labels is not None:
             loss_fct = CrossEntropyLoss()
