@@ -302,7 +302,7 @@ def load_and_cache_examples(args, tokenizer, labels, pad_token_label_id, mode):
     all_input_ids = torch.tensor([f.input_ids for f in features], dtype=torch.long)
     all_input_mask = torch.tensor([f.input_mask for f in features], dtype=torch.long)
     all_segment_ids = torch.tensor([f.segment_ids for f in features], dtype=torch.long)
-    all_label_ids = torch.tensor([int(f.label_ids) for f in features], dtype=torch.long)
+    all_label_ids = torch.tensor([[int(x) for x in f.label_ids] for f in features], dtype=torch.long)
     dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids)
     return dataset
 
