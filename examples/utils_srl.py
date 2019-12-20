@@ -217,6 +217,9 @@ def convert_examples_to_features(examples,
         tokens += [sep_token]
         label_ids += [pad_token_label_id]
         verb_seq_ids += [0]
+        label_BIO_ids += [pad_token_label_id]
+        label_CRO_ids += [pad_token_label_id]
+        label_SRL_ids += [pad_token_label_id]
         if sep_token_extra:
             # roberta uses an extra separator b/w pairs of sentences
             tokens += [sep_token]
