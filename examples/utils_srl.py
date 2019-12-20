@@ -20,6 +20,7 @@ from __future__ import absolute_import, division, print_function
 import logging
 import os
 from io import open
+from tqdm import *
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +139,7 @@ def convert_examples_to_features(examples,
         `cls_token_segment_id` define the segment id associated to the CLS token (0 for BERT, 2 for XLNet)
     """
 
-    SRL_labels = ["A0", "A1", "A2", "A3", "A4", "A5","AA", "AM", "V",
+    SRL_labels = ["A0", "A1", "A2", "A3", "A4", "A5","AA", "AM", "V", "O", 
                   "AM-ADV", "AM-CAU", "AM-DIR", "AM-DIS", "AM-EXT", "AM-LOC", 
                   "AM-MNR", "AM-MOD", "AM-NEG", "AM-PNC", "AM-PRD", "AM-REC", "AM-TMP"]
     label_map = {label: i for i, label in enumerate(label_list)}
@@ -150,7 +151,7 @@ def convert_examples_to_features(examples,
     cnt_counts = []
     # last_tokens = []
     # last_label_ids = []
-    for (ex_index, example) in enumerate(examples):
+    for (ex_index, example) in tqdm(enumerate(examples)):
         if ex_index % 10000 == 0:
             logger.info("Writing example %d of %d", ex_index, len(examples))
 
