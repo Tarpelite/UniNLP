@@ -184,7 +184,7 @@ def convert_examples_to_features(examples,
             tokens += [sep_token]
             label_ids += [pad_token_label_id]
     
-        segment_ids = [sequence_a_segment_id] * (tokens_a_len + 1) + [sequence_b_segment_id] * len(verb_tokens)
+        segment_ids = [sequence_a_segment_id] * (tokens_a_len + 1) + [sequence_b_segment_id] * (len(verb_tokens) + 1)
 
         if cls_token_at_end:
             tokens += [cls_token]
