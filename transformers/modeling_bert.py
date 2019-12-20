@@ -1982,7 +1982,7 @@ class BertForSRL(BertPreTrainedModel):
 
         self.BIO_classifier = nn.Bilinear(config.hidden_size, 1, self.num_BIO_labels)
         self.CRO_classifier = nn.Bilinear(config.hidden_size, self.num_BIO_labels, self.num_CRO_labels)
-        self.SRL_classifier = nn.Bilinear(config.hidden_size, self.CRO_classifier, self.num_SRL_labels)
+        self.SRL_classifier = nn.Bilinear(config.hidden_size, self.num_CRO_labels, self.num_SRL_labels)
         self.label_classifier = nn.Bilinear(config.hidden_size, self.num_SRL_labels, self.num_labels)
         # self.classifier = nn.Linear(config.hidden_size, self.num_labels)
 
