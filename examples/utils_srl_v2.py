@@ -117,9 +117,9 @@ def convert_examples_to_features(examples,
                   "AM-ADV", "AM-CAU", "AM-DIR", "AM-DIS", "AM-EXT", "AM-LOC", "AM-TM",
                   "AM-MNR", "AM-MOD", "AM-NEG", "AM-PNC", "AM-PRD", "AM-REC", "AM-TMP"]
     label_map = {label: i for i, label in enumerate(label_list)}
-    label_BIO_map = {label: i for i, label in enumerate(["B", "I", "O"])}
-    label_CRO_map = {label: i for i, label in enumerate(["C", "R", "O"])}
-    label_SRL_map = {label: i for i, label in enumerate(SRL_labels)}
+    # label_BIO_map = {label: i for i, label in enumerate(["B", "I", "O"])}
+    # label_CRO_map = {label: i for i, label in enumerate(["C", "R", "O"])}
+    # label_SRL_map = {label: i for i, label in enumerate(SRL_labels)}
 
     features = []
     cnt_counts = []
