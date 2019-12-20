@@ -2011,7 +2011,9 @@ class BertForSRL(BertPreTrainedModel):
         SRL_logits = self.SRL_classifier(sequence_output, CRO_logits)
 
         logits = self.label_classifier(sequence_output, SRL_logits)
-
+        
+        print("logits shape", logits.shape)
+        print("num_labels", num_labels)
 
         outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here
         if labels is not None:
