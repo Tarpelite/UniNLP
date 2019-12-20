@@ -110,7 +110,7 @@ def read_examples_from_file(data_dir, mode):
                                          labels_CRO=labels_CRO,
                                          labels_SRL=labels_SRL, 
                                          verb_seq=verb_seq))
-            w
+            
             guid_index += 1
 
     return examples
