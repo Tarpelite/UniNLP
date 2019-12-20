@@ -230,7 +230,7 @@ def convert_examples_to_features(examples,
             logger.info("segment_ids: %s", " ".join([str(x) for x in segment_ids]))
             logger.info("label_ids: %s", " ".join([str(x) for x in label_ids]))
 
-        print(type(label_ids))
+        # print(type(label_ids))
         features.append(
                 InputFeatures(input_ids=input_ids,
                               input_mask=input_mask,
