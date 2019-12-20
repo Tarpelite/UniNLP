@@ -1408,8 +1408,12 @@ class MTDNNModelv2(BertPreTrainedModel):
         self.num_labels_pos = num_labels_pos
         self.num_labels_ner = num_labels_ner
         self.num_labels_chunking = num_labels_chunking
+        
 
         self.softmax = nn.Softmax(dim=0)
+        self.similarity = nn.CosineSimilarity(dim=0)
+
+
 
         self.init_weights()
     
@@ -1475,7 +1479,10 @@ class MTDNNModelv2(BertPreTrainedModel):
             outputs = (loss,) + outputs
         
         if do_alpha:
-            outputs = (alpha,) + outputs
+            alpha_loss_func = nn.MSELoss()
+            alpha_sim = self.similarity(self.alpha_pos, self.alpha_ner) + self.similarity(self.alpha_pos, self.alpha_chunking) + self.similarity(self.alpha_ner, self.alpha_chunking)
+            alpha_loss = alpha_loss_func(alpha_sim, torch.tensor([0]).float())
+            outputs = (alpha, alpha_loss) + outputs
         return outputs  # (loss), scores, (hidden_states), (attentions)
         
 class AdapterLayer(nn.Module):
