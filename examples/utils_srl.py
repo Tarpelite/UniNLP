@@ -64,13 +64,14 @@ def read_examples_from_file(data_dir, mode):
     guid_index = 1
     examples = []
     with open(file_path, encoding="utf-8") as f:
-        words = []
-        labels = []
-        labels_BIO = [] # ["B", "I", "O"]
-        labels_CRO = [] # ["R", "C", "O"]
-        labels_SRL = [] # ["A0", "A1", ...]
-        verb_seq = []
+        
         for line in f.readlines():
+            words = []
+            labels = []
+            labels_BIO = [] # ["B", "I", "O"]
+            labels_CRO = [] # ["R", "C", "O"]
+            labels_SRL = [] # ["A0", "A1", ...]
+            verb_seq = []
             inputs = line.strip().strip("\n").split("|||")
             lefthand_input = inputs[0].strip().split()
             righthand_input = inputs[1].strip().split() if len(inputs) > 1 else ['O' for _ in lefthand_input]
@@ -109,6 +110,7 @@ def read_examples_from_file(data_dir, mode):
                                          labels_CRO=labels_CRO,
                                          labels_SRL=labels_SRL, 
                                          verb_seq=verb_seq))
+            w
             guid_index += 1
 
     return examples
