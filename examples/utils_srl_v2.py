@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 class InputExample(object):
     """A single training/test example for token classification."""
 
-    def __init__(self, guid, words, labels):
+    def __init__(self, guid, words, labels, verb):
         """Constructs a InputExample.
 
         Args:
@@ -83,6 +83,7 @@ def read_examples_from_file(data_dir, mode):
             examples.append(InputExample(guid="%s-%d".format(mode, guid_index),
                                          words=words,
                                          labels=labels,
+                                         verb=verb
                                         ))
             
             guid_index += 1
