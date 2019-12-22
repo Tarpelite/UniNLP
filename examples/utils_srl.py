@@ -35,6 +35,7 @@ num_cpus = cpu_count()
 logger = logging.getLogger(__name__)
 
 
+
 class InputExample(object):
     """A single training/test example for token classification."""
 
@@ -124,6 +125,77 @@ def convert_examples_to_features(examples,
     # label_CRO_map = {label: i for i, label in enumerate(["C", "R", "O"])}
     # label_SRL_map = {label: i for i, label in enumerate(SRL_labels)}
 
+    features = []
+    cnt_counts = []
+    def process(example):
+        tokens = []
+        label_ids = []
+        for word, label in zip(example.words, example.labels):
+            word_tokens = tokenizer.tokenize(word)
+            tokens.extend(word_tokens)
+            label_ids.extend([label_map[label]] + [pad_token_label_id] * (len(word_tokens) - 1))
+        verb_tokens = tokenizer.tokenize(example.verb)
+
+        cnt_counts.append(len(tokens))
+        special_tokens_count = 3
+        if len(tokens) + len(verb_tokens) > max_seq_length - special_tokens_count:
+            tokens = tokens[:(max_seq_length - special_tokens_count - len(verb_tokens))]
+            label_ids = label_ids[:(max_seq_length - special_tokens_count - len(verb_tokens))]
+
+        tokens_a_len = len(tokens)
+        tokens += [sep_token] + verb_tokens + [sep_token]
+        label_ids += [pad_token_label_id] + [pad_token_label_id]*len(verb_tokens) + [pad_token_label_id]
+
+        if sep_token_extra:
+            tokens += [sep_token]
+            label_ids += [pad_token_label_id]
+        segment_ids = [sequence_a_segment_id] * (tokens_a_len + 1) + [sequence_b_segment_id] * (len(verb_tokens) + 1)
+
+        if cls_token_at_end:
+            tokens += [cls_token]
+            label_ids += [pad_token_label_id]
+            segment_ids += [cls_token_segment_id]
+            
+        else:
+            tokens = [cls_token] + tokens
+            label_ids = [pad_token_label_id] + label_ids
+            segment_ids = [cls_token_segment_id] + segment_ids
+
+        input_ids = tokenizer.convert_tokens_to_ids(tokens)
+
+        # The mask has 1 for real tokens and 0 for padding tokens. Only real
+        # tokens are attended to.
+        input_mask = [1 if mask_padding_with_zero else 0] * len(input_ids)
+
+        # Zero-pad up to the sequence length.
+        padding_length = max_seq_length - len(input_ids)
+        if pad_on_left:
+            input_ids = ([pad_token] * padding_length) + input_ids
+            input_mask = ([0 if mask_padding_with_zero else 1] * padding_length) + input_mask
+            segment_ids = ([pad_token_segment_id] * padding_length) + segment_ids
+            label_ids = ([pad_token_label_id] * padding_length) + label_ids
+
+           
+        else:
+            input_ids += ([pad_token] * padding_length)
+            input_mask += ([0 if mask_padding_with_zero else 1] * padding_length)
+            segment_ids += ([pad_token_segment_id] * padding_length)
+            label_ids += ([pad_token_label_id] * padding_length)
+           
+        assert len(input_ids) == max_seq_length
+        assert len(input_mask) == max_seq_length
+        assert len(segment_ids) == max_seq_length
+        assert len(label_ids) == max_seq_length
+
+        features.append(
+                InputFeatures(input_ids=input_ids,
+                              input_mask=input_mask,
+                              segment_ids=segment_ids,
+                              label_ids=label_ids))
+    
+        
+
+        
     features = []
     cnt_counts = []
     # last_tokens = []

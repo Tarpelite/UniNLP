@@ -1008,7 +1008,7 @@ def main():
             result, _ = evaluate(args, model, tokenizer, pos_dataset, labels_pos, pad_token_label_id, mode="dev", prefix=global_step, task="pos")
             result, _ = evaluate(args, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner")
             result, _ = evaluate(args, model, tokenizer, chunking_dataset, labels_chunking, pad_token_label_id, mode="dev", prefix=global_step, task="chunking")
-            result, _ = evaluate(args, model, tokenizer, srl_dataset, labels_srl, pad_token_label_id, mode="dev")
+            result, _ = evaluate(args, model, tokenizer, srl_dataset, labels_srl, pad_token_label_id, mode="dev", task="srl")
 
             torch.save(model, "source_model.pl")    
             logger.info("Finetuning and Evaluate")
