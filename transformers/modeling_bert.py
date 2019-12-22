@@ -1484,6 +1484,123 @@ class MTDNNModelv2(BertPreTrainedModel):
             # alpha_loss = alpha_loss_func(alpha_sim, torch.tensor([0]).float().cuda())
             outputs = (alpha, ) + outputs
         return outputs  # (loss), scores, (hidden_states), (attentions)
+
+class MTDNNModelv3(BertPreTrainedModel):
+    def __init__(self, config, num_labels_pos, num_labels_ner, num_labels_chunking, num_labels_srl, init_last=False):
+        super(MTDNNModelv3, self).__init__(config)
+
+
+        self.bert = BertModel(config)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+
+        self.classifier_pos = nn.Linear(config.hidden_size, num_labels_pos)
+        self.classifier_ner = nn.Linear(config.hidden_size, num_labels_ner)
+        self.classifier_chunking = nn.Linear(config.hidden_size, num_labels_chunking)
+        self.classifier_srl = nn.Linear(config.hidden_size, num_labels_srl)
+
+        init_value_pos = torch.zeros(config.num_hidden_layers, 1)
+        init_value_ner = torch.zeros(config.num_hidden_layers, 1)
+        init_value_chunking = torch.zeros(config.num_hidden_layers, 1)
+        init_value_srl = torch.zeros(config.num_hidden_layers, 1)
+
+        inf_value = 10
+
+        if init_last:
+            init_value_pos[-1] = inf_value
+            init_value_ner[-1] = inf_value
+            init_value_chunking[-1] = inf_value
+            init_value_srl[-1] = inf_value
+        else:
+            init_value_pos = torch.rand(config.num_hidden_layers, 1)
+            init_value_ner = torch.rand(config.num_hidden_layers, 1)
+            init_value_chunking = torch.rand(config.num_hidden_layers, 1)
+            init_value_srl = torch.rand(coonfig.num_hidden_layers, 1)
+
+        self.alpha_pos = torch.nn.Parameter(init_value_pos, requires_grad=True)
+        self.alpha_ner = torch.nn.Parameter(init_value_ner, requires_grad=True)
+        self.alpha_chunking = torch.nn.Parameter(init_value_chunking, requires_grad=True)
+        self.alpha_srl = torch.nn.Parameter(init_value_srl, requires_grad=True)
+
+        self.num_labels_pos = num_labels_pos
+        self.num_labels_ner = num_labels_ner
+        self.num_labels_chunking = num_labels_chunking
+        self.num_labels_srl = num_labels_srl
+
+        self.softmax = nn.Softmax(dim=0)
+        # self.similarity = nn.CosineSimilarity(dim=0)
+        self.init_weights()
+    
+    def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, 
+                position_ids=None, head_mask=None, inputs_embeds=None, labels=None, task_id=0, layer_id=-1, do_alpha=False):
+        
+        
+
+        outputs = self.bert(input_ids,
+                            attention_mask=attention_mask,
+                            token_type_ids=token_type_ids,
+                            position_ids=position_ids,
+                            head_mask=head_mask,
+                            inputs_embeds=inputs_embeds)
+
+        sequence_output = outputs[0]
+
+        hidden_states = outputs[-1]
+        # print(len(outputs))
+        # print(hidden_states.shape)
+        sequence_output = hidden_states[layer_id]
+
+        
+
+        if task_id == 0:
+            classifier = self.classifier_pos
+            num_labels = self.num_labels_pos
+            alpha = self.alpha_pos
+        elif task_id == 1:
+            classifier = self.classifier_ner
+            num_labels = self.num_labels_ner
+            alpha = self.alpha_ner
+        elif task_id == 2:
+            classifier = self.classifier_chunking
+            num_labels = self.num_labels_chunking
+            alpha = self.alpha_chunking
+        elif task_id == 3:
+            classifier = self.classifier_srl
+            num_labels = self.num_labels_srl
+            alpha = self.alpha_srl
+
+        if do_alpha:
+            alpha = self.softmax(alpha)
+            # print("alpha shape", alpha.shape)
+            # print(alpha)
+            hidden_states = hidden_states[1:]
+            hidden_states = torch.stack(hidden_states)   # [num_hidden_layers, batch_size, seq_len, hidden_size]
+            hidden_states = hidden_states.permute(1,2,3,0)  # [batch_size, seq_len, hidden_size, num_hidden_layers]
+            sequence_output = torch.matmul(hidden_states, alpha).squeeze(-1) # [batch_size, seq_len, hidden_size]
+
+        sequence_output = self.dropout(sequence_output)
+        logits = classifier(sequence_output)
+
+        outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here
+
+
+        if labels is not None:
+            loss_fct = CrossEntropyLoss()
+            # Only keep active parts of the loss
+            if attention_mask is not None:
+                active_loss = attention_mask.view(-1) == 1
+                active_logits = logits.view(-1, num_labels)[active_loss]
+                active_labels = labels.view(-1)[active_loss]
+                loss = loss_fct(active_logits, active_labels)
+            else:
+                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+            outputs = (loss,) + outputs
+        
+        if do_alpha:
+            # alpha_loss_func = nn.MSELoss()
+            # alpha_sim = self.similarity(self.alpha_pos, self.alpha_ner) + self.similarity(self.alpha_pos, self.alpha_chunking) + self.similarity(self.alpha_ner, self.alpha_chunking)
+            # alpha_loss = alpha_loss_func(alpha_sim, torch.tensor([0]).float().cuda())
+            outputs = (alpha, ) + outputs
+        return outputs  # (loss), scores, (hidden_states), (attentions)
         
 class AdapterLayer(nn.Module):
     def __init__(self,config):
