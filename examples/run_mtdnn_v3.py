@@ -504,8 +504,8 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
 
     # prepare optimizer and schedule (linear warmup and decay)
     no_decay = ['bias', 'LayerNorm.weight']
-    alpha_sets = ['alpha_pos', 'alpha_ner', 'alpha_chunking']
-    srl_sets = ['alpha_srl']
+    alpha_sets = ['alpha_pos', 'alpha_ner', 'alpha_chunking', 'alpha_srl']
+    # srl_sets = ['alpha_srl']
     optimizer_grouped_parameters = [
         {'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in (no_decay + alpha_sets))], 'weight_decay': args.weight_decay},
         {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.0},
