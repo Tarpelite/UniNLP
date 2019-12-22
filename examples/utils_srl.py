@@ -28,6 +28,9 @@ import logging
 import os
 from io import open
 from tqdm import *
+from multiprocessing import Pool, cpu_count
+
+num_cpus = cpu_count()
 
 logger = logging.getLogger(__name__)
 

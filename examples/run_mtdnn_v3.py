@@ -573,6 +573,7 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
 
             inputs = {"input_ids":input_ids, 
                       "attention_mask":input_mask, 
+                      "token_type_ids":segment_ids,
                       "labels":label_ids, 
                       "task_id":task_id, 
                       "layer_id":layer_id,
@@ -699,6 +700,7 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
         with torch.no_grad():
             inputs = {"input_ids": batch[0],
                       "attention_mask": batch[1],
+                      "token_type_ids":batch[2],
                       "labels": batch[3], 
                       "task_id":task_id, 
                       "layer_id": layer_id,
