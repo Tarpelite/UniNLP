@@ -477,10 +477,10 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunk
 
     srl_features_batches = []
     cnt = 0
-    while cnt + mini_batch_size < len(chunking_features):
+    while cnt + mini_batch_size < len(srl_features):
         batch_t = []
         for i in range(cnt, cnt + mini_batch_size):
-            batch_t.append(chunking_features[i])
+            batch_t.append(srl_features[i])
         chunking_features_batches.append(batch_t)
         cnt += mini_batch_size
     batch_t = []
@@ -583,7 +583,7 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
             if args.do_alpha:
                 loss = outputs[1]
                 # alpha_loss = outputs[1]
-                alpha = outputs[0]     
+                # alpha = outputs[0]     
                 # loss = loss + alpha_loss
             # scale loss
             if args.n_gpu > 1:
@@ -629,7 +629,7 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
                 scheduler.step()  # Update learning rate schedule
                 optimizer.step()
                 model.zero_grad()
-                global_step += 1
+                global_step += 1 
 
                 if args.local_rank in [-1, 0] and args.logging_steps > 0 and global_step % args.logging_steps == 0:
                     # Log metrics
