@@ -194,7 +194,7 @@ def convert_examples_to_features(examples,
         features.append(in_f)
         return in_f 
     with Pool(num_cpus) as p:
-        results = list(tqdm(p.imap(solve, examples), total=len(examples)))
+        results = list(tqdm(p.imap(process, examples), total=len(examples)))
 
         
     # features = []
