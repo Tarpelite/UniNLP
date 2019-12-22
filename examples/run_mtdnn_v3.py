@@ -82,7 +82,7 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
 
     # Prepare optimizer and schedule (linear warmup and decay)
     no_decay = ["bias", "LayerNorm.weight"]
-    alpha_sets = ["alpha_pos", "alpha_ner"]
+    alpha_sets = ["alpha_pos", "alpha_ner", "alpha_chunking", "alpha_srl"]
 
     optimizer_grouped_parameters = [
         {"params": [p for n, p in model.named_parameters() if not any(nd in n for nd in (no_decay + alpha_sets))],
@@ -139,7 +139,9 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
     elif task == "chunking":
         task_id = 2
         layer_id = args.layer_id_chunking
-    
+    elif task == "srl":
+        task_id = 3
+        layer_id = args.layer_id_srl
 
     if args.ft_with_last_layer:
         do_alpha=False
@@ -192,9 +194,11 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
                     alpha_pos = softmax(model.module.alpha_pos).detach().cpu().numpy()[:num_layers]
                     alpha_ner = softmax(model.module.alpha_ner).detach().cpu().numpy()[:num_layers]
                     alpha_chunking = softmax(model.module.alpha_chunking).detach().cpu().numpy()[:num_layers]
+                    alpha_srl = softmax(model.module.alpha_srl).detach().cpu().numpy()[:num_layers]
                     print("alpha_pos", alpha_pos)
                     print("alpha_ner", alpha_ner)
                     print("alpha_chunking", alpha_chunking)
+                    print("alpha_srl", alpha_srl)
 
             tr_loss += loss.item()
             if (step + 1) % args.gradient_accumulation_steps == 0:
