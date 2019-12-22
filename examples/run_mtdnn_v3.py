@@ -481,7 +481,7 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunk
         batch_t = []
         for i in range(cnt, cnt + mini_batch_size):
             batch_t.append(srl_features[i])
-        chunking_features_batches.append(batch_t)
+        srl_features_batches.append(batch_t)
         cnt += mini_batch_size
     batch_t = []
     for i in range(cnt, len(srl_features)):
@@ -573,6 +573,7 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
 
             inputs = {"input_ids":input_ids, 
                       "attention_mask":input_mask, 
+                      "token_type_ids":segment_ids,
                       "labels":label_ids, 
                       "task_id":task_id, 
                       "layer_id":layer_id,
@@ -699,6 +700,7 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
         with torch.no_grad():
             inputs = {"input_ids": batch[0],
                       "attention_mask": batch[1],
+                      "token_type_ids":batch[2],
                       "labels": batch[3], 
                       "task_id":task_id, 
                       "layer_id": layer_id,
@@ -958,7 +960,7 @@ def main():
         train_dataset = load_and_cache_train_examples(args, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, pad_token_label_id)
         # print("dataset lens", len(train_dataset))
         # logger.info("first dataset lens :{}".format(type(train_dataset[0])))
-        global_step, tr_loss, _ = train(args, train_dataset, model, tokenizer, labels_pos, labels_ner, labels_srl, labels_chunking, pad_token_label_id)
+        global_step, tr_loss, _ = train(args, train_dataset, model, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, pad_token_label_id)
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 
     # Saving best-practices: if you use defaults names for the model, you can reload it using from_pretrained()
@@ -994,7 +996,7 @@ def main():
         logger.info("Evaluate the following checkpoints: %s", checkpoints)
         for checkpoint in checkpoints:
             global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
-            model = model_class.from_pretrained(checkpoint, num_labels_pos=num_labels_pos, num_labels_ner=num_labels_ner, num_labels_chunking=num_labels_chunking)
+            model = model_class.from_pretrained(checkpoint, num_labels_pos=num_labels_pos, num_labels_ner=num_labels_ner, num_labels_chunking=num_labels_chunking, num_labels_srl=num_labels_srl)
             model.to(args.device)
         
 
