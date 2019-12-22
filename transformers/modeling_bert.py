@@ -1514,7 +1514,7 @@ class MTDNNModelv3(BertPreTrainedModel):
             init_value_pos = torch.rand(config.num_hidden_layers, 1)
             init_value_ner = torch.rand(config.num_hidden_layers, 1)
             init_value_chunking = torch.rand(config.num_hidden_layers, 1)
-            init_value_srl = torch.rand(coonfig.num_hidden_layers, 1)
+            init_value_srl = torch.rand(config.num_hidden_layers, 1)
 
         self.alpha_pos = torch.nn.Parameter(init_value_pos, requires_grad=True)
         self.alpha_ner = torch.nn.Parameter(init_value_ner, requires_grad=True)
