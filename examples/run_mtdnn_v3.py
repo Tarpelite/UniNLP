@@ -192,7 +192,10 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
 
                 
                 print("loss", loss.item())
-                if args.do_alpha:
+                if args.model_type.lower() == "task_embedding":
+                    print("alpha", alpha[:num_layers])
+
+                elif args.do_alpha:
                     alpha_pos = softmax(model.module.alpha_pos).detach().cpu().numpy()[:num_layers]
                     alpha_ner = softmax(model.module.alpha_ner).detach().cpu().numpy()[:num_layers]
                     alpha_chunking = softmax(model.module.alpha_chunking).detach().cpu().numpy()[:num_layers]
@@ -617,8 +620,10 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
                       "do_alpha":args.do_alpha}
             outputs = model(**inputs)
             loss = outputs[0]
-
-            if args.do_alpha:
+            if args.model_type.lower() == "task_embedding":
+                alpha = outputs[0]
+            
+            elif args.do_alpha:
                 loss = outputs[1]
                 # alpha_loss = outputs[1]
                 # alpha = outputs[0]     
@@ -641,8 +646,10 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
             if (step + 1 ) % 100 == 0:
                 
                 print("loss", loss.item())
+                if args.model_type.lower() == "task_embedding":
+                    print("alpha", alpha[:num_layers])
 
-                if args.do_alpha:
+                elif args.do_alpha:
                     alpha_pos = softmax(model.module.alpha_pos).detach().cpu().numpy()[:num_layers]
                     alpha_ner = softmax(model.module.alpha_ner).detach().cpu().numpy()[:num_layers]
                     alpha_chunking = softmax(model.module.alpha_chunking).detach().cpu().numpy()[:num_layers]
