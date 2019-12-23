@@ -253,7 +253,7 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, chunkin
         torch.distributed.barrier()
 
     # Load data features from cache or dataset file
-    cached_features_file = os.path.join(args.data_dir, "cached_{}_{}_{}".format("dev",
+    cached_features_file = os.path.join(args.pos_data_dir, "cached_{}_{}_{}".format("dev",
         list(filter(None, args.model_name_or_path.split("/"))).pop(),
         str(args.max_seq_length)))
 
@@ -382,7 +382,7 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunk
     if args.local_rank not in [-1, 0] and not evaluate:
         torch.distributed.barrier()
 
-    cached_features_file = os.path.join(args.data_dir, "cached_{}_{}_{}".format("mtTrain",
+    cached_features_file = os.path.join(args.pos_data_dir, "cached_{}_{}_{}".format("mtTrain",
         list(filter(None, args.model_name_or_path.split("/"))).pop(),
         str(args.max_seq_length)))
     
