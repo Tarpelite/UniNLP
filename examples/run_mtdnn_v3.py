@@ -57,7 +57,7 @@ ALL_MODELS = sum(
 
 MODEL_CLASSES = {
     "bert":(BertConfig, MTDNNModel, BertTokenizer),
-    "task_embedding":(BertConfig, TaskEmbedddingModel, BertTokenizer)
+    "task_embedding":(BertConfig, TaskEmbeddingModel, BertTokenizer)
 }
 
 def set_seed(args):
