@@ -2129,17 +2129,17 @@ class BertForSRL(BertPreTrainedModel):
 
         logits = self.label_classifier(sequence_output, SRL_logits)
         
-        print("logits shape", logits.shape)
-        print("num_labels", self.num_labels)
+        # print("logits shape", logits.shape)
+        # print("num_labels", self.num_labels)
 
-        print("BIO logits shape", BIO_logits.shape)
-        print("num_BIO_labels", self.num_BIO_labels)
+        # print("BIO logits shape", BIO_logits.shape)
+        # print("num_BIO_labels", self.num_BIO_labels)
 
-        print("CRO logits shape", CRO_logits.shape)
-        print("num_CRO_labels", self.num_CRO_labels)
+        # print("CRO logits shape", CRO_logits.shape)
+        # print("num_CRO_labels", self.num_CRO_labels)
 
-        print("SRL logits shape", SRL_logits.shape)
-        print("num_SRL_labels", self.num_SRL_labels)
+        # print("SRL logits shape", SRL_logits.shape)
+        # print("num_SRL_labels", self.num_SRL_labels)
 
         outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here
         if labels is not None:
@@ -2162,4 +2162,106 @@ class BertForSRL(BertPreTrainedModel):
         return outputs  # (loss), scores, (hidden_states), (attentions)
 
 
+class MTDNNModelTaskEmbeddingV2(BertPreTrainedModel):
+    def __init__(self, config, num_labels_pos, num_labels_ner, num_labels_chunking, num_labels_srl, init_last=False):
+        super(MTDNNModelTaskEmbeddingV2, self).__init__(config)
+
+        self.bert = BertModel(config)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+
+        self.classifier_pos = nn.Linear(config.hidden_size, num_labels_pos)
+        self.classifier_ner = nn.Linear(config.hidden_size, num_labels_ner)
+        self.classifier_chunking = nn.Linear(config.hidden_size, num_labels_chunking)
+        self.classifier_srl = nn.Linear(config.hidden_size, num_labels_srl)
+
+        num_tasks = 4
+        self.task_embedding = nn.Embedding(num_tasks, config.hidden_size)
+
+        self.w1 = nn.Linear(config.hidden_size, 1)
+        self.w2 = nn.Linear(config.hidden_size, 1)
+
+        self.num_labels_pos = num_labels_pos
+        self.num_labels_ner = num_labels_ner
+        self.num_labels_chunking  = num_labels_chunking
+        self.num_labels_srl = num_labels_srl
+
+        self.softmax = nn.Softmax(dim=0)
         
+        self.init_weights()
+    
+    def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, 
+                        position_ids=None, head_mask=None, input_embeds=None, labels=None, 
+                        task_id=0, layer_id=-1, do_alpha=True):
+        
+        outputs = self.bert(input_ids, 
+                            attention_mask=attention_mask,
+                            token_type_ids=token_type_ids,
+                            position_ids=position_ids,
+                            head_mask=head_mask,
+                            input_embeds=input_embeds)
+        
+        sequence_output = outputs[0]
+
+        hidden_states = outputs[-1]
+        sequence_output = hidden_states[layer_id]
+
+        if task_id == 0:
+            classifier = self.classifier_pos
+            num_labels = self.num_labels_pos
+        
+        elif task_id == 1:
+            classifier = self.classifier_ner
+            num_labels = self.num_labels_ner
+
+        elif task_id == 2:
+            classifier = self.classifier_chunking
+            num_labels = self.num_labels_chunking
+        
+        elif task_id == 3:
+            classifier = self.classifier_srl
+            num_labels = self.num_labels_srl
+        
+        task_embedding = self.task_embedding(torch.tensor([task_id]).cuda()).view(-1)
+        hidden_states = hidden_states[1:]
+        hidden_states = torch.stack(hidden_states)   # [num_hidden_layers, batch_size, seq_len, hidden_size]
+
+
+
+        # alpha = w1*hidden_states + w2*task_embedding + bias 
+        out1 = self.w1(hidden_states) #[num_hidden_layers, batch_size, seq_len, 1]
+        task_embedding = task_embedding.expand(hidden_states.size(0), hidden_states.size(1), task_embedding.size(0)) # [num_hidden_layers, batch_size, hidden_size]
+        out2 = self.w2(task_embedding) # [num_hidden_layers, batch_size, 1]
+        alpha = out1.squeeze(-1) + out2 # [num_hidden_layers, batch_size, seq_len]
+        
+        alpha = self.softmax(alpha).permute(1, 0, 2) #[batch_size, num_hidden_layers, seq_len]
+
+        alpha_vis = torch.mean(alpha, dim=0)
+
+        hidden_states = hidden_states.permute(1,0,2,3)  # [batch_size, num_hidden_layers, seq_len, hidden_size]
+
+        alpha = alpha.view(alpha.size() + (1,)).expand(alpha.size() + (hidden_states.size(3), )) #[batch_size, num_hidden_layers, seq_len, hidden_size]
+
+        sequence_output = torch.sum(alpha*hidden_states, dim=1) #[batch_size, seq_len, hidden_size]
+
+
+        sequence_output = self.dropout(sequence_output)
+        logits = classifier(sequence_output)
+
+        outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here
+
+
+        if labels is not None:
+            loss_fct = CrossEntropyLoss()
+            # Only keep active parts of the loss
+            if attention_mask is not None:
+                active_loss = attention_mask.view(-1) == 1
+                active_logits = logits.view(-1, num_labels)[active_loss]
+                active_labels = labels.view(-1)[active_loss]
+                loss = loss_fct(active_logits, active_labels)
+            else:
+                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+            outputs = (loss,) + outputs
+        
+        if do_alpha:
+            outputs = (alpha_vis,) + outputs
+        return outputs  # (loss), scores, (hidden_states), (attentions)
