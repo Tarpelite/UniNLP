@@ -2190,7 +2190,7 @@ class MTDNNModelTaskEmbeddingV2(BertPreTrainedModel):
         self.init_weights()
     
     def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, 
-                        position_ids=None, head_mask=None, input_embeds=None, labels=None, 
+                        position_ids=None, head_mask=None, inputs_embeds=None, labels=None, 
                         task_id=0, layer_id=-1, do_alpha=True):
         
         outputs = self.bert(input_ids, 
@@ -2198,7 +2198,7 @@ class MTDNNModelTaskEmbeddingV2(BertPreTrainedModel):
                             token_type_ids=token_type_ids,
                             position_ids=position_ids,
                             head_mask=head_mask,
-                            input_embeds=input_embeds)
+                            inpust_embeds=inputs_embeds)
         
         sequence_output = outputs[0]
 
