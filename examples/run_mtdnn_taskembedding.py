@@ -79,7 +79,7 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
 
     # Prepare optimizer and schedule (linear warmup and decay)
     no_decay = ["bias", "LayerNorm.weight"]
-    alpha_sets = ["alpha_pos", "alpha_ner"]
+    alpha_sets = ["alpha_pos", "alpha_ner", "alpha_chunking"]
 
     optimizer_grouped_parameters = [
         {"params": [p for n, p in model.named_parameters() if not any(nd in n for nd in (no_decay + alpha_sets))],
