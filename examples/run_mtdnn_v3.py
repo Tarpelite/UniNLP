@@ -165,7 +165,7 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
 
             outputs = model(**inputs)
             loss = outputs[0]  # model outputs are always tuple in pytorch-transformers (see doc)
-            if do_alpha:
+            if do_alpha or args.model_type.lower() == "task_embedding":
                 alpha = outputs[0]
                 # alpha_loss = outputs[1]
                 loss = outputs[1]
@@ -621,6 +621,7 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
             loss = outputs[0]
             if args.model_type.lower() == "task_embedding":
                 alpha = outputs[0]
+                loss = outputs[1]
             
             elif args.do_alpha:
                 loss = outputs[1]
