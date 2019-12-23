@@ -257,7 +257,7 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, chunkin
         list(filter(None, args.model_name_or_path.split("/"))).pop(),
         str(args.max_seq_length)))
 
-    if os.exists(cached_features_file) and not args.overwrite_cache:
+    if os.path.exists(cached_features_file) and not args.overwrite_cache:
         logger.info("Loading features from cached file %s", cached_features_file)
         pos_features, ner_features, chunking_features, srl_features = torch.load(cached_features_file)
 
@@ -386,7 +386,7 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunk
         list(filter(None, args.model_name_or_path.split("/"))).pop(),
         str(args.max_seq_length)))
     
-    if os.exists(cached_features_file) and not args.overwrite_cache:
+    if os.path.exists(cached_features_file) and not args.overwrite_cache:
         logger.info("Loading features from cached file %s", cached_features_file)
         pos_features, ner_features, chunking_features, srl_features = torch.load(cached_features_file)
     else:
