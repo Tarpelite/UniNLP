@@ -188,8 +188,7 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
             else:
                 loss.backward()
 
-            if (step + 1) % 100 == 0 and do_alpha:
-
+            if (step + 1) % 100 == 0 :
                 
                 print("loss", loss.item())
                 if args.model_type.lower() == "task_embedding":
