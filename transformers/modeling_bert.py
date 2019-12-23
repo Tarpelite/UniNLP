@@ -2198,7 +2198,7 @@ class MTDNNModelTaskEmbeddingV2(BertPreTrainedModel):
                             token_type_ids=token_type_ids,
                             position_ids=position_ids,
                             head_mask=head_mask,
-                            inpust_embeds=inputs_embeds)
+                            inputs_embeds=inputs_embeds)
         
         sequence_output = outputs[0]
 
