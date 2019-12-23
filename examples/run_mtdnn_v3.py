@@ -257,7 +257,12 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, chunkin
         torch.distributed.barrier()
 
     # Load data features from cache or dataset file
-    cached_features_file = os.path.join(args.pos_data_dir, "cached_{}_{}_{}".format("dev",
+    if is_ft:
+        prefix = "dev_ft"
+    else:
+        prefix = "dev"
+        
+    cached_features_file = os.path.join(args.pos_data_dir, "cached_{}_{}_{}".format(prefix,
         list(filter(None, args.model_name_or_path.split("/"))).pop(),
         str(args.max_seq_length)))
 

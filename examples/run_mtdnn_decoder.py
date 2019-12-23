@@ -15,22 +15,6 @@ from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, Tenso
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
 
-from utils_ner import convert_examples_to_features as convert_examples_to_features_ner
-from utils_ner import get_labels as get_labels_ner
-from utils_ner import read_examples_from_file as read_examples_from_file_ner
-
-
-from utils_pos import convert_examples_to_features as convert_examples_to_features_pos
-from utils_pos import get_labels as get_labels_pos
-from utils_pos import read_examples_from_file as read_examples_from_file_pos
-
-from utils_chunking import convert_examples_to_features as convert_examples_to_features_chunking
-from utils_chunking import get_labels as get_labels_chunking
-from utils_chunking import read_examples_from_file as read_examples_from_file_chunking
-
-from utils_srl import convert_examples_to_features as convert_examples_to_features_srl
-from utils_srl import get_labels as get_labels_srl
-from utils_srl import read_examples_from_file as read_examples_from_file_srl
 
 import torch.nn as nn
 from torch.optim import Adam
@@ -55,10 +39,134 @@ MODEL_CLASSES = {
 }
 
 
+class Decoder(object):
+
+    def __init__(self, 
+                special_tokens_count = 2,
+                sep_token = "[SEP]",
+                sequence_a_segment_id = 0,
+                cls_token_segment_id = 1,
+                cls_token="[CLS]",
+                pad_token=0,
+                pad_token_segment_id=0,
+                model_type="bert"):
+        
+        self.MODEL_CLASSES = {
+            "bert":(BertConfig, MTDNNModel, BertTokenizer),
+            "task_embedding":(BertConfig, TaskEmbeddingModel, BertTokenizer)
+        }
+        self.special_tokens_count = special_tokens_count
+        self.sep_token = sep_token
+        self.sequence_a_segment_id = sequence_a_segment_id
+        self.cls_token_segment_id = cls_token_segment_id
+        self.cls_token = cls_token
+        self.pad_token = pad_token
+        self.pad_token_segment_id = pad_token_segment_id
+        self.model_type = model_type
+
+    def get_labels(self, pos_labels_fn, ner_labels_fn, chunking_labels_fn, srl_labels_fn):
+
+        with open(pos_labels_fn, "r") as f:
+            labels_pos = f.read().splitlines()
+            if "X" not in labels_pos:
+                labels_pos += ["X"]
+            self.labels_pos = labels_pos 
+        
+        with open(ner_labels_fn, "r") as f:
+            labels_ner = f.read().splitlines()
+            if "O" not in labels_ner:
+                labels_ner = ["O"] + labels_ner
+            self.labels_ner = labels_ner
+
+        with open(chunking_labels_fn, "r") as f:
+            labels_chunking = f.read().splitlines()
+            
+
+
+
+    def setup_model(self, no_cuda=False):
+        self.device  =  torch.device("cuda" if torch.cuda.is_available() and not no_cuda else "cpu")
+        
+        config_class, model_clss, tokenizer_class = self.MODEL_CLASSES[self.model_type]
+
+        
+
+        
+
+        
+
+special_tokens_count = 2
+sep_token = "[SEP]"
+sequence_a_segment_id = 0
+cls_token_segment_id = 1
+cls_token = "[CLS]"
+pad_token = 0
+pad_token_segment_id = 0
 
 def decode_pos(args, input_text, model, tokenizer):
 
+    # load labels
+    label_path = args.label_pos
+    with open(path, "r") as f:
+        labels = f.readlines().splitlines()
+    if "X" not in labels:
+        labels = labels + ["X"]
+    
+    label_map = {label: i for i, label in enumerate(labels)}
+    
 
+    tokens = tokenizer.tokenize(input_text)
+    
+
+    max_seq_length = args.max_seq_length
+    if len(tokens) > max_seq_length - special_tokens_count:
+        tokens = tokens[:(max_seq_length - special_tokens_count)]
+    
+    valid_length = len(tokens)
+    tokens += [sep_token]
+    segment_ids = [sequence_a_segment_id]*len(tokens)
+
+    tokens = [cls_token]
+    max_len = len(tokens)
+    segment_ids += [cls_token_segment_id]
+
+    input_mask = [1 if mask_padding_with_zero else 0] * len(input_ids)
+
+    padding_length = max_seq_length - len(input_ids)
+
+    input_ids += ([pad_token] * padding_length)
+    input_mask += ([0 if mask_padding_with_zero else 1] * padding_length)
+    segment_ids += ([pad_token_segment_id]*padding_length)
+
+    with torch.no_grad():
+        inputs = {"input_ids": input_ids, 
+                  "input_mask": input_mask,
+                  "task_id": 0, 
+                  "token_type_ids":segment_ids}
+
+        outputs = model(**inputs)
+    
+    _, _, logits = outputs[:3]
+    pres = logits.squeeze().detach().cpu().numpy()
+    preds = np.argmax(preds, axis=1)[1:valid_length + 1]
+    tokens = tokens[1:valid_length + 1]
+
+    pos_results = []
+    r_list = []
+    for tk, pred in zip(token_list, preds):
+        if tk.startswith('##') and len(r_list) > 0:
+            r_list[-1] = r_list[-1] + tk[2:]
+            pos_results[-1] = pos_results[-1] 
+        else:
+            r_list.append(tk)
+            pos_results.append(pred)
+    
+    return pos_results, r_list
+
+def decode_ner(args, input_text, model, tokenizer):
+
+
+ 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_type", default=None, type=str, required=True, 
