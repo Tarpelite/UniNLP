@@ -1110,7 +1110,7 @@ def main():
             api = "https://sc.ftqq.com/SCU47715T1085ec82936ebfe2723aaa3095bb53505ca315d2865a0.send"
             
             data = {
-                "text": args.description,
+                "text": args.task_description,
                 "data": "+ ".join([str(key) + " : " + str(msg_dict[key]) + "\n" for key in msg_dict])
 
             }
