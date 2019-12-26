@@ -1109,12 +1109,13 @@ def main():
         if args.send_msg:
             api = "https://sc.ftqq.com/SCU47715T1085ec82936ebfe2723aaa3095bb53505ca315d2865a0.send"
             
+            text = "+ ".join([str(key) + " : " + str(msg_dict[key]) + "\n" for key in msg_dict])
             data = {
                 "text": args.task_description,
-                "data": "+ ".join([str(key) + " : " + str(msg_dict[key]) + "\n" for key in msg_dict])
+                "desp": text
 
             }
-
+            print(text)
             requests.post(api, data=data)
 
 
