@@ -1111,9 +1111,11 @@ def main():
             
             data = {
                 "text": args.description,
-                "data": "+".join([str(key) + " : " + str(msg_dict[key]) for key in msg_dict])
+                "data": "+ ".join([str(key) + " : " + str(msg_dict[key]) + "\n" for key in msg_dict])
 
             }
+
+            requests.post(api, data=data)
 
 
 
