@@ -35,6 +35,7 @@ from utils_srl import read_examples_from_file as read_examples_from_file_srl
 import torch.nn as nn
 from torch.optim import Adam
 import copy
+import requests
 
 from transformers import AdamW, get_linear_schedule_with_warmup
 from transformers import WEIGHTS_NAME, BertConfig, BertForTokenClassification, BertTokenizer
@@ -261,7 +262,7 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, chunkin
         prefix = "dev_ft"
     else:
         prefix = "dev"
-        
+
     cached_features_file = os.path.join(args.pos_data_dir, "cached_{}_{}_{}".format(prefix,
         list(filter(None, args.model_name_or_path.split("/"))).pop(),
         str(args.max_seq_length)))
@@ -916,9 +917,12 @@ def main():
     parser.add_argument("--server_ip", type=str, default="", help="For distant debugging.")
     parser.add_argument("--server_port", type=str, default="", help="For distant debugging.")
     parser.add_argument("--use_adapter", action="store_true")
+    parser.add_argument("--send_msg", action="store_true")
+    parser.add_argument("--task_description", type=str, help="for collecting results")
     args = parser.parse_args()
 
 
+    
     layer_id_pos = args.layer_id_pos
     layer_id_ner = args.layer_id_ner
     layer_id_chunking = args.layer_id_chunking
@@ -1043,6 +1047,7 @@ def main():
             checkpoints = list(os.path.dirname(c) for c in sorted(glob.glob(args.output_dir + "/**/" + WEIGHTS_NAME, recursive=True)))
             logging.getLogger("pytorch_transformers.modeling_utils").setLevel(logging.WARN)  # Reduce logging
         logger.info("Evaluate the following checkpoints: %s", checkpoints)
+        msg_dict = {}
         for checkpoint in checkpoints:
             global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
             model = model_class.from_pretrained(checkpoint, num_labels_pos=num_labels_pos, num_labels_ner=num_labels_ner, num_labels_chunking=num_labels_chunking, num_labels_srl=num_labels_srl)
@@ -1054,32 +1059,45 @@ def main():
             
             logger.info("Evaluate before finetune")
 
-            result, _ = evaluate(args, model, tokenizer, pos_dataset, labels_pos, pad_token_label_id, mode="dev", prefix=global_step, task="pos")
-            result, _ = evaluate(args, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner")
-            result, _ = evaluate(args, model, tokenizer, chunking_dataset, labels_chunking, pad_token_label_id, mode="dev", prefix=global_step, task="chunking")
-            result, _ = evaluate(args, model, tokenizer, srl_dataset, labels_srl, pad_token_label_id, mode="dev", task="srl")
+            result_pos_no_ft, _ = evaluate(args, model, tokenizer, pos_dataset, labels_pos, pad_token_label_id, mode="dev", prefix=global_step, task="pos")
+            result_ner_no_ft, _ = evaluate(args, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner")
+            result_chunking_no_ft, _ = evaluate(args, model, tokenizer, chunking_dataset, labels_chunking, pad_token_label_id, mode="dev", prefix=global_step, task="chunking")
+            result_srl_no_ft, _ = evaluate(args, model, tokenizer, srl_dataset, labels_srl, pad_token_label_id, mode="dev", task="srl")
 
+            msg_dict["pos_no_ft"] = result_pos_no_ft["pos_accuracy"]
+            msg_dict["ner_no_ft"] = result_ner_no_ft["ner_f1"]
+            msg_dict["chunking_no_ft"] = result_chunking_no_ft["chunking_f1"]
+            msg_dict["srl_no_ft"] = result_srl_no_ft["srl_f1"]
+
+            
             torch.save(model, "source_model.pl")    
             logger.info("Finetuning and Evaluate")
 
             # POS tag
             _, _, model = finetune(args, pos_dataset_ft, model, tokenizer, labels_pos, pad_token_label_id, task="pos")
             result, _ = evaluate(args, model, tokenizer, pos_dataset, labels_pos, pad_token_label_id, mode="dev", prefix=global_step, task="pos")
-            
+
+            msg_dict["pos_after_ft"] = result["pos_accuracy"] 
             # NER
             model = torch.load("source_model.pl")
             _, _, model = finetune(args, ner_dataset_ft, model, tokenizer,  labels_ner, pad_token_label_id, task="ner")
             result, _ = evaluate(args, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner")
            
+            msg_dict["ner_after_ft"] = result["ner_f1"]
+
             # Chunking
             model = torch.load("source_model.pl")
             _, _, model = finetune(args, chunking_dataset_ft, model, tokenizer,  labels_chunking, pad_token_label_id, task="chunking")
             result, _ = evaluate(args, model, tokenizer, chunking_dataset, labels_chunking, pad_token_label_id, mode="dev", prefix=global_step, task="chunking")
 
+            msg_dict["chunking_after_ft"] = result["chunking_f1"]
+
             # SRL
             model = torch.load("source_model.pl")
             _, _, model = finetune(args, srl_dataset_ft, model, tokenizer,  labels_srl, pad_token_label_id, task="srl")
             result, _ = evaluate(args, model, tokenizer, srl_dataset, labels_srl, pad_token_label_id, mode="dev", prefix=global_step, task="srl")
+
+            msg_dict["srl_after_ft"] = result["srl_f1"]
 
         
 
@@ -1088,6 +1106,15 @@ def main():
             for key in sorted(results.keys()):
                 writer.write("{} = {}\n".format(key, str(results[key])))
         
+        if args.send_msg:
+            api = "https://sc.ftqq.com/SCU47715T1085ec82936ebfe2723aaa3095bb53505ca315d2865a0.send"
+            
+            data = {
+                "text": args.description,
+                "data": "+".join([str(key) + " : " + str(msg_dict[key]) for key in msg_dict])
+
+            }
+
 
 
     if args.do_predict and args.local_rank in [-1, 0]:
