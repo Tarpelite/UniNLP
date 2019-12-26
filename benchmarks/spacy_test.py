@@ -25,6 +25,7 @@ def get_pos_examples(data_dir):
     
     if words:
         examples.append([words, labels])
+    return examples
     
 def get_ner_examples(data_dir):
     file_path = os.path.join(data_dir, "{}.txt".format("dev"))
@@ -56,6 +57,7 @@ if __name__ == "__main__":
 
     nlp = spacy.load("en_core_web_sm")
     pos_examples = get_pos_examples(args.pos_data)
+    print(len(pos_examples))
     total = 0
     hit = 0
     pred_pos_labels = []
@@ -63,12 +65,19 @@ if __name__ == "__main__":
     ## inference
     start = time.time()
 
-    for exp in pos_examples:
-        words = nlp(exp[0])
+    # Just use the label of the first sub-word
+    for exp in tqdm(pos_examples):
+
+        words = exp[0]
         labels = exp[1]
         
+        for word in words:
+            tokens = nlp(word)
+            pred_label = tokens[0].pos_
+            pred_pos_labels.append(pred_label)
+        
         assert len(words) == len(labels)
-        pred_pos_labels.extend([token.pos_ for token in words])
+       
 
     end = time.time()
 
