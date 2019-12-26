@@ -48,22 +48,22 @@ def get_ner_examples(data_dir):
             examples.append([words, labels])
     return examples
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--pos_data", type=str, default="")
-    parser.add_argument("--ner_data", type=str, default="")
-
-    args = parser.parse_args()
-
-    nlp = spacy.load("en_core_web_sm")
+def evaluate_pos(args, model):
     pos_examples = get_pos_examples(args.pos_data)
     print(len(pos_examples))
-    total = 0
-    hit = 0
+
     pred_pos_labels = []
     true_labels = []
-    ## inference
+    total_words = []
+    total_tokens = []
+    # inferenece
     start = time.time()
+    pos_label_list = [
+        "ADJ", "ADP", "ADV", "AUX", "CCONJ", 
+        "DET", "INTJ", "NOUN", "NUM", "PART",
+        "PRON", "PROPN", "PUNCT", "SCONJ", "SYM",
+        "VERB", "X"
+    ]
 
     # Just use the label of the first sub-word
     for exp in tqdm(pos_examples):
@@ -72,23 +72,62 @@ if __name__ == "__main__":
         labels = exp[1]
         
         for word in words:
-            tokens = nlp(word)
+            tokens = model(word)
+            total_words.append(word)
+            total_tokens.append(tokens[0])
             pred_label = tokens[0].pos_
+            if pred_label not in pos_label_list: 
+                pred_label = "X"
+                print(pred_label)
             pred_pos_labels.append(pred_label)
         
         assert len(words) == len(labels)
        
-
     end = time.time()
-
     for exp in pos_examples:
         true_labels.extend(exp[1])
 
     ## evaluate
     total = len(pred_pos_labels)
+    hit = 0
     for pred, true_label in zip(tqdm(pred_pos_labels), tqdm(true_labels)):
         if pred == true_label:
             hit += 1
     
-    print("time cost", end - start)
+    pre_start = time.time()
+    
+
+    test_data = [" ".join(exp[0]) for exp in pos_examples]
+    for exp in tqdm(test_data):
+        words = " ".join(exp)
+        tokens = model(words)
+    pre_end = time.time()
+
+    print("sents per second", total*1.0000000/(pre_end - pre_start))
+    print("pos tag time cost", end - start)
     print("pos acc", hit*1.0000000 / total)
+
+    # write the prediction for checking
+    with open("pred_pos.txt", "w+", encoding="utf-8") as f:
+        for word, tok, pred, true in zip(total_words, total_tokens, pred_pos_labels, true_labels):
+            line = word + "\t" + tok + "\t" + pred + "\t" + true
+            f.write(line + "\n") 
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--pos_data", type=str, default="")
+    parser.add_argument("--ner_data", type=str, default="")
+    parser.add_argument("--model_type", type=str, default="")
+
+    args = parser.parse_args()
+
+    nlp = spacy.load(args.model_type)
+    
+    evaluate_pos(args, nlp)
+
+    # ner_examples = get_ner_examples(args.ner_data)
+
+    # print(len(ner_examples))
+
+    
