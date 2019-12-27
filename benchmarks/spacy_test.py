@@ -74,7 +74,7 @@ def evaluate_pos(args, model):
         idxs = []
         text = ""
         for word in words:
-            idxs += len(text)
+            idxs += [len(text)]
             text += word + " "
         
         tokens = model(text)
