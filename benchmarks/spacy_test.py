@@ -145,14 +145,23 @@ def evaluate_ner(args, model):
                     pred_ner_labels.append("O")
                 elif pred_label not in label_list:
                     pred_ner_labels.append("MIST")
+                elif pred_label == "PERSON":
+                    pred_ner_labels.append("PER")
                 else:
                     pred_ner_labels.append(pred_label)
 
         assert len(pred_ner_labels) == len(labels)
         total_pred_labels.extend(pred_ner_labels)
     end = time.time()
+
     for exp in ner_examples:
-        true_labels.extend(exp[1])
+        labs = []
+        for x in exp[1]:
+            if "-" in x:
+                labs.append(x.split("-")[1])
+            else:
+                labs.append(x)
+        true_labels.extend(labs)
     
     ## evaluate
     total = len(total_pred_labels)
