@@ -99,6 +99,10 @@ def evaluate_pos(args, model):
     for exp in pos_examples:
         true_labels.extend(exp[1])
 
+    res = []
+    for l_pred in pred_pos_labels:
+        res.extend(l_pred)
+    pred_pos_labels = res
     ## evaluate
     total = len(pred_pos_labels)
     hit = 0
