@@ -107,8 +107,6 @@ def evaluate_pos(args, model):
         if pred == true_label:
             hit += 1
     
-    
-
 
     print("sents per second", total*1.0000000/(end - start))
     print("pos tag time cost", end - start)
@@ -119,6 +117,54 @@ def evaluate_pos(args, model):
     #     for word, tok, pred, true in zip(total_words, total_tokens, pred_pos_labels, true_labels):
     #         line = word + "\t" + tok + "\t" + pred + "\t" + true
     #         f.write(line + "\n") 
+
+def evaluate_ner(args, model):
+    label_list = ["PER", "ORG", "LOC"]
+    ner_examples = get_ner_examples(args.ner_data)
+
+    total_pred_labels = []
+    true_labels = []
+    start = time.time()
+    for exp in tqdm(ner_examples):
+
+        words = exp[0]
+        labels = exp[1]
+
+        idxs = []
+        text = ""
+        for word in words:
+            idxs += [len(text)]
+            text += word + " "
+        
+        tokens = model(text)
+        pred_ner_labels = []
+        for tk in tokens:
+            if tk.idx in idxs:
+                pred_label = tk.ent_type_
+                if len(pred_label) == 0:
+                    pred_ner_labels.append("O")
+                elif pred_label not in label_list:
+                    pred_ner_labels.append("MIST")
+                else:
+                    pred_ner_labels.append(pred_label)
+
+        assert len(pred_ner_labels) == len(labels)
+        total_pred_labels.extend(pred_ner_labels)
+    end = time.time()
+    for exp in ner_examples:
+        true_labels.extend(exp[1])
+    
+    ## evaluate
+    total = len(total_pred_labels)
+    hit = 0
+    for pred, true_label in zip(tqdm(total_pred_labels), tqdm(true_labels)):
+        if pred == true_label:
+            hit += 1
+    
+    print("sents per second", total*1.0000000/(end - start))
+    print("pos tag time cost", end - start)
+    print("pos acc", hit*1.0000000 / total)
+
 
 
 if __name__ == "__main__":
@@ -131,8 +177,11 @@ if __name__ == "__main__":
 
     nlp = spacy.load(args.model_type)
     
-    evaluate_pos(args, nlp)
+    if len(args.pos_data) > 0:
+        evaluate_pos(args, nlp)
 
+    if len(args.ner_data) > 0:
+        evaluate_ner(args, nlp)
     # ner_examples = get_ner_examples(args.ner_data)
 
     # print(len(ner_examples))
