@@ -79,10 +79,17 @@ def evaluate_pos(args, model):
         
         tokens = model(text)
         pred_pos_labels = []
+        print(words)
+        print(idxs)
+        tk_texts = []
+        tk_idxs = []
         for tk in tokens:
+            tk_texts.append(tk.text)
+            tk_idxs.append(tk.idx)
             if tk.idx in idxs:
                 pred_pos_labels.append(tk.pos_)
-
+        print(tk_texts)
+        print(tk_idxs)
         # for word in words:
         #     tokens = model(word)
         #     total_words.append(word)
