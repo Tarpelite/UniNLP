@@ -148,7 +148,7 @@ def evaluate_ner(args, model):
                 if len(pred_label) == 0:
                     pred_ner_labels.append("O")
                 elif pred_label not in label_list:
-                    pred_ner_labels.append("MIST")
+                    pred_ner_labels.append("MISC")
                 elif pred_label == "PERSON":
                     pred_ner_labels.append("PER")
                 else:
