@@ -37,6 +37,8 @@ def get_ner_examples(data_dir):
             if line.startswith("-DOCSTART-") or line == "" or line == "\n":
                 if words:
                     examples.append([words, labels])
+                words = []
+                labels = []
             else:
                 splits = line.split(" ")
                 words.append(splits[0])
@@ -46,6 +48,8 @@ def get_ner_examples(data_dir):
                     labels.append("O")
         if words:
             examples.append([words, labels])
+            words = []
+            labels = []
     return examples
 
 def evaluate_pos(args, model):
