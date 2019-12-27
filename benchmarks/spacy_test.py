@@ -175,8 +175,8 @@ def evaluate_ner(args, model):
             hit += 1
     
     print("sents per second", total*1.0000000/(end - start))
-    print("pos tag time cost", end - start)
-    print("pos acc", hit*1.0000000 / total)
+    print("ner tag time cost", end - start)
+    print("ner acc", hit*1.0000000 / total)
 
 
 
