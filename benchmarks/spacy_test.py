@@ -71,17 +71,29 @@ def evaluate_pos(args, model):
         words = exp[0]
         labels = exp[1]
         
+        idxs = []
+        text = ""
         for word in words:
-            tokens = model(word)
-            total_words.append(word)
-            total_tokens.append(tokens[0])
-            pred_label = tokens[0].pos_
-            if pred_label not in pos_label_list: 
-                pred_label = "X"
-                print(pred_label)
-            pred_pos_labels.append(pred_label)
+            idxs += len(text)
+            text += word + " "
         
-        assert len(words) == len(labels)
+        tokens = model(text)
+        pred_pos_labels = []
+        for tk in tokens:
+            if tk.idx in idxs:
+                pred_pos_labels.append(tk.pos_)
+
+        # for word in words:
+        #     tokens = model(word)
+        #     total_words.append(word)
+        #     total_tokens.append(tokens[0].text)
+        #     pred_label = tokens[0].pos_
+        #     if pred_label not in pos_label_list: 
+        #         pred_label = "X"
+        #         print(pred_label)
+        #     pred_pos_labels.append(pred_label)
+        
+        assert len(pred_pos_labels) == len(labels)
        
     end = time.time()
     for exp in pos_examples:
