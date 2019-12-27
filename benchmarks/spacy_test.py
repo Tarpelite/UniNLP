@@ -158,7 +158,8 @@ def evaluate_ner(args, model):
 
 
         assert len(pred_ner_labels) == len(labels)
-        
+        print("pred", pred_ner_labels)
+        print("labels", labels)
         total_pred_labels.append(pred_ner_labels)
     end = time.time()
 
