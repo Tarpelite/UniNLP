@@ -3,6 +3,7 @@ import os
 from tqdm import *
 import argparse
 import time
+from seqeval.metrics import f1_score
 
 def get_pos_examples(data_dir):
     file_path = os.path.join(data_dir, "{}.txt".format("dev"))
@@ -128,6 +129,7 @@ def evaluate_ner(args, model):
 
     total_pred_labels = []
     true_labels = []
+    total_f1 = 0.0
     start = time.time()
     for exp in tqdm(ner_examples):
 
@@ -154,8 +156,10 @@ def evaluate_ner(args, model):
                 else:
                     pred_ner_labels.append(pred_label)
 
+
         assert len(pred_ner_labels) == len(labels)
-        total_pred_labels.extend(pred_ner_labels)
+        
+        total_pred_labels.append(pred_ner_labels)
     end = time.time()
 
     for exp in ner_examples:
@@ -165,18 +169,15 @@ def evaluate_ner(args, model):
                 labs.append(x.split("-")[1])
             else:
                 labs.append(x)
-        true_labels.extend(labs)
+        true_labels.append(labs)
     
     ## evaluate
-    total = len(total_pred_labels)
+    total = sum([len(x) for x in total_pred_labels])
     hit = 0
-    for pred, true_label in zip(tqdm(total_pred_labels), tqdm(true_labels)):
-        if pred == true_label:
-            hit += 1
     
     print("sents per second", total*1.0000000/(end - start))
     print("ner tag time cost", end - start)
-    print("ner acc", hit*1.0000000 / total)
+    print("ner f1", f1_score(true_labels, total_pred_labels))
 
 
 
