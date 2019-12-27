@@ -66,6 +66,7 @@ def evaluate_pos(args, model):
     ]
 
     # Just use the label of the first sub-word
+    total_pred_labels = []
     for exp in tqdm(pos_examples):
 
         words = exp[0]
@@ -79,17 +80,9 @@ def evaluate_pos(args, model):
         
         tokens = model(text)
         pred_pos_labels = []
-        print(words)
-        print(idxs)
-        tk_texts = []
-        tk_idxs = []
         for tk in tokens:
-            tk_texts.append(tk.text)
-            tk_idxs.append(tk.idx)
             if tk.idx in idxs:
                 pred_pos_labels.append(tk.pos_)
-        print(tk_texts)
-        print(tk_idxs)
         # for word in words:
         #     tokens = model(word)
         #     total_words.append(word)
@@ -101,40 +94,31 @@ def evaluate_pos(args, model):
         #     pred_pos_labels.append(pred_label)
         
         assert len(pred_pos_labels) == len(labels)
+        total_pred_labels.extend(pred_pos_labels)
        
     end = time.time()
     for exp in pos_examples:
         true_labels.extend(exp[1])
 
-    res = []
-    for l_pred in pred_pos_labels:
-        res.extend(l_pred)
-    pred_pos_labels = res
     ## evaluate
-    total = len(pred_pos_labels)
+    total = len(total_pred_labels)
     hit = 0
-    for pred, true_label in zip(tqdm(pred_pos_labels), tqdm(true_labels)):
+    for pred, true_label in zip(tqdm(total_pred_labels), tqdm(true_labels)):
         if pred == true_label:
             hit += 1
     
-    pre_start = time.time()
     
 
-    test_data = [" ".join(exp[0]) for exp in pos_examples]
-    for exp in tqdm(test_data):
-        words = " ".join(exp)
-        tokens = model(words)
-    pre_end = time.time()
 
-    print("sents per second", total*1.0000000/(pre_end - pre_start))
+    print("sents per second", total*1.0000000/(end - start))
     print("pos tag time cost", end - start)
     print("pos acc", hit*1.0000000 / total)
 
     # write the prediction for checking
-    with open("pred_pos.txt", "w+", encoding="utf-8") as f:
-        for word, tok, pred, true in zip(total_words, total_tokens, pred_pos_labels, true_labels):
-            line = word + "\t" + tok + "\t" + pred + "\t" + true
-            f.write(line + "\n") 
+    # with open("pred_pos.txt", "w+", encoding="utf-8") as f:
+    #     for word, tok, pred, true in zip(total_words, total_tokens, pred_pos_labels, true_labels):
+    #         line = word + "\t" + tok + "\t" + pred + "\t" + true
+    #         f.write(line + "\n") 
 
 
 if __name__ == "__main__":
