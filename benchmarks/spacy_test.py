@@ -3,8 +3,9 @@ import os
 from tqdm import *
 import argparse
 import time
-from seqeval.metrics import f1_score
+from seqeval.metrics import f1_score, precision_score
 import sys
+from spacy.tokenizer import Tokenizer
 
 def get_pos_examples(data_dir):
     file_path = os.path.join(data_dir, "{}.txt".format("dev"))
@@ -28,7 +29,53 @@ def get_pos_examples(data_dir):
     if words:
         examples.append([words, labels])
     return examples
+
+def get_onto_pos_examples(data_dir):
+    file_path = os.path.join(data_dir, "{}.txt".format("dev"))
+    examples= []
+    with open(file_path, encoding="utf-8") as f:
+        words = []
+        labels = []
+        for line in f.readlines():
+            if line == "\n":
+                if words:
+                   examples.append([words, labels])
+                   words = []
+                   labels = []
+            elif line.startswith("#"):
+                pass
+            else:
+                line = line.strip("\n").split("\t")
+                words.append(line[0])
+                labels.append(line[1])
     
+    if words:
+        examples.append([words, labels])
+    return examples
+
+def get_onto_ner_examples(data_dir):
+    file_path = os.path.join(data_dir, "{}.txt".format("dev"))
+    examples= []
+    with open(file_path, encoding="utf-8") as f:
+        words = []
+        labels = []
+        for line in f.readlines():
+            if line == "\n":
+                if words:
+                   examples.append([words, labels])
+                   words = []
+                   labels = []
+            elif line.startswith("#"):
+                pass
+            else:
+                line = line.strip("\n").split("\t")
+                words.append(line[0])
+                labels.append(line[-1])
+    
+    if words:
+        examples.append([words, labels])
+    return examples
+  
 def get_ner_examples(data_dir, mode="dev"):
     file_path = os.path.join(data_dir, "{}.txt".format(mode))
     examples = []
@@ -55,9 +102,13 @@ def get_ner_examples(data_dir, mode="dev"):
     return examples
 
 def evaluate_pos(args, model):
-    pos_examples = get_pos_examples(args.pos_data)
+    if args.onto:
+        pos_examples = get_onto_pos_examples(args.pos_data)
+    else:
+        pos_examples = get_pos_examples(args.pos_data)
     print(len(pos_examples))
 
+    model.tokenizer = Tokenizer(model.vocab)
     pred_pos_labels = []
     true_labels = []
     total_words = []
@@ -68,7 +119,7 @@ def evaluate_pos(args, model):
         "ADJ", "ADP", "ADV", "AUX", "CCONJ", 
         "DET", "INTJ", "NOUN", "NUM", "PART",
         "PRON", "PROPN", "PUNCT", "SCONJ", "SYM",
-        "VERB", "X"
+        "VERB", "X", "SPACE"
     ]
 
     # Just use the label of the first sub-word
@@ -87,8 +138,9 @@ def evaluate_pos(args, model):
         tokens = model(text)
         pred_pos_labels = []
         for tk in tokens:
-            if tk.idx in idxs:
-                pred_pos_labels.append(tk.pos_)
+            # if tk.idx in idxs:
+            #     pred_pos_labels.append(tk.tag_)
+            pred_pos_labels.append(tk.tag_)
         # for word in words:
         #     tokens = model(word)
         #     total_words.append(word)
@@ -113,7 +165,8 @@ def evaluate_pos(args, model):
         if pred == true_label:
             hit += 1
     
-
+    print("pred", total_pred_labels[:50])
+    print("true labels",true_labels[:50] )
     print("sents per second", total*1.0000000/(end - start))
     print("pos tag time cost", end - start)
     print("pos acc", hit*1.0000000 / total)
@@ -125,18 +178,21 @@ def evaluate_pos(args, model):
     #         f.write(line + "\n") 
 
 
-def train_ner(args, model):
-    ner_train_examples = 
+
 
 def evaluate_ner(args, model):
-    label_list = ["PER", "ORG", "LOC"]
-    ner_examples = get_ner_examples(args.ner_data)
+    if args.onto:
+        ner_examples = get_onto_ner_examples(args.ner_data)
+    else:
+        ner_examples = get_ner_examples(args.ner_data)
 
     total_pred_labels = []
     true_labels = []
     total_f1 = 0.0
     start = time.time()
     total_labels_clean = []
+    all_ner_words = []
+    model.tokenizer = Tokenizer(model.vocab)
     for exp in tqdm(ner_examples):
 
         words = exp[0]
@@ -151,79 +207,35 @@ def evaluate_ner(args, model):
         tokens = model(text)
         pred_ner_labels = []
         for tk in tokens:
-            if tk.idx in idxs:
-                pred_label = tk.ent_type_
-                if len(pred_label) == 0:
-                    pred_ner_labels.append("O")
-                elif pred_label not in label_list:
-                    pred_ner_labels.append("MISC")
-                elif pred_label == "PERSON":
-                    pred_ner_labels.append("PER")
-                else:
-                    pred_ner_labels.append(pred_label)
-
+            # if tk.idx in idxs:
+            #     pred_label = tk.ent_type_
+            #     if len(pred_label)> 0:
+            #         pred_ner_labels.append(pred_label)
+            #     else:
+            #         pred_ner_labels.append("O")
+            pred_label = tk.ent_type_
+            if len(pred_label) > 0:
+                pred_ner_labels.append(pred_label)
+            else:
+                pred_ner_labels.append("O")
 
         assert len(pred_ner_labels) == len(labels)
 
-        labels_clean = []
-        for label in labels:
-            if label != "O":
-                label = label.split("-")[1]
-            labels_clean.append(label)
         
-        # labels_num = 0
-        # pred_num = 0
-        # hit = 0
-        # for label, pred in zip(labels_clean, pred_ner_labels):
-        #     if label != "O":
-        #         labels_num += 1
-        #     if pred != "O":
-        #         pred_num += 1
-        #     if label == pred and label != "O":
-        #         hit += 1
-
-        # if pred_num == 0:
-        #     t_acc = 0
-        # else:
-        #     t_acc = hit * 1.000000 / pred_num
-        # if labels_num == 0:
-        #     t_recall = 0
-        # else:
-        #     t_recall = hit * 1.00000/ labels_num
-
-        # if t_acc == 0 or t_recall == 0:
-        #     t_f1 = 0
-        # else:
-        #     t_f1 = 2*(t_acc*t_recall)/(t_acc + t_recall)
-        # total_f1 += t_f1
-
-        # t_f1 = f1_score(labels_clean,pred_ner_labels)
-        # total_f1 += t_f1
-        # print("pred", pred_ner_labels)
-        # print("labels", labels)
-        # print(t_acc)
-        # print(t_f1)
-        total_labels_clean.append(labels_clean)
+       
+        total_labels_clean.append(labels)
         total_pred_labels.append(pred_ner_labels)
     end = time.time()
 
-    # for exp in ner_examples:
-    #     labs = []
-    #     for x in exp[1]:
-    #         if "-" in x:
-    #             labs.append(x.split("-")[1])
-    #         else:
-    #             labs.append(x)
-    #     true_labels.append(labs)
-    
     ## evaluate
+    print("pred", total_pred_labels[:20])
+    print("true labels", total_labels_clean[:20])
     total = sum([len(x) for x in total_pred_labels])
-    hit = 0
     
     print("sents per second", total*1.0000000/(end - start))
     print("ner tag time cost", end - start)
+    print("ner acc", precision_score(total_labels_clean, total_pred_labels))
     print("ner f1", f1_score(total_labels_clean, total_pred_labels))
-    print("manul ner f1", total_f1 / len(ner_examples))
 
 
 if __name__ == "__main__":
@@ -231,11 +243,11 @@ if __name__ == "__main__":
     parser.add_argument("--pos_data", type=str, default="")
     parser.add_argument("--ner_data", type=str, default="")
     parser.add_argument("--model_type", type=str, default="")
+    parser.add_argument("--onto", action="store_true")
 
     args = parser.parse_args()
 
     nlp = spacy.load(args.model_type)
-    print(sys.getsizeof(nlp))
     
     if len(args.pos_data) > 0:
         evaluate_pos(args, nlp)

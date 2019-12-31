@@ -58,7 +58,7 @@ def read_examples_from_file(data_dir, mode):
     with open(file_path, encoding="utf-8") as f:
         words = []
         labels = []
-        for line in f:
+        for line in f.readlines():
             if line == "\n":
                 if words:
                     examples.append(InputExample(guid="{}-{}".format(mode, guid_index),
@@ -67,18 +67,16 @@ def read_examples_from_file(data_dir, mode):
                     guid_index += 1
                     words = []
                     labels = []
+            elif line.startswith("#"):
+                pass
             else:
-                splits = line.strip("\n").split("\t")
-                words.append(splits[0])
-                if len(splits) > 1:
-                    labels.append(splits[-1])
-                else:
-                    # Examples could have no label for mode = "test"
-                    labels.append("O")
+                line = line.strip("\n").split("\t")
+                words.appeng(line[0])
+                labels.append(line[1])
         if words:
-            examples.append(InputExample(guid="%s-%d".format(mode, guid_index),
+             examples.append(InputExample(guid="%s-%d".format(mode, guid_index),
                                          words=words,
-                                         labels=labels))
+                                         labels = labels))
     return examples
 
 
