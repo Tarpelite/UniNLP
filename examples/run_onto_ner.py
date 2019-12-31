@@ -144,6 +144,7 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
                 loss.backward()
 
             tr_loss += loss.item()
+            print("loss", loss)
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 if args.fp16:
                     torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), args.max_grad_norm)
@@ -245,6 +246,9 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
             if out_label_ids[i, j] != pad_token_label_id:
                 out_label_list[i].append(label_map[out_label_ids[i][j]])
                 preds_list[i].append(label_map[preds[i][j]])
+
+    print("preds_list", preds_list)
+    print("out_label_list", out_label_list)
 
     results = {
         "loss": eval_loss,
