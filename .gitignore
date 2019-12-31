@@ -108,3 +108,11 @@ runs/
 
 #model
 *.pl
+wh_v2/
+tiny_model*/
+
+bert_cache/
+
+# log
+.log.txt
+.alpha.log.training

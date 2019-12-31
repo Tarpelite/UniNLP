@@ -4,6 +4,7 @@ from tqdm import *
 import argparse
 import time
 from seqeval.metrics import f1_score
+import sys
 
 def get_pos_examples(data_dir):
     file_path = os.path.join(data_dir, "{}.txt".format("dev"))
@@ -131,6 +132,7 @@ def evaluate_ner(args, model):
     true_labels = []
     total_f1 = 0.0
     start = time.time()
+    total_labels_clean = []
     for exp in tqdm(ner_examples):
 
         words = exp[0]
@@ -158,19 +160,57 @@ def evaluate_ner(args, model):
 
 
         assert len(pred_ner_labels) == len(labels)
-        print("pred", pred_ner_labels)
-        print("labels", labels)
+
+        labels_clean = []
+        for label in labels:
+            if label != "O":
+                label = label.split("-")[1]
+            labels_clean.append(label)
+        
+        # labels_num = 0
+        # pred_num = 0
+        # hit = 0
+        # for label, pred in zip(labels_clean, pred_ner_labels):
+        #     if label != "O":
+        #         labels_num += 1
+        #     if pred != "O":
+        #         pred_num += 1
+        #     if label == pred and label != "O":
+        #         hit += 1
+
+        # if pred_num == 0:
+        #     t_acc = 0
+        # else:
+        #     t_acc = hit * 1.000000 / pred_num
+        # if labels_num == 0:
+        #     t_recall = 0
+        # else:
+        #     t_recall = hit * 1.00000/ labels_num
+
+        # if t_acc == 0 or t_recall == 0:
+        #     t_f1 = 0
+        # else:
+        #     t_f1 = 2*(t_acc*t_recall)/(t_acc + t_recall)
+        # total_f1 += t_f1
+
+        # t_f1 = f1_score(labels_clean,pred_ner_labels)
+        # total_f1 += t_f1
+        # print("pred", pred_ner_labels)
+        # print("labels", labels)
+        # print(t_acc)
+        # print(t_f1)
+        total_labels_clean.append(labels_clean)
         total_pred_labels.append(pred_ner_labels)
     end = time.time()
 
-    for exp in ner_examples:
-        labs = []
-        for x in exp[1]:
-            if "-" in x:
-                labs.append(x.split("-")[1])
-            else:
-                labs.append(x)
-        true_labels.append(labs)
+    # for exp in ner_examples:
+    #     labs = []
+    #     for x in exp[1]:
+    #         if "-" in x:
+    #             labs.append(x.split("-")[1])
+    #         else:
+    #             labs.append(x)
+    #     true_labels.append(labs)
     
     ## evaluate
     total = sum([len(x) for x in total_pred_labels])
@@ -178,8 +218,8 @@ def evaluate_ner(args, model):
     
     print("sents per second", total*1.0000000/(end - start))
     print("ner tag time cost", end - start)
-    print("ner f1", f1_score(true_labels, total_pred_labels))
-
+    print("ner f1", f1_score(total_labels_clean, total_pred_labels))
+    print("manul ner f1", total_f1 / len(ner_examples))
 
 
 if __name__ == "__main__":
@@ -191,6 +231,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     nlp = spacy.load(args.model_type)
+    print(sys.getsizeof(nlp))
     
     if len(args.pos_data) > 0:
         evaluate_pos(args, nlp)
