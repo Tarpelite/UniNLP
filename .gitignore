@@ -110,6 +110,7 @@ runs/
 *.pl
 wh_v2/
 tiny_model*/
+model4server/
 
 bert_cache/
 
