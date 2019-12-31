@@ -110,6 +110,7 @@ def convert_examples_to_features(examples,
     cnt_counts = []
     last_tokens = []
     last_label_ids = []
+    get_label_list = []
     for (ex_index, example) in enumerate(examples):
         if ex_index % 10000 == 0:
             logger.info("Writing example %d of %d", ex_index, len(examples))
@@ -122,6 +123,8 @@ def convert_examples_to_features(examples,
             # Use the real label id for the first token of the word, and padding ids for the remaining tokens
             label_ids.extend([label_map[label]] + [pad_token_label_id] * (len(word_tokens) - 1))
 
+            if label not in get_label_list: 
+                get_label_list.append(label)
         if ex_index == 0:
             last_tokens = tokens[-64:]
             last_label_ids = label_ids[-64:]
@@ -215,7 +218,8 @@ def convert_examples_to_features(examples,
     
     logger.info("*** Statistics ***")
     logger.info("*** max_len:{}  min_len:{} avg_len:{}***".format(max(cnt_counts), min(cnt_counts), sum(cnt_counts) / len(cnt_counts)))
-
+    
+    print("dataset label list", get_label_list)
     return features
 
 
@@ -225,6 +229,7 @@ def get_labels(path):
             labels = f.read().splitlines()
         if "O" not in labels:
             labels = ["O"] + labels
+        print("get_labels", labels)
         return labels
     else:
         return ["O", "B-MISC", "I-MISC",  "B-PER", "I-PER", "B-ORG", "I-ORG", "B-LOC", "I-LOC"]

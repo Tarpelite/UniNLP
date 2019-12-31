@@ -29,8 +29,8 @@ def get_pos_examples(data_dir):
         examples.append([words, labels])
     return examples
     
-def get_ner_examples(data_dir):
-    file_path = os.path.join(data_dir, "{}.txt".format("dev"))
+def get_ner_examples(data_dir, mode="dev"):
+    file_path = os.path.join(data_dir, "{}.txt".format(mode))
     examples = []
     with open(file_path, encoding="utf-8") as f:
         words = []
@@ -123,6 +123,10 @@ def evaluate_pos(args, model):
     #     for word, tok, pred, true in zip(total_words, total_tokens, pred_pos_labels, true_labels):
     #         line = word + "\t" + tok + "\t" + pred + "\t" + true
     #         f.write(line + "\n") 
+
+
+def train_ner(args, model):
+    ner_train_examples = 
 
 def evaluate_ner(args, model):
     label_list = ["PER", "ORG", "LOC"]
