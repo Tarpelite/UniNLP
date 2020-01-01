@@ -16,29 +16,23 @@ from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
 
 from utils_ner import convert_examples_to_features as convert_examples_to_features_ner
-from utils_ner import get_labels as get_labels_ner
 from utils_ner import read_examples_from_file as read_examples_from_file_ner
 
 
 from utils_pos import convert_examples_to_features as convert_examples_to_features_pos
-from utils_pos import get_labels as get_labels_pos
 from utils_pos import read_examples_from_file as read_examples_from_file_pos
 
 from utils_chunking import convert_examples_to_features as convert_examples_to_features_chunking
-from utils_chunking import get_labels as get_labels_chunking
 from utils_chunking import read_examples_from_file as read_examples_from_file_chunking
 
 from utils_srl import convert_examples_to_features as convert_examples_to_features_srl
-from utils_srl import get_labels as get_labels_srl
 from utils_srl import read_examples_from_file as read_examples_from_file_srl
 
-from utils_onto_ner import convert_examples_to_features as convert_examples_to_features_onto_ner
-from utils_onto_ner import get_labels as get_labels_onto_ner
-from utils_onto_ner import read_examples_from_file as read_examples_from_file_onto_ner
+from utils_onto import convert_examples_to_features_pos as convert_examples_to_features_onto_pos
+from utils_onto import convert_examples_to_features_ner as convert_examples_to_features_onto_ner
+from utils_onto import get_labels 
+from utils_onto import read_examples_from_file as read_examples_from_file_onto
 
-from utils_onto_pos import convert_examples_to_features as convert_examples_to_features_onto_pos
-from utils_onto_pos import get_labels as get_labels_onto_pos
-from utils_onto_pos import read_examples_from_file as read_examples_from_file_onto_pos
 
 import torch.nn as nn
 from torch.optim import Adam
@@ -68,6 +62,9 @@ MODEL_CLASSES = {
     "bert":(BertConfig, MTDNNModel, BertTokenizer),
     "task_embedding":(BertConfig, TaskEmbeddingModel, BertTokenizer)
 }
+
+task_list = ["pos", "ner", "chunking", "srl", "onto_pos", "onto_ner"]
+task_map = {name:i for i, name in enumerate(task_list)}
 
 def set_seed(args):
     random.seed(args.seed)
@@ -139,26 +136,8 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
     set_seed(args)  # Added here for reproductibility (even between python 2 and 3)
     
     do_alpha = args.do_alpha
-
-
-    if task == "pos":
-        task_id = 0
-        layer_id = args.layer_id_pos
-    elif task == "ner":
-        task_id = 1
-        layer_id = args.layer_id_ner
-    elif task == "chunking":
-        task_id = 2
-        layer_id = args.layer_id_chunking
-    elif task == "srl":
-        task_id = 3
-        layer_id = args.layer_id_srl
-    elif task == "onto_pos":
-        task_id = 4
-        layer_id = args.layer_id_onto_pos
-    elif task == "onto_ner":
-        task_id = 5
-        layer_id = args.layer_id_onto_ner
+    task_id = task_map[task]
+    layer_id = -1
 
     if args.ft_with_last_layer:
         do_alpha=False
@@ -367,13 +346,13 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, chunkin
                                                 pad_token_segment_id=4 if args.model_type in ["xlnet"] else 0,
                                                 pad_token_label_id=pad_token_label_id)
         
-        logger.info("Creating onto pos features from dataset file at %s", args.onto_data_dir)
+        logger.info("Creating onto examples from dataset file at %s", args.onto_data_dir)
         if is_ft:
-            onto_pos_examples = read_examples_from_file_onto_pos(args.onto_data_dir, "train")
+            onto_examples = read_examples_from_file_onto(args.onto_data_dir, "train")
         else:
-            onto_pos_examples = read_examples_from_file_onto_pos(args.onto_data_dir, "test")
+            onto_examples = read_examples_from_file_onto(args.onto_data_dir, "dev")
         
-        onto_pos_features = convert_examples_to_features_onto_pos(onto_pos_examples, onto_pos_labels, args.max_seq_length, tokenizer,
+        onto_pos_features = convert_examples_to_features_onto_pos(onto_examples, onto_pos_labels, args.max_seq_length, tokenizer,
                                                 cls_token_at_end=bool(args.model_type in ["xlnet"]),
                                                 # xlnet has a cls token at the end
                                                 cls_token=tokenizer.cls_token,
@@ -388,13 +367,8 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, chunkin
                                                 pad_token_label_id=pad_token_label_id)
         
         
-        logger.info("Creating onto ner features from dataset file at %s", args.onto_data_dir)
-        if is_ft:
-            onto_ner_examples = read_examples_from_file_onto_ner(args.onto_data_dir, "train")
-        else:
-            onto_ner_examples = read_examples_from_file_onto_ner(args.onto_data_dir, "test")
         
-        onto_ner_features = convert_examples_to_features_onto_ner(onto_ner_examples, onto_ner_labels, args.max_seq_length, tokenizer,
+        onto_ner_features = convert_examples_to_features_onto_ner(onto_examples, onto_ner_labels, args.max_seq_length, tokenizer,
                                                 cls_token_at_end=bool(args.model_type in ["xlnet"]),
                                                 # xlnet has a cls token at the end
                                                 cls_token=tokenizer.cls_token,
@@ -443,9 +417,24 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, chunkin
 
     srl_dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids)
 
-    return pos_dataset, ner_dataset, chunking_dataset, srl_dataset
+    all_input_ids = torch.tensor([f.input_ids for f in onto_pos_features], dtype=torch.long)
+    all_input_mask = torch.tensor([f.input_mask for f in onto_pos_features], dtype=torch.long)
+    all_segment_ids = torch.tensor([f.segment_ids for f in onto_pos_features], dtype=torch.long)
+    all_label_ids = torch.tensor([f.label_ids for f in onto_pos_features], dtype=torch.long)
 
-def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunking_labels, srl_labels, pad_token_label_id):
+    onto_pos_dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids)
+
+
+    all_input_ids = torch.tensor([f.input_ids for f in onto_ner_features], dtype=torch.long)
+    all_input_mask = torch.tensor([f.input_mask for f in onto_ner_features], dtype=torch.long)
+    all_segment_ids = torch.tensor([f.segment_ids for f in onto_ner_features], dtype=torch.long)
+    all_label_ids = torch.tensor([f.label_ids for f in onto_ner_features], dtype=torch.long)
+
+    onto_ner_dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids)
+
+    return pos_dataset, ner_dataset, chunking_dataset, srl_dataset, onto_pos_dataset, onto_ner_dataset
+
+def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunking_labels, srl_labels, onto_pos_labels, onto_ner_labels, pad_token_label_id):
 
     if args.local_rank not in [-1, 0] and not evaluate:
         torch.distributed.barrier()
@@ -529,9 +518,42 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunk
                                                     pad_token_segment_id=4 if args.model_type in ["xlnet"] else 0,
                                                     pad_token_label_id=pad_token_label_id
                                                     )
+        
+        logger.info("Creating onto features from dataset file at %s", args.onto_data_dir)
+        onto_examples = read_examples_from_file_onto(args.onto_data_dir, "train")
+        onto_pos_features = convert_examples_to_features_onto_pos(onto_examples, onto_pos_labels, args.max_seq_length, tokenizer,
+                                                    cls_token_at_end=bool(args.model_type in ["xlnet"]),
+                                                    # xlnet has a cls token at the end
+                                                    cls_token=tokenizer.cls_token,
+                                                    cls_token_segment_id=2 if args.model_type in ["xlnet"] else 0,
+                                                    sep_token=tokenizer.sep_token,
+                                                    sep_token_extra=bool(args.model_type in ["roberta"]),
+                                                    # roberta uses an extra separator b/w pairs of sentences, cf. github.com/pytorch/fairseq/commit/1684e166e3da03f5b600dbb7855cb98ddfcd0805
+                                                    pad_on_left=bool(args.model_type in ["xlnet"]),
+                                                    # pad on the left for xlnet
+                                                    pad_token=tokenizer.convert_tokens_to_ids([tokenizer.pad_token])[0],
+                                                    pad_token_segment_id=4 if args.model_type in ["xlnet"] else 0,
+                                                    pad_token_label_id=pad_token_label_id
+                                                    )
+
+        onto_ner_features = convert_examples_to_features_onto_ner(onto_examples, onto_ner_labels, args.max_seq_length, tokenizer,
+                                                    cls_token_at_end=bool(args.model_type in ["xlnet"]),
+                                                    # xlnet has a cls token at the end
+                                                    cls_token=tokenizer.cls_token,
+                                                    cls_token_segment_id=2 if args.model_type in ["xlnet"] else 0,
+                                                    sep_token=tokenizer.sep_token,
+                                                    sep_token_extra=bool(args.model_type in ["roberta"]),
+                                                    # roberta uses an extra separator b/w pairs of sentences, cf. github.com/pytorch/fairseq/commit/1684e166e3da03f5b600dbb7855cb98ddfcd0805
+                                                    pad_on_left=bool(args.model_type in ["xlnet"]),
+                                                    # pad on the left for xlnet
+                                                    pad_token=tokenizer.convert_tokens_to_ids([tokenizer.pad_token])[0],
+                                                    pad_token_segment_id=4 if args.model_type in ["xlnet"] else 0,
+                                                    pad_token_label_id=pad_token_label_id
+                                                    )
+
         if args.local_rank in [-1, 0]:
             logger.info("Saving features into cached file %s", cached_features_file)
-            features = (pos_features, ner_features, chunking_features, srl_features)
+            features = (pos_features, ner_features, chunking_features, srl_features, onto_pos_features, onto_ner_features)
             torch.save(features, cached_features_file)
 
 
@@ -590,12 +612,37 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunk
         batch_t.append(srl_features[i])
     srl_features_batches.append(batch_t)
 
-    data_list = [pos_features_batchs, ner_features_batchs, chunking_features_batches, srl_features_batches]
+    onto_pos_features_batches = []
+    cnt = 0
+    while cnt + mini_batch_size < len(onto_pos_features):
+        batch_t = []
+        for i in range(cnt, cnt + mini_batch_size):
+            batch_t.append(onto_pos_features[i])
+        onto_pos_features_batches.append(batch_t)
+        cnt += mini_batch_size
+    batch_t = []
+    for i in range(cnt, len(onto_pos_features)):
+        batch_t.append(onto_pos_features[i])
+    onto_pos_features_batches.append(batch_t)
 
+    onto_ner_features_batches = []
+    cnt = 0
+    while cnt + mini_batch_size < len(onto_ner_features):
+        batch_t = []
+        for i in range(cnt, cnt+mini_batch_size):
+            batch_t.append(onto_ner_features[i])
+        onto_pos_features_batches.append(batch_t)
+        cnt += mini_batch_size
+    batch_t = []
+    for i in range(cnt, len(onto_ner_features)):
+        batch_t.append(onto_ner_features[i])
+    onto_ner_features_batches.append(batch_t)
+    
+    data_list = [pos_features_batchs, ner_features_batchs, chunking_features_batches, srl_features_batches, onto_pos_features_batches, onto_ner_features_batches]
     return data_list
 
 
-def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, pad_token_label_id):
+def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, labels_onto_pos, labels_onto_ner, pad_token_label_id):
     """ Train the model """ 
     if args.local_rank in [-1, 0]:
         tb_writer = SummaryWriter()
@@ -606,7 +653,7 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
 
     # prepare optimizer and schedule (linear warmup and decay)
     no_decay = ['bias', 'LayerNorm.weight']
-    alpha_sets = ['alpha_pos', 'alpha_ner', 'alpha_chunking', 'alpha_srl']
+    alpha_sets = ['alpha_pos', 'alpha_ner', 'alpha_chunking', 'alpha_srl', 'alpha_onto_pos', 'alpha_onto_ner']
     # srl_sets = ['alpha_srl']
     optimizer_grouped_parameters = [
         {'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in (no_decay + alpha_sets))], 'weight_decay': args.weight_decay},
@@ -653,7 +700,9 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
         train_data_list = [sorted(t, key=lambda k:random.random()) for t in train_data_list]
         all_iters = [iter(item) for item in train_data_list]
         all_indices = []
-        all_indices = [0]*len(train_data_list[0]) + [1]*len(train_data_list[1]) + [2]*len(train_data_list[2]) + [3]*len(train_data_list[3])
+        # all_indices = [0]*len(train_data_list[0]) + [1]*len(train_data_list[1]) + [2]*len(train_data_list[2]) + [3]*len(train_data_list[3])
+        for x in range(len(train_data_list)):
+            all_indices += [x]*len(train_data_list[x])
         random.shuffle(all_indices)
         model.train()
         epoch_iterator = tqdm(all_indices, desc="Iteration", disable=args.local_rank not in [-1, 0])
@@ -664,21 +713,12 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
             segment_ids = torch.tensor([f.segment_ids for f in features], dtype=torch.long).to(args.device)
             label_ids = torch.tensor([f.label_ids for f in features], dtype=torch.long).to(args.device)
 
-            if task_id == 0:
-                layer_id = args.layer_id_pos
-            elif task_id == 1:
-                layer_id = args.layer_id_ner
-            elif task_id == 2:
-                layer_id = args.layer_id_chunking
-            elif task_id == 3:
-                layer_id = args.layer_id_srl
-
             inputs = {"input_ids":input_ids, 
                       "attention_mask":input_mask, 
                       "token_type_ids":segment_ids,
                       "labels":label_ids, 
                       "task_id":task_id, 
-                      "layer_id":layer_id,
+                      "layer_id":-1,
                       "do_alpha":args.do_alpha}
             outputs = model(**inputs)
             loss = outputs[0]
@@ -717,17 +757,24 @@ def train(args, train_data_list, model, tokenizer, labels_pos, labels_ner, label
                     alpha_ner = softmax(model.module.alpha_ner).detach().cpu().numpy()[:num_layers]
                     alpha_chunking = softmax(model.module.alpha_chunking).detach().cpu().numpy()[:num_layers]
                     alpha_srl = softmax(model.module.alpha_srl).detach().cpu().numpy()[:num_layers]
+                    alpha_onto_pos = softmax(model.module.alpha_onto_pos).detach().cpu().numpy()[:num_layers]
+                    alpha_onto_ner = softmax(model.module.alpha_onto_ner).detach().cpu().numpy()[:num_layers]
                     print("alpha_pos", alpha_pos)
                     print("alpha_ner", alpha_ner)
                     print("alpha_chunking", alpha_chunking)
                     print("alpha_srl", alpha_srl)
+                    print("alpha_onto_pos", alpha_onto_pos)
+                    print("alpha_onto_ner", alpha_onto_ner)
 
                     alpha_log_f.write(str(step+1))
                     alpha_log_f.write(" ".join([str(x) for x in alpha_pos.reshape(len(alpha_pos))]) + "\n")
                     alpha_log_f.write(" ".join([str(x) for x in alpha_ner.reshape(len(alpha_ner))]) + "\n")
                     alpha_log_f.write(" ".join([str(x) for x in alpha_chunking.reshape(len(alpha_chunking))]) + "\n")
                     alpha_log_f.write(" ".join([str(x) for x in alpha_srl.reshape(len(alpha_srl))]) + "\n")
+                    alpha_log_f.write(" ".join([str(x) for x in alpha_onto_pos.reshape(len(alpha_onto_pos))]) + "\n")
+                    alpha_log_f.write(" ".join([str(x) for x in alpha_onto_ner.reshape(len(alpha_onto_ner))]) + "\n")
                     alpha_log_f.write('\n')
+
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 if args.fp16:
                     torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), args.max_grad_norm)
@@ -788,18 +835,10 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
     preds = None
     out_label_ids = None
     model.eval()
-    if task == "pos":
-        task_id = 0
-        layer_id = args.layer_id_pos
-    elif task == "ner":
-        task_id = 1
-        layer_id = args.layer_id_ner
-    elif task == "chunking":
-        task_id = 2
-        layer_id = args.layer_id_chunking
-    elif task == "srl":
-        task_id = 3
-        layer_id = args.layer_id_srl
+    
+    task_id = task_map[task]
+    layer_id = -1
+
 
     for batch in tqdm(eval_dataloader, desc="Evaluating"):
         batch = tuple(t.to(args.device) for t in batch)
@@ -863,6 +902,15 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
     elif task == "srl":
         results = {
             "srl_f1": f1_score(out_label_list, preds_list)
+        }
+    elif task == "onto_pos":
+        results = {
+            "onto_pos_accuracy":accuracy_score(out_label_list, preds_list)
+        }
+    elif task == "onto_ner":
+        results = {
+            "onto_ner_accuracy":accuracy_score(out_label_list, preds_list),
+            "onto_ner_f1": f1_score(out_label_list, preds_list)
         }
 
     logger.info("***** Eval results %s *****", prefix)
@@ -949,13 +997,15 @@ def main():
     parser.add_argument("--ner_data_dir", type=str, default="")
     parser.add_argument("--chunking_data_dir", type=str, default="")
     parser.add_argument("--srl_data_dir", type=str, default="")
+    parser.add_argument("--onto_data_dir", type=str, default="")
 
     parser.add_argument("--ft_before_eval", action="store_true")
-    parser.add_argument("--layer_id_pos", type=int, default=-1)
-    parser.add_argument("--layer_id_ner", type=int, default=-1)
-    parser.add_argument("--layer_id_chunking", type=int, default=-1)
-    parser.add_argument("--layer_id_srl", type=int, default=-1)
+    parser.add_argument("--labels_pos", type=str)
+    parser.add_argument("--labels_ner", type=str)
+    parser.add_argument("--labels_chunking", type=str)
     parser.add_argument("--labels_srl", type=str)
+    parser.add_argument("--labels_onto_pos", type=str)
+    parser.add_argument("--labels_onto_ner", type=str)
 
     parser.add_argument("--alpha_learning_rate", type=float, default=1e-3)
     parser.add_argument("--init_last", action="store_true")
@@ -980,11 +1030,6 @@ def main():
 
 
     
-    layer_id_pos = args.layer_id_pos
-    layer_id_ner = args.layer_id_ner
-    layer_id_chunking = args.layer_id_chunking
-    layer_id_srl = args.layer_id_srl
-
 
     if os.path.exists(args.output_dir) and os.listdir(
             args.output_dir) and args.do_train and not args.overwrite_output_dir:
@@ -1022,14 +1067,15 @@ def main():
     set_seed(args)
 
     # Prepare CONLL-2003 task for NER, Universe Dependency for pos-tag, CONLL-2000 task for chunking
-    labels_ner = get_labels_ner(args.labels)
-    num_labels_ner = len(labels_ner)
-    labels_pos = get_labels_pos(args.labels)
-    num_labels_pos = len(labels_pos)
-    labels_chunking = get_labels_chunking(args.labels)
-    num_labels_chunking = len(labels_chunking)
+    
+    
+    
+    labels_ner = get_labels(args.labels_ner)
+    labels_pos = get_labels(args.labels_pos)
+    labels_chunking = get_labels(args.labels_chunking)
     labels_srl = get_labels_srl(args.labels_srl)
-    num_labels_srl = len(labels_srl)
+    labels_onto_pos = get_labels(args.labels_onto_pos)
+    labels_onto_ner = get_labels(args.labels_onto_ner)
     
     # Use cross entropy ignore index as padding label id so that only real label ids contribute to the loss later
     pad_token_label_id = CrossEntropyLoss().ignore_index
@@ -1041,7 +1087,7 @@ def main():
     args.model_type = args.model_type.lower()
     config_class, model_class, tokenizer_class = MODEL_CLASSES[args.model_type]
     config = config_class.from_pretrained(args.config_name if args.config_name else args.model_name_or_path,
-                                          num_labels=num_labels_ner,
+                                          num_labels=len(labels_ner),
                                           cache_dir=args.cache_dir if args.cache_dir else None,
                                           output_hidden_states=True)
     tokenizer = tokenizer_class.from_pretrained(args.tokenizer_name if args.tokenizer_name else args.model_name_or_path,
@@ -1051,10 +1097,12 @@ def main():
     model = model_class.from_pretrained(args.model_name_or_path,
                                         from_tf=bool(".ckpt" in args.model_name_or_path),
                                         config=config, 
-                                        num_labels_pos=num_labels_pos, 
-                                        num_labels_ner=num_labels_ner,
-                                        num_labels_chunking=num_labels_chunking,
-                                        num_labels_srl=num_labels_srl,
+                                        num_labels_pos=len(labels_pos), 
+                                        num_labels_ner=len(labels_ner),
+                                        num_labels_chunking=len(labels_chunking),
+                                        num_labels_srl=len(labels_srl),
+                                        num_labels_onto_pos=len(labels_onto_pos),
+                                        num_labels_onto_ner=len(labels_onto_ner)
                                         cache_dir=args.cache_dir if args.cache_dir else None,
                                         init_last=args.init_last)
     num_layers = config.num_hidden_layers
@@ -1067,10 +1115,10 @@ def main():
 
     # Training
     if args.do_train:
-        train_dataset = load_and_cache_train_examples(args, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, pad_token_label_id)
+        train_dataset = load_and_cache_train_examples(args, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, labels_onto_pos, labels_onto_ner, pad_token_label_id)
         # print("dataset lens", len(train_dataset))
         # logger.info("first dataset lens :{}".format(type(train_dataset[0])))
-        global_step, tr_loss, _ = train(args, train_dataset, model, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, pad_token_label_id)
+        global_step, tr_loss, _ = train(args, train_dataset, model, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, labels_onto_pos, labels_onto_ner, pad_token_label_id)
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 
     # Saving best-practices: if you use defaults names for the model, you can reload it using from_pretrained()
@@ -1107,11 +1155,11 @@ def main():
         msg_dict = {}
         for checkpoint in checkpoints:
             global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
-            model = model_class.from_pretrained(checkpoint, num_labels_pos=num_labels_pos, num_labels_ner=num_labels_ner, num_labels_chunking=num_labels_chunking, num_labels_srl=num_labels_srl)
+            model = model_class.from_pretrained(checkpoint, num_labels_pos=len(labels_pos), num_labels_ner=len(labels_ner), num_labels_chunking=len(labels_chunking), num_labels_srl=len(labels_srl), num_labels_onto_pos = len(labels_onto_pos), num_labels_onto_ner = len(labels_onto_ner))
             model.to(args.device)
         
 
-            pos_dataset_ft, ner_dataset_ft, chunking_dataset_ft, srl_dataset_ft = load_and_cache_dev_examples(args, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, pad_token_label_id, is_ft=True)
+            pos_dataset_ft, ner_dataset_ft, chunking_dataset_ft, srl_dataset_ft, onto_pos_dataset_ft, onto_ner_dataset_ft = load_and_cache_dev_examples(args, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, pad_token_label_id, is_ft=True)
             pos_dataset, ner_dataset, chunking_dataset, srl_dataset = load_and_cache_dev_examples(args, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, pad_token_label_id, is_ft=False)
             
             logger.info("Evaluate before finetune")
@@ -1120,11 +1168,17 @@ def main():
             result_ner_no_ft, _ = evaluate(args, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner")
             result_chunking_no_ft, _ = evaluate(args, model, tokenizer, chunking_dataset, labels_chunking, pad_token_label_id, mode="dev", prefix=global_step, task="chunking")
             result_srl_no_ft, _ = evaluate(args, model, tokenizer, srl_dataset, labels_srl, pad_token_label_id, mode="dev", task="srl")
+            results_onto_pos_no_ft, _ = evaluate(args, model, tokenizer, onto_pos_dataset, labels_onto_pos, pad_token_label_id, mode="dev",task="onto_pos")
+            results_onto_ner_no_ft, _ = evaluate(args, model, tokenizer, onto_ner_dataset, labels_onto_ner, pad_token_label_id, mode="dev", task="onto_ner")
 
             msg_dict["pos_no_ft"] = result_pos_no_ft["pos_accuracy"]
             msg_dict["ner_no_ft"] = result_ner_no_ft["ner_f1"]
             msg_dict["chunking_no_ft"] = result_chunking_no_ft["chunking_f1"]
             msg_dict["srl_no_ft"] = result_srl_no_ft["srl_f1"]
+            msg_dict["onto_pos_no_ft"] = result_onto_pos_no_ft["onto_pos_accuracy"]
+            msg_dict["onto_ner_no_ft_acc"] = result_onto_ner_no_ft["onto_ner_accuracy"]
+            msg_dict["onto_ner_no_ft_f1"] = result_onto_ner_no_ft["onto_ner_f1"]
+
 
             
             torch.save(model, "source_model.pl")    
@@ -1155,6 +1209,21 @@ def main():
             result, _ = evaluate(args, model, tokenizer, srl_dataset, labels_srl, pad_token_label_id, mode="dev", prefix=global_step, task="srl")
 
             msg_dict["srl_after_ft"] = result["srl_f1"]
+
+            # Onto POS
+            model = torch.load("source_model.pl")
+            _, _, model = finetune(args, onto_pos_dataset_ft, model, tokenizer, labels_onto_pos, pad_token_label_id, task="onto_pos")
+            result, _ = evaluate(args, model, tokenizer, onto_pos_dataset, labels_onto_pos, pad_token_label_id, mode="dev", prefix=global_step, task="onto_pos")
+
+            msg_dict["onto_pos_acc_ft"] = result["onto_pos_accuracy"]
+
+            # Onto NER
+            model = torch.load("source_model.pl")
+            _, _, model = finetune(args, onto_ner_dataset_ft, model, tokenizer, labels_onto_ner, pad_token_label_id, task="onto_ner")
+            result, _ = evaluate(args, model, tokenizer, onto_ner_dataset, labels_onto_ner, pad_token_label_id, mode="dev", prefix=global_step, task="onto_ner")
+
+            msg_dict["onto_ner_acc_ft"] = result["onto_ner_accuracy"]
+            msg_dict["onto_ner_f1_ft"] = result["onto_ner_f1"]
 
         
 
