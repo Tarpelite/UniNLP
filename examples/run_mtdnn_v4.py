@@ -1073,7 +1073,7 @@ def main():
     labels_ner = get_labels(args.labels_ner)
     labels_pos = get_labels(args.labels_pos)
     labels_chunking = get_labels(args.labels_chunking)
-    labels_srl = get_labels_srl(args.labels_srl)
+    labels_srl = get_labels(args.labels_srl)
     labels_onto_pos = get_labels(args.labels_onto_pos)
     labels_onto_ner = get_labels(args.labels_onto_ner)
     
