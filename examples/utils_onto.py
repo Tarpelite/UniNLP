@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 class InputExample(object):
     """A single training/test example for token classification."""
 
-    def __init__(self, guid, words, labels):
+    def __init__(self, guid, words, labels_pos, labels_ner):
         """Constructs a InputExample.
 
         Args:
@@ -38,8 +38,8 @@ class InputExample(object):
         """
         self.guid = guid
         self.words = words
-        self.pos_labels = pos_labels
-        self.ner_labels = ner_labels
+        self.pos_labels = labels_pos
+        self.ner_labels = labels_ner
 
 
 class InputFeatures(object):
