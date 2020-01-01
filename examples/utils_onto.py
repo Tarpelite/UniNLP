@@ -38,8 +38,8 @@ class InputExample(object):
         """
         self.guid = guid
         self.words = words
-        self.pos_labels = labels_pos
-        self.ner_labels = labels_ner
+        self.labels_pos = labels_pos
+        self.labels_ner = labels_ner
 
 
 class InputFeatures(object):
