@@ -2367,6 +2367,7 @@ class MTDNNModelv4(BertPreTrainedModel):
             alpha = self.alpha_onto_pos
         elif task_id == 5: # onto_ner
             classifier = self.classifier_onto_ner
+            num_labels = self.num_labels_onto_ner
             alpha = self.alpha_onto_ner
 
 
