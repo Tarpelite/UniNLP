@@ -446,7 +446,7 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunk
     if os.path.exists(cached_features_file) and not args.overwrite_cache:
         logger.info("Loading features from cached file %s", cached_features_file)
         cached_features = torch.load(cached_features_file)
-        pos_features, ner_features, chunking_features, srl_features = cached_features
+        pos_features, ner_features, chunking_features, srl_features, onto_pos_features, onto_ner_features = cached_features
     else:
         # load POS dataset
         logger.info("Creating POS features from dataset file at %s", args.pos_data_dir)
