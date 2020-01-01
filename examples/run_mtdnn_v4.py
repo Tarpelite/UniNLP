@@ -1168,8 +1168,8 @@ def main():
             result_ner_no_ft, _ = evaluate(args, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner")
             result_chunking_no_ft, _ = evaluate(args, model, tokenizer, chunking_dataset, labels_chunking, pad_token_label_id, mode="dev", prefix=global_step, task="chunking")
             result_srl_no_ft, _ = evaluate(args, model, tokenizer, srl_dataset, labels_srl, pad_token_label_id, mode="dev", task="srl")
-            results_onto_pos_no_ft, _ = evaluate(args, model, tokenizer, onto_pos_dataset, labels_onto_pos, pad_token_label_id, mode="dev",task="onto_pos")
-            results_onto_ner_no_ft, _ = evaluate(args, model, tokenizer, onto_ner_dataset, labels_onto_ner, pad_token_label_id, mode="dev", task="onto_ner")
+            result_onto_pos_no_ft, _ = evaluate(args, model, tokenizer, onto_pos_dataset, labels_onto_pos, pad_token_label_id, mode="dev",task="onto_pos")
+            result_onto_ner_no_ft, _ = evaluate(args, model, tokenizer, onto_ner_dataset, labels_onto_ner, pad_token_label_id, mode="dev", task="onto_ner")
 
             msg_dict["pos_no_ft"] = result_pos_no_ft["pos_accuracy"]
             msg_dict["ner_no_ft"] = result_ner_no_ft["ner_f1"]
