@@ -1159,7 +1159,7 @@ def main():
             model.to(args.device)
         
 
-            pos_dataset_ft, ner_dataset_ft, chunking_dataset_ft, srl_dataset_ft, onto_pos_dataset_ft, onto_ner_dataset_ft = load_and_cache_dev_examples(args, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, pad_token_label_id, is_ft=True)
+            pos_dataset_ft, ner_dataset_ft, chunking_dataset_ft, srl_dataset_ft, onto_pos_dataset_ft, onto_ner_dataset_ft = load_and_cache_dev_examples(args, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, labels_onto_pos, labels_onto_ner, pad_token_label_id, is_ft=True)
             pos_dataset, ner_dataset, chunking_dataset, srl_dataset = load_and_cache_dev_examples(args, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, pad_token_label_id, is_ft=False)
             
             logger.info("Evaluate before finetune")
