@@ -559,7 +559,7 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunk
 
 
     # pack the dataset t into mini-batch: Dt
-    mini_batch_size = args.per_gpu_train_batch_size
+    mini_batch_size = args.per_gpu_train_batch_size * args.n_gpu
     cnt = 0
     pos_features_batchs = []
     while cnt + mini_batch_size < len(pos_features):
