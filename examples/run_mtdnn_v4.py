@@ -1102,7 +1102,7 @@ def main():
                                         num_labels_chunking=len(labels_chunking),
                                         num_labels_srl=len(labels_srl),
                                         num_labels_onto_pos=len(labels_onto_pos),
-                                        num_labels_onto_ner=len(labels_onto_ner)
+                                        num_labels_onto_ner=len(labels_onto_ner),
                                         cache_dir=args.cache_dir if args.cache_dir else None,
                                         init_last=args.init_last)
     num_layers = config.num_hidden_layers
