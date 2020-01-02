@@ -519,9 +519,10 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunk
                                                     pad_token_label_id=pad_token_label_id
                                                     )
         
-        logger.info("Creating onto features from dataset file at %s", args.onto_data_dir)
-        onto_examples = read_examples_from_file_onto(args.onto_data_dir, "train")
-        onto_pos_features = convert_examples_to_features_onto_pos(onto_examples, onto_pos_labels, args.max_seq_length, tokenizer,
+        # load onto pos
+        logger.info("Creating onto features from dataset file at %s", args.onto_pos_data_dir)
+        onto_pos_examples = read_examples_from_file_onto(args.onto_pos_data_dir, "train")
+        onto_pos_features = convert_examples_to_features_onto_pos(onto_pos_examples, onto_pos_labels, args.max_seq_length, tokenizer,
                                                     cls_token_at_end=bool(args.model_type in ["xlnet"]),
                                                     # xlnet has a cls token at the end
                                                     cls_token=tokenizer.cls_token,
@@ -535,8 +536,10 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunk
                                                     pad_token_segment_id=4 if args.model_type in ["xlnet"] else 0,
                                                     pad_token_label_id=pad_token_label_id
                                                     )
-
-        onto_ner_features = convert_examples_to_features_onto_ner(onto_examples, onto_ner_labels, args.max_seq_length, tokenizer,
+        # load onto ner
+        logger.info("Creating onto features from dataset file at %s", args.onto_ner_data_dir)
+        onto_ner_examples = read_examples_from_file_onto(args.onto_ner_data_dir, "train")
+        onto_ner_features = convert_examples_to_features_onto_ner(onto_ner_examples, onto_ner_labels, args.max_seq_length, tokenizer,
                                                     cls_token_at_end=bool(args.model_type in ["xlnet"]),
                                                     # xlnet has a cls token at the end
                                                     cls_token=tokenizer.cls_token,
@@ -1001,7 +1004,8 @@ def main():
     parser.add_argument("--ner_data_dir", type=str, default="")
     parser.add_argument("--chunking_data_dir", type=str, default="")
     parser.add_argument("--srl_data_dir", type=str, default="")
-    parser.add_argument("--onto_data_dir", type=str, default="")
+    parser.add_argument("--onto_pos_data_dir", type=str, default="")
+    parser.add_argument("--onto_ner_data_dir", type=str, default="")
 
     parser.add_argument("--ft_before_eval", action="store_true")
     parser.add_argument("--labels_pos", type=str)
