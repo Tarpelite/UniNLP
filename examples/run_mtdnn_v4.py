@@ -330,7 +330,7 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, chunkin
         if is_ft:
             srl_examples = read_examples_from_file_srl(args.srl_data_dir, "train")
         else:
-            srl_examples = read_examples_from_file_srl(args.srl_data_dir, "test")
+            srl_examples = read_examples_from_file_srl(args.srl_data_dir, "dev")
         
         srl_features = convert_examples_to_features_srl(srl_examples, srl_labels, args.max_seq_length, tokenizer,
                                                 cls_token_at_end=bool(args.model_type in ["xlnet"]),
