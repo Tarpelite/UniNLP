@@ -346,13 +346,13 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, chunkin
                                                 pad_token_segment_id=4 if args.model_type in ["xlnet"] else 0,
                                                 pad_token_label_id=pad_token_label_id)
         
-        logger.info("Creating onto examples from dataset file at %s", args.onto_data_dir)
+        logger.info("Creating onto examples from dataset file at %s", args.onto_pos_data_dir)
         if is_ft:
-            onto_examples = read_examples_from_file_onto(args.onto_data_dir, "train")
+            onto_pos_examples = read_examples_from_file_onto(args.onto_pos_data_dir, "train")
         else:
-            onto_examples = read_examples_from_file_onto(args.onto_data_dir, "dev")
+            onto_pos_examples = read_examples_from_file_onto(args.onto_pos_data_dir, "dev")
         
-        onto_pos_features = convert_examples_to_features_onto_pos(onto_examples, onto_pos_labels, args.max_seq_length, tokenizer,
+        onto_pos_features = convert_examples_to_features_onto_pos(onto_pos_examples, onto_pos_labels, args.max_seq_length, tokenizer,
                                                 cls_token_at_end=bool(args.model_type in ["xlnet"]),
                                                 # xlnet has a cls token at the end
                                                 cls_token=tokenizer.cls_token,
@@ -366,9 +366,13 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, chunkin
                                                 pad_token_segment_id=4 if args.model_type in ["xlnet"] else 0,
                                                 pad_token_label_id=pad_token_label_id)
         
+        logger.info("Creating onto examples from dataset file at %s", args.onto_ner_data_dir)
+        if is_ft:
+            onto_ner_examples = read_examples_from_file_onto(args.onto_ner_data_dir, "train")
+        else:
+            onto_ner_examples = read_examples_from_file_onto(args.onto_ner_data_dir, "dev")
         
-        
-        onto_ner_features = convert_examples_to_features_onto_ner(onto_examples, onto_ner_labels, args.max_seq_length, tokenizer,
+        onto_ner_features = convert_examples_to_features_onto_ner(onto_ner_examples, onto_ner_labels, args.max_seq_length, tokenizer,
                                                 cls_token_at_end=bool(args.model_type in ["xlnet"]),
                                                 # xlnet has a cls token at the end
                                                 cls_token=tokenizer.cls_token,
