@@ -908,6 +908,10 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
             "onto_pos_accuracy":accuracy_score(out_label_list, preds_list)
         }
     elif task == "onto_ner":
+        print("preds")
+        print(preds_list[:20])
+        print("out_label_list")
+        print(out_label_list[:20])
         results = {
             "onto_ner_accuracy":accuracy_score(out_label_list, preds_list),
             "onto_ner_f1": f1_score(out_label_list, preds_list)
@@ -1170,7 +1174,7 @@ def main():
             result_srl_no_ft, _ = evaluate(args, model, tokenizer, srl_dataset, labels_srl, pad_token_label_id, mode="dev", task="srl")
             result_onto_pos_no_ft, _ = evaluate(args, model, tokenizer, onto_pos_dataset, labels_onto_pos, pad_token_label_id, mode="dev",task="onto_pos")
             result_onto_ner_no_ft, _ = evaluate(args, model, tokenizer, onto_ner_dataset, labels_onto_ner, pad_token_label_id, mode="dev", task="onto_ner")
-
+         
             msg_dict["pos_no_ft"] = result_pos_no_ft["pos_accuracy"]
             msg_dict["ner_no_ft"] = result_ner_no_ft["ner_f1"]
             msg_dict["chunking_no_ft"] = result_chunking_no_ft["chunking_f1"]
