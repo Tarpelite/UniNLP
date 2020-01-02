@@ -8,7 +8,7 @@ import random
 
 import numpy as np
 import torch
-from seqeval.metrics import precision_score, recall_score, f1_score, accuracy_score
+from seqeval.metrics import precision_score, recall_score, f1_score, accuracy_score, recall_score
 from tensorboardX import SummaryWriter
 from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, TensorDataset
@@ -921,7 +921,9 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
         print(out_label_list[:20])
         results = {
             "onto_ner_accuracy":accuracy_score(out_label_list, preds_list),
-            "onto_ner_f1": f1_score(out_label_list, preds_list)
+            "onto_ner_f1": f1_score(out_label_list, preds_list),
+            "onto_ner_precision":precision_score(out_label_list, preds_list),
+            "onto_ner_recall": recall_score(out_label_list, preds_list)
         }
 
     logger.info("***** Eval results %s *****", prefix)
