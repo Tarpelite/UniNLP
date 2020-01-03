@@ -638,7 +638,7 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunk
         batch_t = []
         for i in range(cnt, cnt+mini_batch_size):
             batch_t.append(onto_ner_features[i])
-        onto_pos_features_batches.append(batch_t)
+        onto_ner_features_batches.append(batch_t)
         cnt += mini_batch_size
     batch_t = []
     for i in range(cnt, len(onto_ner_features)):

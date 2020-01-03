@@ -1,0 +1,9 @@
+tasks:
+  - pos:
+         - f1
+         - accuracy
+         - precision
+  - srl
+  - ner
+  - onto_pos
+  - onto_ner
