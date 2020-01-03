@@ -13,6 +13,7 @@ import torch.nn as nn
 from torch.optim import Adam
 import copy 
 import requests
+from seqeval.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 from utils_mtdnn import MegaDataset
 from transformers import AdamW, get_linear_schedule_with_warmup
@@ -169,7 +170,73 @@ def train(args, model, dataset, mode, task_id=-1):
     return model
 
 
-def evaluate()
+def evaluate(args, model, UniDataSet, label_list, task):
+    
+    dataset = UniDataSet.load_single_dataset(task, "dev")
+    task_id = UniDataset.task_map[task]
+    label_list = UniDataSet[task_id]
+
+    if torch.cuda.device_count() > 0: 
+        eval_batch_size = torch.cuda.device_count() * args.mini_batch_size
+    else:
+        eval_batch_size = args.per_gpu_eval_batch_size
+    eval_sampler = SequentialSampler(eval_dataset)
+    eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=eval_batch_size)
+
+    logger.info(" *** Runing {} evaluation ***".format(task)) 
+    logger.info("  Num examples = %d", len(eval_dataset))
+    logger.info("  Batch size = %d", eval_batch_size)
+    nb_eval_steps = 0
+    preds = None
+    out_label_ids = None
+    model.eval()
+
+    for batch in tqdm(eval_dataloader, desc="Evaluating"):
+        batch = tuple(t.to(args.device) for t in batch)
+
+        with torch.no_grad():
+            inputs = {
+                "input_ids":batch[0],
+                "attention_mask":batch[1],
+                "token_type_ids":batch[2],
+                "task_id":task_id}
+            
+            outputs = model(**inputs)
+
+            if args.do_alpha:
+                alpha = outputs[0]
+                outputs = outputs[1:]
+            _ , logits = outputs[:2]
+
+        nb_eval_steps += 1
+        if preds is None:
+            preds = logits.detach().cpu().numpy()
+            out_label_ids = inputs["labels"].detach().cpu().numpy()
+        else:
+            preds = np.append(preds, logits.detach().cpu().numpy, axis=0)
+            out_label_ids = np.append(out_label_ids, inputs["labels"].detach().cpu().numpy(), axis=0)
+    
+    preds = np.argmax(preds, axis=2)
+
+    label_map = {i: label for i, label in enumerate(labels)}
+
+    out_label_list = [[] for _ in range(out_label_ids.shape[0])]
+    preds_list = [[] for _ in range(out_label_ids.shape[0])]
+
+    for i in range(out_label_ids.shape[0]):
+        for j in range(out_label_ids.shape[1]):
+            if out_label_ids[i, j] != pad_token_label_id:
+                out_label_list[i].append(label_map[out_label_ids[i][j]])
+                preds_list[i].append(label_map[preds[i][j]])
+    
+    results = {}
+    results["a"] = accuracy_score(out_label_list, preds_list)
+    results["p"] = precision_score(out_label_list, preds_list)
+    results["r"] = recall_score(out_label_list, preds_list)
+    results["f"] = f1_score(out_label_list, preds_list)
+
+    return results
+
 
 def main():
 
@@ -292,7 +359,43 @@ def main():
         # Good practice: save your training arguments together with the trained model
         torch.save(args, os.path.join(args.output_dir, "training_args.bin"))
     
-    if args.do_eval"
+    if args.do_eval:
+        
+        tokenizer = tokenizer_class.from_pretrained(args.output_dir, 
+                                                    do_lower_case=args.do_lower_case)
+        checkpoints = [args.output_dir]
+
+        model = model_class.from_pretrained(checkpoint,
+                                            from_tf=bool(".ckpt" in args.model_name_or_path),
+                                            config = config,
+                                            labels_list=UniDataSet.labels_list,
+                                            do_task_embedding=args.do_task_embedding,
+                                            do_alpha=args.do_alpha)
+        
+
+        model.to(args.device)
+        total_results = {}
+        for task in UniDataSet.tasks_list:
+            dataset = UniDataSet.load_single_dataset(task, "dev")
+            task_id = UniDataset.task_map[task]
+            label_list = UniDataSet[task_id]
+            results = evaluate(args, model, UniDataSet, label_list, task)
+            if task == "POS":
+                total_results["POS"] = results["a"]
+            elif task == "NER":
+                total_results["NER"] = results["f"]
+            elif task == "CHUNKING":
+                total_results["CHUNKING"] = results["f"]
+            elif task == "SRL":
+                total_results["SRL"] = results["f"]
+            elif task == "ONTO_POS":
+                total_results["ONTO_POS"] = results["a"]
+            elif task == "ONTO_NER":
+                total_results["ONTO_NER"] = results["f"]
+        print(total_results)
+
+if __name__ == "__main__":
+    main()
 
 
 
