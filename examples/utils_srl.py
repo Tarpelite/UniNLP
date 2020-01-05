@@ -158,9 +158,10 @@ def read_examples_from_file(data_dir, mode):
             lefthand_input = inputs[0].strip().split()
             righthand_input = inputs[1].strip().split() 
 
+            verb  = words[0]
             words = lefthand_input[1:]
             labels = righthand_input
-            verb  = words[int(lefthand_input[0])]
+           
 
             assert len(words) == len(labels) 
 
