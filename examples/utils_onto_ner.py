@@ -59,23 +59,13 @@ def read_examples_from_file(data_dir, mode):
         words = []
         labels = []
         for line in f:
-            if line == "\n":
-                if words:
-                    examples.append(InputExample(guid="{}-{}".format(mode, guid_index),
-                                                 words=words,
-                                                 labels=labels))
-                    guid_index += 1
-                    words = []
-                    labels = []
-            else:
-                splits = line.strip("\n").split("\t")
-                words.append(splits[0])
-                if len(splits) > 1:
-                    labels.append(splits[-1])
-                else:
-                    # Examples could have no label for mode = "test"
-                    labels.append("O")
-        if words:
+            inputs = line.strip().strip("\n").split("\t")
+            left = inputs[0].strip().split()
+            right = inputs[1].strip().split()
+
+            words = left
+            labels = right
+            assert len(left) == len(right)
             examples.append(InputExample(guid="%s-%d".format(mode, guid_index),
                                          words=words,
                                          labels=labels))
