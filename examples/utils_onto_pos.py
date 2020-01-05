@@ -59,7 +59,7 @@ def read_examples_from_file(data_dir, mode):
         words = []
         labels = []
         for line in f.readlines():
-            inputs = line.strip().split("\n").split("\t")
+            inputs = line.strip().strip("\n").split("\t")
             left = inputs[0].strip().split()
             right = inputs[1].strip().split()
 
