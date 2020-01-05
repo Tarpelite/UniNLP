@@ -28,10 +28,13 @@ from utils_chunking import read_examples_from_file as read_examples_from_file_ch
 from utils_srl import convert_examples_to_features as convert_examples_to_features_srl
 from utils_srl import read_examples_from_file as read_examples_from_file_srl
 
-from utils_onto import convert_examples_to_features_pos as convert_examples_to_features_onto_pos
-from utils_onto import convert_examples_to_features_ner as convert_examples_to_features_onto_ner
+from utils_onto_pos import convert_examples_to_features as convert_examples_to_features_onto_pos
+from utils_onto_pos import read_examples_from_file as read_examples_from_file_onto_pos
+
+from utils_onto_ner import convert_examples_to_features as convert_examples_to_features_onto_ner
+from utils_onto_ner import read_examples_from_file as read_examples_from_file_onto_ner
+
 from utils_onto import get_labels 
-from utils_onto import read_examples_from_file as read_examples_from_file_onto
 
 
 import torch.nn as nn
@@ -348,9 +351,9 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, chunkin
         
         logger.info("Creating onto examples from dataset file at %s", args.onto_pos_data_dir)
         if is_ft:
-            onto_pos_examples = read_examples_from_file_onto(args.onto_pos_data_dir, "train")
+            onto_pos_examples = read_examples_from_file_onto_pos(args.onto_pos_data_dir, "train")
         else:
-            onto_pos_examples = read_examples_from_file_onto(args.onto_pos_data_dir, "dev")
+            onto_pos_examples = read_examples_from_file_onto_pos(args.onto_pos_data_dir, "dev")
         
         onto_pos_features = convert_examples_to_features_onto_pos(onto_pos_examples, onto_pos_labels, args.max_seq_length, tokenizer,
                                                 cls_token_at_end=bool(args.model_type in ["xlnet"]),
@@ -368,9 +371,9 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, chunkin
         
         logger.info("Creating onto examples from dataset file at %s", args.onto_ner_data_dir)
         if is_ft:
-            onto_ner_examples = read_examples_from_file_onto(args.onto_ner_data_dir, "train")
+            onto_ner_examples = read_examples_from_file_onto_ner(args.onto_ner_data_dir, "train")
         else:
-            onto_ner_examples = read_examples_from_file_onto(args.onto_ner_data_dir, "dev")
+            onto_ner_examples = read_examples_from_file_onto_ner(args.onto_ner_data_dir, "dev")
         
         onto_ner_features = convert_examples_to_features_onto_ner(onto_ner_examples, onto_ner_labels, args.max_seq_length, tokenizer,
                                                 cls_token_at_end=bool(args.model_type in ["xlnet"]),
@@ -488,7 +491,7 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunk
                                                     )
         
         # load chunking dataset
-        logger.info("Creating Chunking features from dataset file at %s", args.ner_data_dir)
+        logger.info("Creating Chunking features from dataset file at %s", args.chunking_data_dir)
         chunking_examples = read_examples_from_file_chunking(args.chunking_data_dir, "train")
         chunking_features = convert_examples_to_features_chunking(chunking_examples, chunking_labels, args.max_seq_length, tokenizer,
                                                     cls_token_at_end=bool(args.model_type in ["xlnet"]),
@@ -525,7 +528,7 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunk
         
         # load onto pos
         logger.info("Creating onto features from dataset file at %s", args.onto_pos_data_dir)
-        onto_pos_examples = read_examples_from_file_onto(args.onto_pos_data_dir, "train")
+        onto_pos_examples = read_examples_from_file_onto_pos(args.onto_pos_data_dir, "train")
         onto_pos_features = convert_examples_to_features_onto_pos(onto_pos_examples, onto_pos_labels, args.max_seq_length, tokenizer,
                                                     cls_token_at_end=bool(args.model_type in ["xlnet"]),
                                                     # xlnet has a cls token at the end
@@ -542,7 +545,7 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunk
                                                     )
         # load onto ner
         logger.info("Creating onto features from dataset file at %s", args.onto_ner_data_dir)
-        onto_ner_examples = read_examples_from_file_onto(args.onto_ner_data_dir, "train")
+        onto_ner_examples = read_examples_from_file_onto_ner(args.onto_ner_data_dir, "train")
         onto_ner_features = convert_examples_to_features_onto_ner(onto_ner_examples, onto_ner_labels, args.max_seq_length, tokenizer,
                                                     cls_token_at_end=bool(args.model_type in ["xlnet"]),
                                                     # xlnet has a cls token at the end
