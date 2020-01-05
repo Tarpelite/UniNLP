@@ -76,7 +76,8 @@ class MegaDataSet(object):
 
         features = []
         cnt_counts = []
-
+        last_tokens = []
+        last_label_ids = []
         if "{}-{}".format(task, "train") in self.features_map:
             features = self.features_map["{}-{}".format(task, mode)]
         else:
@@ -88,7 +89,7 @@ class MegaDataSet(object):
                 for word, label in zip(example.words, example.labels):
                     word_tokens = self.tokenizer.tokenize(word)
                     tokens.extend(word_tokens)
-                    label_ids.extend([label_map[label]] + [-100]*(len(word_tokens) - 1))
+                    label_ids.extend([label_map[label]] + [-1]*(len(word_tokens) - 1))
 
                 cnt_counts.append(len(tokens))
                 if task_name == "SRL":

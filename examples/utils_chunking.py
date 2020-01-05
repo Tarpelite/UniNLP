@@ -59,23 +59,13 @@ def read_examples_from_file(data_dir, mode):
         words = []
         labels = []
         for line in f:
-            if line.startswith("-DOCSTART-") or line == "" or line == "\n":
-                if words:
-                    examples.append(InputExample(guid="{}-{}".format(mode, guid_index),
-                                                 words=words,
-                                                 labels=labels))
-                    guid_index += 1
-                    words = []
-                    labels = []
-            else:
-                splits = line.split(" ")
-                words.append(splits[0])
-                if len(splits) > 1:
-                    labels.append(splits[-1].replace("\n", ""))
-                else:
-                    # Examples could have no label for mode = "test"
-                    labels.append("O")
-        if words:
+            inputs = line.strip().strip("\n").split("\t")
+            left = inputs[0].strip().split()
+            right = inputs[1].strip().split()
+
+            words = left
+            labels = right
+            assert len(words) == len(labels)
             examples.append(InputExample(guid="%s-%d".format(mode, guid_index),
                                          words=words,
                                          labels=labels))
@@ -122,15 +112,6 @@ def convert_examples_to_features(examples,
             # Use the real label id for the first token of the word, and padding ids for the remaining tokens
             label_ids.extend([label_map[label]] + [pad_token_label_id] * (len(word_tokens) - 1))
 
-        if ex_index == 0:
-            last_tokens = tokens[-64:]
-            last_label_ids = label_ids[-64:]
-        
-        else:
-            tokens = last_tokens + tokens
-            label_ids = last_label_ids + label_ids
-            last_tokens= tokens[-64:]
-            last_label_ids = label_ids[-64:]
 
         # Account for [CLS] and [SEP] with "- 2" and with "- 3" for RoBERTa.
         cnt_counts.append(len(tokens))

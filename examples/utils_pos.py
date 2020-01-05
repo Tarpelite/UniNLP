@@ -31,22 +31,13 @@ def read_examples_from_file(data_dir, mode):
         words = []
         labels = []
         for line in f.readlines():
-            if line == "\n":
-                if words:
-                    examples.append(InputExample(guid="{}-{}".format(mode, guid_index), 
-                                                words=words, 
-                                                labels=labels))
-                    guid_index += 1
-                    words = []
-                    labels = []
-            elif line.startswith("#"):
-                pass
-            else:
-                line = line.strip("\n").split("\t")
-                words.append(line[1])
-                labels.append(line[3])
-    
-        if words:
+            inputs = line.strip().strip("\n").split("\t")
+            left = inputs[0].strip().split()
+            right = inputs[1].strip().split()
+            
+            words = left
+            labels = right
+            assert len(words) == len(labels)
             examples.append(InputExample(guid="%s-%d".format(mode, guid_index),
                                          words=words,
                                          labels=labels))

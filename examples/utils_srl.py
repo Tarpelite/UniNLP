@@ -154,9 +154,9 @@ def read_examples_from_file(data_dir, mode):
         for line in f.readlines():
             words = []
             labels = []
-            inputs = line.strip().strip("\n").split("|||")
+            inputs = line.strip().strip("\n").split("\t")
             lefthand_input = inputs[0].strip().split()
-            righthand_input = inputs[1].strip().split() if len(inputs) > 1 else ['O' for _ in lefthand_input]
+            righthand_input = inputs[1].strip().split() 
 
             words = lefthand_input[1:]
             labels = righthand_input
