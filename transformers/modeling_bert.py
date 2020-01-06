@@ -26,6 +26,7 @@ import torch
 from torch import nn
 from torch.nn import CrossEntropyLoss, MSELoss
 import copy
+import pickle
 
 from .modeling_utils import PreTrainedModel, prune_linear_layer, AverageMeter
 from .configuration_bert import BertConfig
@@ -2167,12 +2168,22 @@ class MTDNNModelTaskEmbeddingV2(BertPreTrainedModel):
             outputs = (alpha_vis,) + outputs
         return outputs  # (loss), scores, (hidden_states), (attentions)
 
+def copy_model(src):
+    pickle.dump(src, open("save.pl", "wb"))
+    target = pickle.load(open("save.pl", "rb"))
+    return target
+
+class AdapterLayers(nn.Module):
+    def __init__(self, config, num_layers):
+        super(AdapterLayers, self).__init__()
+        self.layers = nn.ModuleList([BertLayer(config) for _ in range (num_layers)])
+    
 
 class MTDNNModelv4(BertPreTrainedModel):
-    def __init__(self, config, num_labels_pos, num_labels_ner, num_labels_chunking, num_labels_srl, num_labels_onto_pos, num_labels_onto_ner, init_last=False):
+    def __init__(self, config, num_labels_pos, num_labels_ner, num_labels_chunking, num_labels_srl, num_labels_onto_pos, num_labels_onto_ner, init_last=False, do_adapter=False):
         super(MTDNNModelv4, self).__init__(config)
 
-
+        self.do_adapter = do_adapter
         self.bert = BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
@@ -2189,6 +2200,22 @@ class MTDNNModelv4(BertPreTrainedModel):
         init_value_srl = torch.zeros(config.num_hidden_layers, 1)
         init_value_onto_pos = torch.zeros(config.num_hidden_layers, 1)
         init_value_onto_ner = torch.zeros(config.num_hidden_layers, 1)
+
+        self.tasks = ["pos", "ner", "chunking", "srl", "onto_pos", "onto_ner"]
+
+        if self.do_adapter:
+            self.adapter_pos = AdapterLayer(config, 2)
+            self.adapter_ner = AdapterLayer(config, 2)
+            self.adapter_chunking = AdapterLayer(config, 2)
+            self.adapter_srl = AdapterLayer(config, 2)
+            self.adapter_onto_pos = AdapterLayer(config, 2)
+            self.adapter_onto_ner = AdapterLayer(config, 2)
+
+            # do init
+            for task in self.tasks:
+                for i in range(len(self.adapter_pos.layers)):
+                    getattr(self, "adpater_{}".format(task)).layers[i] = copy_model(self.bert.encoder.layer[-i])
+
 
         inf_value = 10
 
@@ -2223,6 +2250,7 @@ class MTDNNModelv4(BertPreTrainedModel):
         self.num_labels_onto_ner = num_labels_onto_ner
         
         self.softmax = nn.Softmax(dim=0)
+
         # self.similarity = nn.CosineSimilarity(dim=0)
         self.init_weights()
     
@@ -2230,6 +2258,12 @@ class MTDNNModelv4(BertPreTrainedModel):
                 position_ids=None, head_mask=None, inputs_embeds=None, labels=None, task_id=0, layer_id=-1, do_alpha=False):
         
         
+        if self.do_adapter:
+            task = self.tasks[task_id]
+            adapter_layer = getattr(self, "adapter_{}".format(task))
+            for i in range(len(adapter_layer.layers)):
+                self.bert.encoder.layer[-i] = adapter_layer.layers[i]
+    
         outputs = self.bert(input_ids,
                             attention_mask=attention_mask,
                             token_type_ids=token_type_ids,
@@ -2397,3 +2431,7 @@ class MTDNNModel(BertPreTrainedModel):
         elif do_alpha:
             outputs = (alpha, ) + outputs
         return outputs
+
+
+
+

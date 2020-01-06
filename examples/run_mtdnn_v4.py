@@ -1030,6 +1030,7 @@ def main():
 
     parser.add_argument("--do_alpha", action="store_true")
     parser.add_argument("--ft_with_last_layer", action="store_true")
+    parser.add_argument("--do_adapter", action="store_true")
 
     parser.add_argument("--fp16", action="store_true",
                         help="Whether to use 16-bit (mixed) precision (through NVIDIA apex) instead of 32-bit")
@@ -1121,7 +1122,8 @@ def main():
                                         num_labels_onto_pos=len(labels_onto_pos),
                                         num_labels_onto_ner=len(labels_onto_ner),
                                         cache_dir=args.cache_dir if args.cache_dir else None,
-                                        init_last=args.init_last)
+                                        init_last=args.init_last,
+                                        do_adapter=args.do_adapter)
     num_layers = config.num_hidden_layers
     if args.local_rank == 0:
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
