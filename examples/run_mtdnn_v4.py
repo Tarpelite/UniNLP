@@ -156,7 +156,8 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
                       "labels": batch[3], 
                       "task_id": task_id,
                       "layer_id":layer_id,
-                      "do_alpha": do_alpha}
+                      "do_alpha": do_alpha,
+                      "adapter_ft":args.adapter_ft}
             if args.model_type != "distilbert":
                 inputs["token_type_ids"]: batch[2] if args.model_type in ["bert", "xlnet"] else None  # XLM and RoBERTa don"t use segment_ids
 
@@ -1040,6 +1041,7 @@ def main():
     parser.add_argument("--do_alpha", action="store_true")
     parser.add_argument("--ft_with_last_layer", action="store_true")
     parser.add_argument("--do_adapter", action="store_true")
+    parser.add_argument("--adapter_ft", action="store_true")
 
     parser.add_argument("--fp16", action="store_true",
                         help="Whether to use 16-bit (mixed) precision (through NVIDIA apex) instead of 32-bit")

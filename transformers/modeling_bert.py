@@ -2163,7 +2163,15 @@ class AdapterLayers(nn.Module):
     
 
 class MTDNNModelv4(BertPreTrainedModel):
-    def __init__(self, config, num_labels_pos, num_labels_ner, num_labels_chunking, num_labels_srl, num_labels_onto_pos, num_labels_onto_ner, init_last=False, do_adapter=False):
+    def __init__(self, config, 
+                 num_labels_pos, 
+                 num_labels_ner, 
+                 num_labels_chunking, 
+                 num_labels_srl, 
+                 num_labels_onto_pos, 
+                 num_labels_onto_ner, 
+                 init_last=False, 
+                 do_adapter=False):
         super(MTDNNModelv4, self).__init__(config)
 
         self.do_adapter = do_adapter
@@ -2238,15 +2246,22 @@ class MTDNNModelv4(BertPreTrainedModel):
         self.init_weights()
     
     def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, 
-                position_ids=None, head_mask=None, inputs_embeds=None, labels=None, task_id=0, layer_id=-1, do_alpha=False):
+                position_ids=None, head_mask=None, inputs_embeds=None, labels=None, task_id=0, layer_id=-1, do_alpha=False, adapter_ft=False):
         
         
         if self.do_adapter:
+            if adapter_ft:
+                for param in self.bert.parameters():
+                    param.requires_grad = False
+
             task = self.tasks[task_id]
             adapter_layer = getattr(self, "adapter_{}".format(task))
             for i in range(len(adapter_layer.layers)):
                 self.bert.encoder.layer[-i] = adapter_layer.layers[i]
-    
+                if adapter_ft:
+                    for param in self.bert.encoder.layer[-i]:
+                        param.requires_grad = True
+        
         outputs = self.bert(input_ids,
                             attention_mask=attention_mask,
                             token_type_ids=token_type_ids,
