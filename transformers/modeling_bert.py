@@ -2259,7 +2259,7 @@ class MTDNNModelv4(BertPreTrainedModel):
             for i in range(len(adapter_layer.layers)):
                 self.bert.encoder.layer[-i] = adapter_layer.layers[i]
                 if adapter_ft:
-                    for param in self.bert.encoder.layer[-i]:
+                    for param in self.bert.encoder.layer[-i].parameters():
                         param.requires_grad = True
         
         outputs = self.bert(input_ids,
