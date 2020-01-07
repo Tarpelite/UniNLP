@@ -935,6 +935,22 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
 
     return results, preds_list
 
+def save_adapters(model, output_dir):
+    task_list = ["pos", "ner", "chunking", "srl", "onto_pos", "onto_ner"]
+    for task in task_list:
+        adapter = getattr(model, "adapter_{}".format(task))
+        torch.save(adapter, os.path.join(output_dir, "adapter_{}.pt".format(task)))
+
+def load_adapters(model, output_dir):
+    task_list = ["pos", "ner", "chunking", "srl", "onto_pos", "onto_ner"]
+    
+    for task in task_list:
+        path = os.path.join(output_dir, "adapter_{}.pt".format(task))
+        adapter = torch.load(path)
+        setattr(model, "adapter_{}".format(task), adapter)
+    return model
+
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -1151,6 +1167,8 @@ def main():
         # They can then be reloaded using `from_pretrained()`
         model_to_save = model.module if hasattr(model, "module") else model  # Take care of distributed/parallel training
         model_to_save.save_pretrained(args.output_dir)
+        if args.do_adapter:
+            save_adapters(model, args.output_dir)
         tokenizer.save_pretrained(args.output_dir)
 
         # Good practice: save your training arguments together with the trained model
@@ -1174,7 +1192,16 @@ def main():
         msg_dict = {}
         for checkpoint in checkpoints:
             global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
-            model = model_class.from_pretrained(checkpoint, num_labels_pos=len(labels_pos), num_labels_ner=len(labels_ner), num_labels_chunking=len(labels_chunking), num_labels_srl=len(labels_srl), num_labels_onto_pos = len(labels_onto_pos), num_labels_onto_ner = len(labels_onto_ner))
+            model = model_class.from_pretrained(checkpoint, 
+                                                num_labels_pos=len(labels_pos), 
+                                                num_labels_ner=len(labels_ner), 
+                                                num_labels_chunking=len(labels_chunking), 
+                                                num_labels_srl=len(labels_srl), 
+                                                num_labels_onto_pos = len(labels_onto_pos), 
+                                                num_labels_onto_ner = len(labels_onto_ner),
+                                                do_adapter=args.do_adapter)
+            if args.do_adapter:
+                model = load_adapters(model, args.output_dir)
             model.to(args.device)
         
 
