@@ -1504,23 +1504,6 @@ class MTDNNModelv3(BertPreTrainedModel):
             outputs = (alpha, ) + outputs
         return outputs  # (loss), scores, (hidden_states), (attentions)
         
-class AdapterLayer(nn.Module):
-    def __init__(self,config):
-        super(AdapterLayer, self).__init__()
-        adapter_size = int(config.intermediate_size/2)
-        self.FeedForwarddownProject = nn.Linear(config.intermediate_size, adapter_size)
-        self.Nonlinear = nn.Sigmoid()
-        self.FeedForwardupProject = nn.Linear(adapter_size, config.intermediate_size)
-    
-    def forward(self, hidden_states, skip=False):
-        # add skip layer
-        if skip:
-            return hidden_states
-        else:
-            hidden_states_inner = self.FeedForwarddownProject(hidden_states)
-            hidden_states_inner = self.Nonlinear(hidden_states_inner)
-            hidden_states_inner = self.FeedForwardupProject(hidden_states_inner)
-            return hidden_states_inner
 
 class AdapterBertLayer(nn.Module):
     def __init__(self, config):
