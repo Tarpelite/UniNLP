@@ -234,7 +234,7 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
     if args.local_rank in [-1, 0]:
         tb_writer.close()
     
-    path = os.join(args.output_dir, "{}-ft.bin".format(task))
+    path = os.path.join(args.output_dir, "{}-ft.bin".format(task))
     logger.info("save model to {}".format(path))
     torch.save(model, path)
     return global_step, tr_loss / global_step, model
