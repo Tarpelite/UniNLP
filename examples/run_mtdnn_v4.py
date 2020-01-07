@@ -223,16 +223,6 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
                     tb_writer.add_scalar("loss", (tr_loss - logging_loss) / args.logging_steps, global_step)
                     logging_loss = tr_loss
 
-                if args.local_rank in [-1, 0] and args.save_steps > 0 and global_step % args.save_steps == 0:
-                    # Save model checkpoint
-                    output_dir = os.path.join(args.output_dir, "checkpoint-{}".format(global_step))
-                    if not os.path.exists(output_dir):
-                        os.makedirs(output_dir)
-                    model_to_save = model.module if hasattr(model, "module") else model  # Take care of distributed/parallel training
-                    model_to_save.save_pretrained(output_dir)
-                    torch.save(args, os.path.join(output_dir, "training_args.bin"))
-                    logger.info("Saving model checkpoint to %s", output_dir)
-
             if args.max_steps > 0 and global_step > args.max_steps:
                 epoch_iterator.close()
                 break
@@ -242,7 +232,10 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
 
     if args.local_rank in [-1, 0]:
         tb_writer.close()
-  
+    
+    path = os.join(args.output_dir, "{}-ft.bin".format(task))
+    logger.info("save model to {}".format(path))
+    torch.save(model, path)
     return global_step, tr_loss / global_step, model
 
 
