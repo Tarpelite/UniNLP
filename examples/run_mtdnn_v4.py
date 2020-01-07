@@ -889,6 +889,15 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
                 out_label_list[i].append(label_map[out_label_ids[i][j]])
                 preds_list[i].append(label_map[preds[i][j]])
     
+    if task == "onto_ner" or task == "ner":
+        for i in range(len(preds_list)):
+            for j in range(len(preds_list[i])):
+                preds_list[i][j] =  preds_list[i][j].split("-")[-1]
+        
+        for i in range(len(out_label_list)):
+            for j in range(len(out_label_list[i])):
+                out_label_list[i][j] = out_label_list[i][j].split("-")[-1]
+
     results = {}
     if task == "pos":
         results["pos_accuracy"] = accuracy_score(out_label_list, preds_list)
