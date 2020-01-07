@@ -2187,12 +2187,12 @@ class MTDNNModelv4(BertPreTrainedModel):
         self.tasks = ["pos", "ner", "chunking", "srl", "onto_pos", "onto_ner"]
 
         if self.do_adapter:
-            self.adapter_pos = AdapterLayer(config, 2)
-            self.adapter_ner = AdapterLayer(config, 2)
-            self.adapter_chunking = AdapterLayer(config, 2)
-            self.adapter_srl = AdapterLayer(config, 2)
-            self.adapter_onto_pos = AdapterLayer(config, 2)
-            self.adapter_onto_ner = AdapterLayer(config, 2)
+            self.adapter_pos = AdapterLayers(config, 2)
+            self.adapter_ner = AdapterLayers(config, 2)
+            self.adapter_chunking = AdapterLayers(config, 2)
+            self.adapter_srl = AdapterLayers(config, 2)
+            self.adapter_onto_pos = AdapterLayers(config, 2)
+            self.adapter_onto_ner = AdapterLayers(config, 2)
 
             # do init
             for task in self.tasks:
