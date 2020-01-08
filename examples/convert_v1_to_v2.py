@@ -39,6 +39,7 @@ import torch.nn as nn
 from torch.optim import Adam
 import copy
 import requests
+import os
 
 from transformers import AdamW, get_linear_schedule_with_warmup
 from transformers import WEIGHTS_NAME, BertConfig, BertForTokenClassification, BertTokenizer
@@ -54,6 +55,9 @@ def convert_model(src_path, target_path):
     if not os.path.exists(target_path):
         os.mkdir(target_path)
     model_to_save.save_pretrained(target_path)
+    model_path = os.path.join(target_path, "pytorch_model.bin")
+    cp_command = "mv {} {}".format(model_path. src_path)
+    os.system(cp_command)
     
 
 if __name__ == "__main__":
