@@ -56,7 +56,7 @@ def convert_model(src_path, target_path):
         os.mkdir(target_path)
     model_to_save.save_pretrained(target_path)
     model_path = os.path.join(target_path, "pytorch_model.bin")
-    cp_command = "mv {} {}".format(model_path. src_path)
+    cp_command = "mv {} {}".format(model_path, src_path)
     os.system(cp_command)
     
 
