@@ -50,7 +50,8 @@ from transformers import DistilBertConfig, DistilBertForTokenClassification, Dis
 
 def convert_model(src_path, target_path):
     model = torch.load(src_path)
-    model.save_pretrained(target_path)
+    model_to_save = model.module if hasattr(model, "module") else model 
+    model_to_save.save_pretrained(target_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
