@@ -35,13 +35,39 @@ class BiAffine(nn.Module):
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.U = nn.Parameter(torch.FloatTensor(output_dim, input_dim, input_dim))
-        nn.init.xavier_uniform_(self.U)
+        # nn.init.xavier_uniform_(self.U)
     
     def forward(self, Rh, Rd):
         Rh = Rh.unsqueeze(1)
         Rd = Rd.unsqueeze(1)
         S = Rh @ self.U @ Rd.transpose(-1, -2)
         return S.squeeze(1)
+
+class BiLSTMEncoder(nn.Module):
+    def __init__(self, input_size=768, hidden_size=2*768):
+        self.num_layers = 1
+        self.hidden_size = hidden_size
+        self.rnn = nn.LSTM( input_size, 
+                            hidden_size, 
+                            batch_first=True, 
+                            bidirectional=True,
+                            num_layers=1)
+        
+    def forward(self, x):
+        batch_size = x.size(0)
+        h0 = torch.zeros(self.num_layers*self.num_directions, batch_size, self.hidden_size)
+        c0 = torch.zeros(self.num_layers*self.num_directions, batch_size, self.hidden_size)
+        out, _ = self.rnn(x, (h0, c0))
+        return out
+
+
+class MLP(nn.Module):
+    def __init__(self, input_size, output_size):
+        
+
+
+
+
 
 class RecurrentEncoder(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers,
