@@ -61,13 +61,6 @@ class BiLSTMEncoder(nn.Module):
         return out
 
 
-class MLP(nn.Module):
-    def __init__(self, input_size, output_size):
-        
-
-
-
-
 
 class RecurrentEncoder(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers,
@@ -176,8 +169,66 @@ class BiAffineParser(BertPreTrainedModel):
 
 
 
+class BertForDependencyParsing(BertPreTrainedModel):
+    def __init__(self, config, num_labels=20):
+        super(BertForDependencyParsing, self).__init__(config)
+        self.bert = BertModel(config)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
+        self.bilstm = BiLSTMEncoder(input_size=config.hidden_size, output_size=config.hidden_size)
 
+        self.arc_mlp_head = nn.Linear(config.hidden_size, 2*config.hidden_size)
+        self.arc_mlp_dep = nn.Linear(config.hidden_size, 2*config.hidden_size)
+
+        self.label_mlp_head = nn.Linear(config.hidden_size, 2*config.hidden_size)
+        self.label_mlp_dep = nn.Linear(config.hidden_size, 2*config.hidden_size)
+
+        self.arc_biaffine = BiAffine(2*config.hidden_size, 1)
+        self.lab_biaffine = BiAffine(2*config.hidden_size, num_labels)
+    
+    def forward(self, 
+                input_ids=None,
+                attention_mask=None,
+                token_type_ids=None,
+                position_ids=None,
+                head_mask=None,
+                inputs_embeds=None,
+                heads=None,
+                labels=None):
+        outputs = self.bert(input_ids,
+                            attention_mask=attention_mask,
+                            token_type_ids=token_type_ids,
+                            position_ids=position_ids,
+                            head_mask=head_mask,
+                            inputs_embeds=inputs_embeds)
+
+        sequence_output = outputs[0]
+        sequence_output = self.dropout(sequence_output)
+        r = self.bilstm(sequence_output)
         
+        arc_head = self.arc_mlp_head(r)
+        arc_dep = self.arc_mlp_dep(r)
 
+        label_head = self.label_mlp_head(r)
+        label_dep = self.label_mlp_head(r)
 
+        s_arc = self.arc_biaffine(arc_head, arc_dep)
+        s_lab = self.lab_biaffine(label_head, label_dep) # [batch, num_labels, seq_len, seq_len]
+
+        outputs = (s_arc, s_lab)
+        if heads is not None and labels is not None:
+            s_arc = s_arc.contiguous().view(-1, s_arc.size(-1))
+            heads = heads.view(-1)
+            arc_loss = nn.CrossEntropy(s_arc, heads)
+            
+            heads = heads.unsqueeze(1).unsqueeze(2)              # [batch, 1, 1, sent_len]
+            heads = heads.expand(-1, s_lab.size(1), -1, -1)      # [batch, n_labels, 1, sent_len]
+            # print("heads", heads.shape)
+            # print("S_lab", S_lab.shape)
+            s_lab = torch.gather(s_lab, 2, heads).squeeze(2)     # [batch, n_labels, sent_len]
+            s_lab = s_lab.transpose(-1, -2)                      # [batch, sent_len, n_labels]
+            s_lab = s_lab.contiguous().view(-1, S_lab.size(-1))  # [batch*sent_len, n_labels]
+            labels = labels.view(-1)                             # [batch*sent_len]
+            label_loss = nn.CrossEntropy(s_lab, labels)
+            outputs = (arc_loss, label_loss) + ouutputs
+        return outputs

@@ -20,7 +20,7 @@ import torch.nn as nn
 from torch.optim import Adam
 
 from transformers import AdamW, get_linear_schedule_with_warmup
-from transformers import WEIGHTS_NAME, BertConfig, BertForTokenClassification, BertTokenizer,BiAffineParser
+from transformers import WEIGHTS_NAME, BertConfig, BertForTokenClassification, BertTokenizer,BiAffineParser, BertForDependencyParsing,
 from transformers import RobertaConfig, RobertaForTokenClassification, RobertaTokenizer
 from transformers import DistilBertConfig, DistilBertForTokenClassification, DistilBertTokenizer
 
@@ -35,7 +35,7 @@ ALL_MODELS = sum(
     ())
 
 MODEL_CLASSES = {
-    "bert": (BertConfig, BiAffineParser, BertTokenizer),
+    "bert": (BertConfig, BertForDependencyParsing, BertTokenizer),
     "roberta": (RobertaConfig, RobertaForTokenClassification, RobertaTokenizer),
     "distilbert": (DistilBertConfig, DistilBertForTokenClassification, DistilBertTokenizer)
 }
@@ -141,20 +141,20 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
             if args.model_type != "distilbert":
                 inputs["token_type_ids"]: batch[2] if args.model_type in ["bert", "xlnet"] else None  # XLM and RoBERTa don"t use segment_ids
 
-            S_arc, S_labels = model(**inputs)
-            S_arc.to(args.device)
-            S_labels.to(args.device)
+            arc_loss, lab_loss = model(**inputs)
+            # S_arc.to(args.device)
+            # S_labels.to(args.device)
 
-            # print("S_arc", S_arc.shape)
-            # print("S_labels", S_labels.shape)
-            heads = batch[4]
-            labels = batch[3]
-            arc_loss = arc_loss_func(S_arc, heads)
-            heads_mask = torch.clone(heads)
-            heads_mask.masked_fill_(heads==-100, 0)
-            heads_mask.masked_fill_(heads>-100, 1)
-            heads = heads*heads_mask
-            lab_loss = lab_loss_func(S_labels, heads, labels)
+            # # print("S_arc", S_arc.shape)
+            # # print("S_labels", S_labels.shape)
+            # heads = batch[4]
+            # labels = batch[3]
+            # arc_loss = arc_loss_func(S_arc, heads)
+            # heads_mask = torch.clone(heads)
+            # heads_mask.masked_fill_(heads==-100, 0)
+            # heads_mask.masked_fill_(heads>-100, 1)
+            # heads = heads*heads_mask
+            # lab_loss = lab_loss_func(S_labels, heads, labels)
 
             loss = arc_loss + lab_loss
             

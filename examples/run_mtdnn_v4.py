@@ -1204,8 +1204,8 @@ def main():
                                                 num_labels_onto_pos = len(labels_onto_pos), 
                                                 num_labels_onto_ner = len(labels_onto_ner),
                                                 do_adapter=args.do_adapter)
-            if args.do_adapter:
-                model = load_adapters(model, args.output_dir)
+            # if args.do_adapter:
+            #     model = load_adapters(model, args.output_dir)
             model.to(args.device)
         
 
