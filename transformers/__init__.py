@@ -102,7 +102,7 @@ if is_torch_available():
                                 CamembertForSequenceClassification, CamembertForMultipleChoice,
                                 CAMEMBERT_PRETRAINED_MODEL_ARCHIVE_MAP)
     from .modeling_encoder_decoder import PreTrainedEncoderDecoder, Model2Model
-    from .modelling_dependency_decoder import BiAffineParser
+    from .modelling_dependency_decoder import BiAffineParser, BertForDependencyParsing
 
     # Optimization
     from .optimization import (AdamW, get_constant_schedule, get_constant_schedule_with_warmup, get_cosine_schedule_with_warmup,
