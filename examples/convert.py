@@ -151,7 +151,7 @@ if __name__ == "__main__":
     parser.add_argument("--task", type=str)
 
     args = parser.parse_args()
-    convert single task
+    # convert single task
     for task in task_list:
         print("convert ", task)
         
