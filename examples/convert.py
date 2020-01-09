@@ -88,7 +88,7 @@ def convert_single_task_model(src_path, config_path, container_path, labels_path
     cp_command = "mv {} {}".format(model_path, src_path)
     os.system(cp_command)
 
-def convert_full_task_model(src_path, config_path, contanier_path, data_dir, target_path):
+def convert_full_task_model(src_path, config_path, container_path, data_dir, target_path):
     
     labels_list = []
     for task in task_list:
