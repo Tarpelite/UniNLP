@@ -126,8 +126,8 @@ def convert_full_task_model(src_path, config_path, container_path, data_dir, tar
                                            do_alpha=False,
                                            do_adapter=False,
                                            num_adapter_layers=2)
-    tgt_model.bert = model.bert
-    tgt_model.dropout = model.dropout
+    tgt_model.bert = src_model.bert
+    tgt_model.dropout = src_model.dropout
     for i, task in enumerate(task_list):
         tgt_model.classifier_list[i] = getattr(src_model, "classifier_{}".format(task.lower()))
 
