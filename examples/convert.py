@@ -48,7 +48,7 @@ from transformers import MTDNNModelTaskEmbeddingV2 as TaskEmbeddingModel
 from transformers import AdapterMTDNNModel 
 from transformers import RobertaConfig, RobertaForTokenClassification, RobertaTokenizer
 from transformers import DistilBertConfig, DistilBertForTokenClassification, DistilBertTokenizer
-from uninlp import MTDNNModel
+from uninlp import MTDNNModel, BertConfig
 
 def get_labels(labels_path):
     with open(path, "r") as f:
