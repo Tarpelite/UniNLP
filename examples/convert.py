@@ -51,7 +51,7 @@ from transformers import DistilBertConfig, DistilBertForTokenClassification, Dis
 from uninlp import MTDNNModel, BertConfig
 
 def get_labels(labels_path):
-    with open(path, "r") as f:
+    with open(labels_path, "r") as f:
         labels = f.read().splitlines()
     return labels
 
