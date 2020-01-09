@@ -53,7 +53,7 @@ from pudb import set_trace
 set_trace()
 
 task_list = ["pos", "ner", "chunking", "srl", "onto_pos", "onto_ner"]
-task_list = ["srl", "onto_pos", "onto_ner"]
+task_list = ["chunking"]
 def get_labels(labels_path):
     with open(labels_path, "r") as f:
         labels = f.read().splitlines()
@@ -158,4 +158,5 @@ if __name__ == "__main__":
         src_path = os.path.join(args.src_dir, "{}-ft.bin".format(task))
         label_file = os.path.join(args.data_dir, task.upper(), "labels.txt")
         convert_single_task_model(src_path, args.config_path, args.container_path, label_file, args.tgt_dir, task)
-    convert_full_task_model(args.src_path, args.config_path, args.container_path, args.data_dir, args.tgt_dir)
+    print("finished")
+    # convert_full_task_model(args.src_dir, args.config_path, args.container_path, args.data_dir, args.tgt_dir)
