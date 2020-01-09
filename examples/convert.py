@@ -125,7 +125,7 @@ def convert_full_task_model(src_path, config_path, container_path, data_dir, tar
                                            do_task_embedding=False,
                                            do_alpha=False,
                                            do_adapter=False,
-                                           num_adapter_layer=2)
+                                           num_adapter_layers=2)
     tgt_model.bert = model.bert
     tgt_model.dropout = model.dropout
     for i, task in enumerate(task_list):
