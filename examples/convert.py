@@ -96,4 +96,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    convert_model(args.src_path, args.container_path, args.labels_path, args.target_path, task)
+    convert_model(args.src_path, args.container_path, args.labels_path, args.tgt_path, task)
