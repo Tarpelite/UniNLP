@@ -64,7 +64,7 @@ def convert_model(src_path, config_path, container_path, labels_path, target_pat
                                         output_hidden_states=True)
     
     tgt_model = MTDNNModel.from_pretrained(container_path,
-                                           from_tf=bool(".ckpt" in args.model_name_or_path),
+                                           from_tf=False,
                                            config=config,
                                            labels_list = [get_labels(labels_path)],
                                            do_task_embedding=False,
