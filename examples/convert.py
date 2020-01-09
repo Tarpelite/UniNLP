@@ -42,19 +42,43 @@ import requests
 import os
 
 from transformers import AdamW, get_linear_schedule_with_warmup
-from transformers import WEIGHTS_NAME, BertConfig, BertForTokenClassification, BertTokenizer
-from transformers import MTDNNModelv4 as MTDNNModel
+from transformers import WEIGHTS_NAME,BertForTokenClassification, BertTokenizer
+from transformers import MTDNNModelv4 
 from transformers import MTDNNModelTaskEmbeddingV2 as TaskEmbeddingModel
 from transformers import AdapterMTDNNModel 
 from transformers import RobertaConfig, RobertaForTokenClassification, RobertaTokenizer
 from transformers import DistilBertConfig, DistilBertForTokenClassification, DistilBertTokenizer
+from uninlp import MTDNNModel
 
-def convert_model(src_path, target_path):
+def get_labels(labels_path):
+    with open(path, "r") as f:
+        labels = f.read().splitlines()
+    return labels
+
+def convert_model(src_path, config_path, container_path, labels_path, target_path, task):
     model = torch.load(src_path)
-    model_to_save = model.module if hasattr(model, "module") else model 
+    model_to_save = model.module if hasattr(model, "module") else model
+    config = BertConfig.from_pretrained(config_path,
+                                        num_labels=2,
+                                        cache_dir=None,
+                                        output_hidden_states=True)
+    
+    tgt_model = MTDNNModel.from_pretrained(container_path,
+                                           from_tf=bool(".ckpt" in args.model_name_or_path),
+                                           config=config,
+                                           labels_list = [get_labels(labels_path)],
+                                           do_task_embedding=False,
+                                           do_alpha=False,
+                                           do_adapter=False,
+                                           num_adapter_layers=2
+                                           )
+    tgt_model.bert = model.bert
+    tgt_model.dropout = model.dropout
+    tgt_model.classifier_list[0] = getattr(model, "classifier_{}".format(task.lower()))
+
     if not os.path.exists(target_path):
         os.mkdir(target_path)
-    model_to_save.save_pretrained(target_path)
+    tgt_model.save_pretrained(target_path)
     model_path = os.path.join(target_path, "pytorch_model.bin")
     cp_command = "mv {} {}".format(model_path, src_path)
     os.system(cp_command)
@@ -65,7 +89,11 @@ if __name__ == "__main__":
 
     parser.add_argument("--src_path", type=str)
     parser.add_argument("--tgt_path", type=str)
+    parser.add_argument("--config_path", type=str)
+    parser.add_argument("--container_path", type=str)
+    parser.add_argument("--labels_path", type=str)
+    parser.add_argument("--task", type=str)
 
     args = parser.parse_args()
 
-    convert_model(args.src_path, args.tgt_path)
+    convert_model(args.src_path, args.container_path, args.labels_path, args.target_path, task)
