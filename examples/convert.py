@@ -120,7 +120,7 @@ def convert_full_task_model(src_path, config_path, contanier_path, data_dir, tar
     tgt_model = MTDNNModel.from_pretrained(container_path,
                                            from_tf=False,
                                            config=tgt_config,
-                                           labels_list=labels_list
+                                           labels_list=labels_list,
                                            do_task_embedding=False,
                                            do_alpha=False,
                                            do_adapter=False,
