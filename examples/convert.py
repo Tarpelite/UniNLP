@@ -49,6 +49,8 @@ from transformers import AdapterMTDNNModel
 from transformers import RobertaConfig, RobertaForTokenClassification, RobertaTokenizer
 from transformers import DistilBertConfig, DistilBertForTokenClassification, DistilBertTokenizer
 from uninlp import MTDNNModel, BertConfig
+from pudb import set_trace
+set_trace()
 
 def get_labels(labels_path):
     with open(labels_path, "r") as f:
