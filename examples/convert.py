@@ -112,7 +112,7 @@ def convert_full_task_model(src_path, config_path, contanier_path, data_dir, tar
                                             init_last=False,
                                             do_adapter=False
                                             )
-    src_model = src_model.module if hasattr(model, "module") else src_model
+    src_model = src_model.module if hasattr(src_model, "module") else src_model
 
     tgt_config = Bertconfig.from_pretrained(config_path,
                                             num_labels=2,
