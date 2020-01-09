@@ -57,7 +57,7 @@ def get_labels(labels_path):
 
 def convert_model(src_path, config_path, container_path, labels_path, target_path, task):
     model = torch.load(src_path)
-    model_to_save = model.module if hasattr(model, "module") else model
+    model = model.module if hasattr(model, "module") else model
     config = BertConfig.from_pretrained(config_path,
                                         num_labels=2,
                                         cache_dir=None,
