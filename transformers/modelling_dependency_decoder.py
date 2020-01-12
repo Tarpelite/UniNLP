@@ -55,8 +55,8 @@ class BiLSTMEncoder(nn.Module):
         self.num_directions=2
     def forward(self, x):
         batch_size = x.size(0)
-        h0 = torch.zeros(self.num_layers*self.num_directions, batch_size, self.hidden_size)
-        c0 = torch.zeros(self.num_layers*self.num_directions, batch_size, self.hidden_size)
+        h0 = torch.zeros(self.num_layers*self.num_directions, batch_size, self.hidden_size).cuda()
+        c0 = torch.zeros(self.num_layers*self.num_directions, batch_size, self.hidden_size).cuda()
         out, _ = self.rnn(x, (h0, c0))
         return out
 
