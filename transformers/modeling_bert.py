@@ -2430,6 +2430,68 @@ class MTDNNModel(BertPreTrainedModel):
             outputs = (alpha, ) + outputs
         return outputs
 
+class BiAffine(nn.Module):
+    """Biaffine attention layer."""
+    def __init__(self, input_dim, output_dim):
+        super(BiAffine, self).__init__()
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.U = nn.Parameter(torch.FloatTensor(output_dim, input_dim, input_dim))
+        # nn.init.xavier_uniform_(self.U)
+    
+    def forward(self, Rh, Rd):
+        Rh = Rh.unsqueeze(1)
+        Rd = Rd.unsqueeze(1)
+        S = Rh @ self.U @ Rd.transpose(-1, -2)
+        return S.squeeze(1)
 
+def LocalCELoss(scores, labels):
+    # score shape [batch_size, max_seq_len, max_seq_len]
+    # labels [batch_size, max_seq_len]
+    scores = torch.exp(scores)
+    target_scores = torch.gather(scores, 2, labels.unqueeze(-1)).squeeze(-1) # [batch_size, max_seq_len]
+    loss = - torch.log (target_score / torch.sum(scores, dim=-1))
+
+
+class BertForParsing(BertPreTrainedModel):
+    def __init__(self, config, mlp_dim):
+        super(BertForParsing, self).__init__(config)
+        self.bert = BertModel(config)
+        self.dropout = nn.Dropout(config.hidden_size)
+        self.mlp_dim = mlp_dim
+
+        self.mlp_head = nn.Linear(config.hidden_size, mlp_dim)
+        self.mlp_dep = nn.Linear(config.hidden_size, mlp_dim)
+
+        self.biaffine = BiAffine(mlp_dim, 1)
+
+        self.init_weight()
+    
+    def decode(self, scores):
+        # do viterbi decoding, build graph for every instance
+
+        def weight(A, 
+    
+    def forward(self, input_ids=None, attention_mask=None, token_type_ids=None,
+                position_ids=None, head_mask=None, inputs_embeds=None, labels=None):
+
+        outputs = self.bert(input_ids,
+                            attention_mask=attention_mask,
+                            token_type_ids=token_type_ids,
+                            position_ids=position_ids,
+                            head_mask=head_mask,
+                            inputs_embeds=inputs_embeds)
+
+        sequence_output = outputs[0]
+
+        sequence_output = self.dropout(sequence_output)
+        s_head = self.mlp_head(sequence_output)
+        s_dep = self.mlp_dep(sequence_output)
+
+        logits = self.biaffine(s_head, s_dep)
+        if labels is not None:
+            loss_fct = LocalCELoss
+            loss = loss_fct(logits, labels)
+            outputs = (loss, ) + outputs
 
 
