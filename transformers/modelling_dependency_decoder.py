@@ -217,6 +217,7 @@ class BertForDependencyParsing(BertPreTrainedModel):
         s_lab = self.lab_biaffine(label_head, label_dep) # [batch, num_labels, seq_len, seq_len]
 
         outputs = (s_arc, s_lab)
+        loss_func = nn.CrossEntropyLoss()
         if heads is not None and labels is not None:
             s_arc = s_arc.contiguous().view(-1, s_arc.size(-1))
             heads = heads.view(-1)
@@ -224,7 +225,7 @@ class BertForDependencyParsing(BertPreTrainedModel):
             print("heads shape", heads.shape)
             print(s_arc)
             print(heads)
-            arc_loss = nn.CrossEntropyLoss(s_arc, heads)
+            arc_loss = loss_func(s_arc, heads)
             
             heads = heads.unsqueeze(1).unsqueeze(2)              # [batch, 1, 1, sent_len]
             heads = heads.expand(-1, s_lab.size(1), -1, -1)      # [batch, n_labels, 1, sent_len]
@@ -234,6 +235,6 @@ class BertForDependencyParsing(BertPreTrainedModel):
             s_lab = s_lab.transpose(-1, -2)                      # [batch, sent_len, n_labels]
             s_lab = s_lab.contiguous().view(-1, s_lab.size(-1))  # [batch*sent_len, n_labels]
             labels = labels.view(-1)                             # [batch*sent_len]
-            label_loss = nn.CrossEntropyLoss(s_lab, labels)
+            label_loss = loss_func(s_lab, labels)
             outputs = (arc_loss, label_loss) + outputs
         return outputs
