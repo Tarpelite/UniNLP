@@ -220,6 +220,10 @@ class BertForDependencyParsing(BertPreTrainedModel):
         if heads is not None and labels is not None:
             s_arc = s_arc.contiguous().view(-1, s_arc.size(-1))
             heads = heads.view(-1)
+            print("s_arc shape", s_arc.shape)
+            print("heads shape", heads.shape)
+            print(s_arc)
+            print(heads)
             arc_loss = nn.CrossEntropyLoss(s_arc, heads)
             
             heads = heads.unsqueeze(1).unsqueeze(2)              # [batch, 1, 1, sent_len]
