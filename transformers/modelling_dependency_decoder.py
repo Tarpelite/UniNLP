@@ -219,7 +219,7 @@ class BertForDependencyParsing(BertPreTrainedModel):
         outputs = (s_arc, s_lab)
         if heads is not None and labels is not None:
             s_arc = s_arc.contiguous().view(-1, s_arc.size(-1))
-            heads = heads.view(-1)
+            heads = heads.view(-1).unsqueeze(-1)
             print("s_arc shape", s_arc.shape)
             print("heads shape", heads.shape)
             print(s_arc)
