@@ -469,14 +469,7 @@ def main():
                                         from_tf=bool(".ckpt" in args.model_name_or_path),
                                         config=config,
                                         cache_dir=args.cache_dir if args.cache_dir else None,
-                                        mlp_input=768, 
-                                        mlp_arc_hidden=768,
-                                        mlp_lab_hidden=768,
-                                        mlp_dropout=0.1, 
-                                        num_labels=num_labels,
-                                        lstm_layers=args.lstm_layers,
-                                        critierion=nn.CrossEntropyLoss(),
-                                        max_len=args.max_seq_length)
+                                        num_labels=num_labels)
 
 
     if args.local_rank == 0:
@@ -523,13 +516,7 @@ def main():
                                         from_tf=bool(".ckpt" in args.model_name_or_path),
                                         config=config,
                                         cache_dir=args.cache_dir if args.cache_dir else None,
-                                        mlp_input=768, 
-                                        mlp_arc_hidden=768,
-                                        mlp_lab_hidden=768,
-                                        mlp_dropout=0.1, 
-                                        num_labels=num_labels,
-                                        critierion=nn.CrossEntropyLoss(),
-                                        max_len=args.max_seq_length)
+                                        num_labels=num_labels)
             model.to(args.device)
             result = evaluate(args, model, tokenizer, labels, pad_token_label_id, mode="dev", prefix=global_step)
             if global_step:
