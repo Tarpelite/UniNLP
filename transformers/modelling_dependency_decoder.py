@@ -50,8 +50,7 @@ class BiLSTMEncoder(nn.Module):
         self.rnn = nn.LSTM( input_size, 
                             hidden_size, 
                             batch_first=True, 
-                            bidirectional=True,
-                            num_layers=1)
+                            bidirectional=True)
         
     def forward(self, x):
         batch_size = x.size(0)
