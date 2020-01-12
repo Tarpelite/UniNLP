@@ -227,8 +227,8 @@ class BertForDependencyParsing(BertPreTrainedModel):
             # print("S_lab", S_lab.shape)
             s_lab = torch.gather(s_lab, 2, heads).squeeze(2)     # [batch, n_labels, sent_len]
             s_lab = s_lab.transpose(-1, -2)                      # [batch, sent_len, n_labels]
-            s_lab = s_lab.contiguous().view(-1, S_lab.size(-1))  # [batch*sent_len, n_labels]
+            s_lab = s_lab.contiguous().view(-1, s_lab.size(-1))  # [batch*sent_len, n_labels]
             labels = labels.view(-1)                             # [batch*sent_len]
             label_loss = nn.CrossEntropy(s_lab, labels)
-            outputs = (arc_loss, label_loss) + ouutputs
+            outputs = (arc_loss, label_loss) + outputs
         return outputs

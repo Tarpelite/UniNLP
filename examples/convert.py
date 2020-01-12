@@ -59,7 +59,12 @@ def get_labels(labels_path):
         labels = f.read().splitlines()
     return labels
 
-def convert_single_task_model(src_path, config_path, container_path, labels_path, target_path, task):
+def convert_single_task_model(src_path, 
+                              config_path, 
+                              container_path, 
+                              labels_path, 
+                              target_path, 
+                              task):
     model = torch.load(src_path)
     model = model.module if hasattr(model, "module") else model
     config = BertConfig.from_pretrained(config_path,
@@ -84,7 +89,7 @@ def convert_single_task_model(src_path, config_path, container_path, labels_path
         os.mkdir(target_path)
     # tgt_model.save_pretrained(target_path)
     model_path = os.path.join(target_path, "pytorch_model.bin")
-    torch.save(tgt_model, model_path)
+    torch.save(tgt_model.state_dict(), model_path)
     cp_command = "mv {} {}".format(model_path, src_path)
     os.system(cp_command)
 
