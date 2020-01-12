@@ -863,7 +863,7 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
                 alpha = outputs[0]
                 outputs = outputs[1:]
             tmp_eval_loss, logits = outputs[:2]
-
+            print("logits", logits)
             if args.n_gpu > 1:
                 tmp_eval_loss = tmp_eval_loss.mean()  # mean() to average on multi-gpu parallel evaluating
 
@@ -1285,7 +1285,7 @@ def main():
             # msg_dict["onto_ner_f1_ft"] = result["onto_ner_f1"]
 
             model_to_save = model.module
-            torch.save(model_to_save, "ner-ft.bin")
+            torch.save(model_to_save.state_dict(), "ner-ft.bin")
 
         output_eval_file = os.path.join(args.output_dir, "eval_results.txt")
         with open(output_eval_file, "w") as writer:
