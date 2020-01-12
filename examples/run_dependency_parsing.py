@@ -257,7 +257,7 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
 
             _, pred = S_arc.max(dim=-2)
             heads = batch[4]
-            print("s_arc", s_arc.shape) # [batch, max_len, max_len]
+            print("S_arc", S_arc.shape) # [batch, max_len, max_len]
             print("pred", pred)
             print("heads", heads)
 
