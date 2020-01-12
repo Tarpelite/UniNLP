@@ -205,8 +205,8 @@ class BertForDependencyParsing(BertPreTrainedModel):
         sequence_output = outputs[0]
         sequence_output = self.dropout(sequence_output)
         r = self.bilstm(sequence_output)
-        print("r.shape", r.shape)
-        print("self.arc_mlp_head", self.arc_mlp_head)
+        # print("r.shape", r.shape)
+        # print("self.arc_mlp_head", self.arc_mlp_head)
         arc_head = self.arc_mlp_head(r)
         arc_dep = self.arc_mlp_dep(r)
 
@@ -221,12 +221,13 @@ class BertForDependencyParsing(BertPreTrainedModel):
         if heads is not None and labels is not None:
             s_arc = s_arc.contiguous().view(-1, s_arc.size(-1))
             heads = heads.view(-1)
-            print("s_arc shape", s_arc.shape)
-            print("heads shape", heads.shape)
-            print(s_arc)
-            print(heads)
+            # print("s_arc shape", s_arc.shape)
+            # print("heads shape", heads.shape)
+            # print(s_arc)
+            # print(heads)
             arc_loss = loss_func(s_arc, heads)
             
+            print("s_lab", s_lab.shape)
             heads = heads.unsqueeze(1).unsqueeze(2)              # [batch, 1, 1, sent_len]
             heads = heads.expand(-1, s_lab.size(1), -1, -1)      # [batch, n_labels, 1, sent_len]
             # print("heads", heads.shape)
