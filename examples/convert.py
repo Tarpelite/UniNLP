@@ -106,7 +106,8 @@ def convert_full_task_model(src_path, config_path, container_path, data_dir, tar
                                         num_labels=9,
                                         cache_dir=None,
                                         output_hidden_state=True)
-    src_model = MTDNNModelv4.from_pretrained(src_path,
+
+    src_model = MTDNNModelv4.from_pretrained(os.path.join(src_path, "pytorch_model.bin"),
                                             from_tf=False,
                                             num_labels_pos=len(labels_list[0]),
                                             num_labels_ner=len(labels_list[1]),
@@ -124,6 +125,7 @@ def convert_full_task_model(src_path, config_path, container_path, data_dir, tar
                                             num_labels=2,
                                             cache_dir=None,
                                             output_hidden_states=True)
+
     tgt_model = MTDNNModel.from_pretrained(container_path,
                                            from_tf=False,
                                            config=tgt_config,
