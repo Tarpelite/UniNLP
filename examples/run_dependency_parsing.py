@@ -143,7 +143,8 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
             if args.model_type != "distilbert":
                 inputs["token_type_ids"]: batch[2] if args.model_type in ["bert", "xlnet"] else None  # XLM and RoBERTa don"t use segment_ids
 
-            arc_loss, lab_loss = model(**inputs)
+            outputs = model(**inputs)
+            arc_loss, lab_loss = outputs[:2]
             # S_arc.to(args.device)
             # S_labels.to(args.device)
 
