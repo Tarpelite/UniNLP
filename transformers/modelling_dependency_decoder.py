@@ -177,11 +177,11 @@ class BertForDependencyParsing(BertPreTrainedModel):
 
         self.bilstm = BiLSTMEncoder(input_size=config.hidden_size, hidden_size=config.hidden_size)
 
-        self.arc_mlp_head = nn.Linear(config.hidden_size, 2*config.hidden_size)
-        self.arc_mlp_dep = nn.Linear(config.hidden_size, 2*config.hidden_size)
+        self.arc_mlp_head = nn.Linear(2*config.hidden_size, 2*config.hidden_size)
+        self.arc_mlp_dep = nn.Linear(2*config.hidden_size, 2*config.hidden_size)
 
-        self.label_mlp_head = nn.Linear(config.hidden_size, 2*config.hidden_size)
-        self.label_mlp_dep = nn.Linear(config.hidden_size, 2*config.hidden_size)
+        self.label_mlp_head = nn.Linear(2*config.hidden_size, 2*config.hidden_size)
+        self.label_mlp_dep = nn.Linear(2*config.hidden_size, 2*config.hidden_size)
 
         self.arc_biaffine = BiAffine(2*config.hidden_size, 1)
         self.lab_biaffine = BiAffine(2*config.hidden_size, num_labels)
