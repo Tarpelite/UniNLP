@@ -146,7 +146,7 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
                 inputs["token_type_ids"]: batch[2] if args.model_type in ["bert", "xlnet"] else None  # XLM and RoBERTa don"t use segment_ids
 
             outputs = model(**inputs)
-            arc_loss, lab_loss = outputs[:2]
+            arc_loss, _ = outputs[:2]
             # S_arc.to(args.device)
             # S_labels.to(args.device)
 
@@ -161,7 +161,7 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
             # heads = heads*heads_mask
             # lab_loss = lab_loss_func(S_labels, heads, labels)
 
-            loss = arc_loss + lab_loss
+            loss = arc_loss
             
 
             if args.n_gpu > 1:
@@ -257,16 +257,18 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
 
             _, pred = S_arc.max(dim=-2)
             heads = batch[4]
+            print("heads", heads.shape) # [batch, max_len, max_len]
+
             mask = (heads != PAD_INDEX).float()
             total_words += torch.sum(heads != PAD_INDEX)
             hits += torch.sum(pred == heads).float()
 
-            tmp_eval_loss = model.arc_loss(S_arc, heads)
+            # tmp_eval_loss = model.arc_loss(S_arc, heads)
 
-            if args.n_gpu > 1:
-                tmp_eval_loss = tmp_eval_loss.mean()  # mean() to average on multi-gpu parallel evaluating
+            # if args.n_gpu > 1:
+            #     tmp_eval_loss = tmp_eval_loss.mean()  # mean() to average on multi-gpu parallel evaluating
 
-            eval_loss += tmp_eval_loss.item()
+            # eval_loss += tmp_eval_loss.item()
         nb_eval_steps += 1
        
 
