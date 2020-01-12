@@ -1046,6 +1046,7 @@ def main():
     parser.add_argument("--alpha_learning_rate", type=float, default=1e-3)
     parser.add_argument("--init_last", action="store_true")
     parser.add_argument("--ft_learning_rate", type=float, default=5e-5)
+    parser.add_argument("--recover_path", type=str)
 
     parser.add_argument("--do_alpha", action="store_true")
     parser.add_argument("--ft_with_last_layer", action="store_true")
@@ -1204,6 +1205,10 @@ def main():
                                                 num_labels_onto_pos = len(labels_onto_pos), 
                                                 num_labels_onto_ner = len(labels_onto_ner),
                                                 do_adapter=args.do_adapter)
+            
+            if args.recover_path != "":
+                model = torch.load(args.recover_path)
+            
             # if args.do_adapter:
             #     model = load_adapters(model, args.output_dir)
             model.to(args.device)
