@@ -44,7 +44,7 @@ class BiAffine(nn.Module):
         return S.squeeze(1)
 
 class BiLSTMEncoder(nn.Module):
-    def __init__(self, input_size=768, hidden_size=2*768):
+    def __init__(self, input_size=384, hidden_size=384):
         super(BiLSTMEncoder, self).__init__()
         self.num_layers = 1
         self.hidden_size = hidden_size
