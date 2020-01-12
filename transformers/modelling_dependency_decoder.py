@@ -45,6 +45,7 @@ class BiAffine(nn.Module):
 
 class BiLSTMEncoder(nn.Module):
     def __init__(self, input_size=768, hidden_size=2*768):
+        super(BiLSTMEncoder, self).__init__()
         self.num_layers = 1
         self.hidden_size = hidden_size
         self.rnn = nn.LSTM( input_size, 
