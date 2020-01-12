@@ -206,6 +206,7 @@ class BertForDependencyParsing(BertPreTrainedModel):
         sequence_output = self.dropout(sequence_output)
         r = self.bilstm(sequence_output)
         print("r.shape", r.shape)
+        print("self.arc_mlp_head", self.arc_mlp_head)
         arc_head = self.arc_mlp_head(r)
         arc_dep = self.arc_mlp_dep(r)
 
