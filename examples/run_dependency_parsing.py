@@ -20,7 +20,7 @@ import torch.nn as nn
 from torch.optim import Adam
 
 from transformers import AdamW, get_linear_schedule_with_warmup
-from transformers import WEIGHTS_NAME, BertConfig, BertForTokenClassification, BertTokenizer,BiAffineParser, BertForDependencyParsing,
+from transformers import WEIGHTS_NAME, BertConfig, BertForTokenClassification, BertTokenizer,BiAffineParser, BertForDependencyParsing
 from transformers import RobertaConfig, RobertaForTokenClassification, RobertaTokenizer
 from transformers import DistilBertConfig, DistilBertForTokenClassification, DistilBertTokenizer
 
@@ -469,9 +469,9 @@ def main():
                                         from_tf=bool(".ckpt" in args.model_name_or_path),
                                         config=config,
                                         cache_dir=args.cache_dir if args.cache_dir else None,
-                                        mlp_input=args.max_seq_length, 
-                                        mlp_arc_hidden=2048,
-                                        mlp_lab_hidden=2048,
+                                        mlp_input=768, 
+                                        mlp_arc_hidden=768,
+                                        mlp_lab_hidden=768,
                                         mlp_dropout=0.1, 
                                         num_labels=num_labels,
                                         lstm_layers=args.lstm_layers,
@@ -523,11 +523,10 @@ def main():
                                         from_tf=bool(".ckpt" in args.model_name_or_path),
                                         config=config,
                                         cache_dir=args.cache_dir if args.cache_dir else None,
-                                        mlp_input=args.max_seq_length, 
-                                        mlp_arc_hidden=2048,
-                                        mlp_lab_hidden=2048,
+                                        mlp_input=768, 
+                                        mlp_arc_hidden=768,
+                                        mlp_lab_hidden=768,
                                         mlp_dropout=0.1, 
-                                        lstm_layers=args.lstm_layers,
                                         num_labels=num_labels,
                                         critierion=nn.CrossEntropyLoss(),
                                         max_len=args.max_seq_length)
