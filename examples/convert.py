@@ -91,6 +91,7 @@ def convert_single_task_model(src_path,
     model_path = os.path.join(target_path, "pytorch_model.bin")
     torch.save(tgt_model.state_dict(), model_path)
     cp_command = "mv {} {}".format(model_path, src_path)
+    print(cp_command)
     os.system(cp_command)
 
 def convert_full_task_model(src_path, config_path, container_path, data_dir, target_path):
