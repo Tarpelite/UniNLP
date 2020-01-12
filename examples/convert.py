@@ -153,7 +153,7 @@ if __name__ == "__main__":
     parser.add_argument("--config_path", type=str)
     parser.add_argument("--container_path", type=str)
     parser.add_argument("--labels_path", type=str)
-    parser.add_argument("--task", type=str)
+    # parser.add_argument("--task", type=str)
 
     args = parser.parse_args()
     # convert single task
