@@ -908,7 +908,9 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
         # "ner_loss": eval_loss,
         # "ner_precision": precision_score(out_label_list, preds_list),
         # "ner_recall": recall_score(out_label_list, preds_list),
-        "ner_f1": f1_score(out_label_list, preds_list)
+        "ner_precision":precision_score(out_label_list, preds_list),
+        "ner_f1": f1_score(out_label_list, preds_list),
+        "ner_recall":recall_score(out_label_list, preds_list)
     }
     elif task == "chunking":
         results = {
@@ -1282,7 +1284,8 @@ def main():
             # msg_dict["onto_ner_acc_ft"] = result["onto_ner_accuracy"]
             # msg_dict["onto_ner_f1_ft"] = result["onto_ner_f1"]
 
-        
+            model_to_save = model.module
+            torch.save(model_to_save, "ner-ft.bin")
 
         output_eval_file = os.path.join(args.output_dir, "eval_results.txt")
         with open(output_eval_file, "w") as writer:
