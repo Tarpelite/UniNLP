@@ -226,16 +226,16 @@ class BertForDependencyParsing(BertPreTrainedModel):
             # print(s_arc)
             # print(heads)
             arc_loss = loss_func(s_arc, heads)
-            
-            print("s_lab", s_lab.shape)
-            heads = heads.unsqueeze(1).unsqueeze(2)              # [batch, 1, 1, sent_len]
-            heads = heads.expand(-1, s_lab.size(1), -1, -1)      # [batch, n_labels, 1, sent_len]
-            # print("heads", heads.shape)
-            # print("S_lab", S_lab.shape)
-            s_lab = torch.gather(s_lab, 2, heads).squeeze(2)     # [batch, n_labels, sent_len]
-            s_lab = s_lab.transpose(-1, -2)                      # [batch, sent_len, n_labels]
-            s_lab = s_lab.contiguous().view(-1, s_lab.size(-1))  # [batch*sent_len, n_labels]
-            labels = labels.view(-1)                             # [batch*sent_len]
-            label_loss = loss_func(s_lab, labels)
+            label_loss = 0
+            # print("s_lab", s_lab.shape)
+            # heads = heads.unsqueeze(1).unsqueeze(2)              # [batch, 1, 1, sent_len]
+            # heads = heads.expand(-1, s_lab.size(1), -1, -1)      # [batch, n_labels, 1, sent_len]
+            # # print("heads", heads.shape)
+            # # print("S_lab", S_lab.shape)
+            # s_lab = torch.gather(s_lab, 2, heads).squeeze(2)     # [batch, n_labels, sent_len]
+            # s_lab = s_lab.transpose(-1, -2)                      # [batch, sent_len, n_labels]
+            # s_lab = s_lab.contiguous().view(-1, s_lab.size(-1))  # [batch*sent_len, n_labels]
+            # labels = labels.view(-1)                             # [batch*sent_len]
+            # label_loss = loss_func(s_lab, labels)
             outputs = (arc_loss, label_loss) + outputs
         return outputs
