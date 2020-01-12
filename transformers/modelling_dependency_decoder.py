@@ -226,7 +226,7 @@ class BertForDependencyParsing(BertPreTrainedModel):
             # print(s_arc)
             # print(heads)
             arc_loss = loss_func(s_arc, heads)
-            label_loss = 0
+            label_loss = arc_loss
             # print("s_lab", s_lab.shape)
             # heads = heads.unsqueeze(1).unsqueeze(2)              # [batch, 1, 1, sent_len]
             # heads = heads.expand(-1, s_lab.size(1), -1, -1)      # [batch, n_labels, 1, sent_len]
