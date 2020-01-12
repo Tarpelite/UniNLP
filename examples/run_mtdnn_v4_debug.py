@@ -898,8 +898,13 @@ def evaluate(args, model, tokenizer, eval_dataset, labels, pad_token_label_id, m
         for i in range(len(out_label_list)):
             for j in range(len(out_label_list[i])):
                 out_label_list[i][j] = out_label_list[i][j].split("-")[-1]
+
     print("preds_list", preds_list[0])
     print("labels_list", out_label_list[0])
+    with open("results-v1.txt", "w+", encoding="utf-8") as f:
+        for line in preds_list:
+            line = " ".join(line) + "\n"
+            f.write(line)
     results = {}
     if task == "pos":
         results["pos_accuracy"] = accuracy_score(out_label_list, preds_list)
