@@ -109,6 +109,8 @@ def convert_examples_to_features(examples,
         for word, label in zip(example.words, example.labels):
             word_tokens = tokenizer.tokenize(word)
             tokens.extend(word_tokens)
+            if label == '_':
+                label = "-100"
             # Use the real label id for the first token of the word, and padding ids for the remaining tokens
             label_ids.extend([int(label)] + [pad_token_label_id] * (len(word_tokens) - 1))
 
