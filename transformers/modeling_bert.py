@@ -2501,6 +2501,7 @@ class BertForParsing(BertPreTrainedModel):
 
         logits = logits*attention_mask.float()
 
+        print("logits", logits)
         outputs = (logits, ) + outputs[2:]
         if labels is not None:
             loss_fct = CrossEntropyLoss()
