@@ -136,18 +136,13 @@ def convert_examples_to_features(examples,
         # convert head to absolute ids in these sequence 
         orig_to_tok_index = [x+1 for x in orig_to_tok_index]
         new_label_ids = []
-        try:
-            for x in label_ids:
-                if x == 0: # special token will be left for [0]
-                    new_label_ids += [0]
-                else:
-                    new_label_ids += [orig_to_tok_index[x-1]]
-        except Exception as e:
-            print("orig_to_tok_index", orig_to_tok_index)
-            print("label_ids", label_ids)
-            print("x", x)
-            # print("new_label_ids", new_label_ids)
-
+        
+        for x in label_ids:
+            if x == 0: # special token will be left for [0]
+                new_label_ids += [0]
+            else:
+                new_label_ids += [orig_to_tok_index[x-1]]
+      
         label_ids = new_label_ids
 
         tokens += [sep_token]
