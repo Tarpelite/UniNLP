@@ -261,7 +261,7 @@ class BiaffineScorer(nn.Module):
         input1 = torch.cat([input1, input1.new_ones(*input1.size()[:-1], 1)], len(input1.size()) - 1)
         input2 = torch.cat([input2, input2.new_ones(*input2.size()[:-1], 1)], len(input2.size()) - 1)
 
-        return self.W_binin(input1, input2)
+        return self.W_bilin(input1, input2)
 
 
 class DeepBiaffineScorer(nn.Module):
