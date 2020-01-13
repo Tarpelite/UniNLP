@@ -135,7 +135,13 @@ def convert_examples_to_features(examples,
         
         # convert head to absolute ids in these sequence 
         orig_to_tok_index = [x+1 for x in orig_to_tok_index]
-        label_ids = [orig_to_tok_index[x-1] for x in label_ids if x > 0 else 0]
+        new_label_ids = []
+        for x in label_ids:
+            if x == 0: # special token will be left for [0]
+                new_label_ids += [0]
+            else:
+                new_label_ids += orig_to_tok_index[x]
+        label_ids = new_label_ids
 
         tokens += [sep_token]
         label_ids += [pad_token_label_id]
