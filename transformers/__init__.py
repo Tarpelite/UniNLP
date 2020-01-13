@@ -65,7 +65,7 @@ if is_torch_available():
     from .modeling_auto import (AutoModel, AutoModelForSequenceClassification, AutoModelForQuestionAnswering,
                                 AutoModelWithLMHead)
 
-    from .modeling_bert import (BertPreTrainedModel, BertModel, BertForPreTraining, BertForParsing
+    from .modeling_bert import (BertPreTrainedModel, BertModel, BertForPreTraining, BertForParsing,
                                 BertForMaskedLM, BertForNextSentencePrediction, BertForSRL,
                                 BertForSequenceClassification, BertForMultipleChoice, MTDNNModel, MTDNNModelv2, MTDNNModelv3, AdapterMTDNNModel, MTDNNModelTaskEmbedding, MTDNNModelTaskEmbeddingV2, MTDNNModelv4,
                                 BertForTokenClassification, BertForQuestionAnswering,
