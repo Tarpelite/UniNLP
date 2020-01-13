@@ -2452,9 +2452,9 @@ def LocalCELoss(scores, labels):
     print("labels shape", labels.shape)
     scores = torch.exp(scores)
     target_scores = torch.gather(scores, 2, labels.long().unsqueeze(-1)).squeeze(-1) # [batch_size, max_seq_len]
-    print("OK1")
+    # print("OK1")
     loss = - torch.log (target_scores / torch.sum(scores, dim=-1))
-    print("OK2")
+    # print("OK2")
     loss = torch.sum(loss)
     print("OK3")
     return loss
@@ -2504,7 +2504,9 @@ class BertForParsing(BertPreTrainedModel):
         if labels is not None:
             loss_fct = LocalCELoss
             loss = loss_fct(logits, labels)
-
+            print("OK4")
+            print("loss", loss)
             outputs = (loss, ) + outputs
+            print("OK5")
         return outputs
 
