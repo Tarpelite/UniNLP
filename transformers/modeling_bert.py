@@ -2448,15 +2448,12 @@ class BiAffine(nn.Module):
 def LocalCELoss(scores, labels):
     # score shape [batch_size, max_seq_len, max_seq_len]
     # labels [batch_size, max_seq_len]
-    print("scores shape", scores.shape)
-    print("labels shape", labels.shape)
     scores = torch.exp(scores)
     target_scores = torch.gather(scores, 2, labels.long().unsqueeze(-1)).squeeze(-1) # [batch_size, max_seq_len]
     # print("OK1")
     loss = - torch.log (target_scores / torch.sum(scores, dim=-1))
     # print("OK2")
     loss = torch.sum(loss)
-    print("OK3")
     return loss
 
 
@@ -2498,15 +2495,9 @@ class BertForParsing(BertPreTrainedModel):
         logits = self.biaffine(s_head, s_dep)
         outputs = (logits, ) + outputs[2:]
 
-        print("s_head shape", s_head.shape)
-        print("s_dep shape", s_dep.shape)
-        print("logits shape", logits.shape)
         if labels is not None:
             loss_fct = nn.CrossEntropyLoss()
             loss = loss_fct(logits, labels)
-            print("OK4")
-            print("loss", loss)
             outputs = (loss, ) + outputs
-            print("OK5")
         return outputs
 
