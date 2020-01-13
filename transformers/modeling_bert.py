@@ -2470,7 +2470,7 @@ class BertForParsing(BertPreTrainedModel):
     def decode(self, scores):
         # do viterbi decoding, build graph for every instance
 
-        def weight(A, 
+        pass
     
     def forward(self, input_ids=None, attention_mask=None, token_type_ids=None,
                 position_ids=None, head_mask=None, inputs_embeds=None, labels=None):
@@ -2489,9 +2489,12 @@ class BertForParsing(BertPreTrainedModel):
         s_dep = self.mlp_dep(sequence_output)
 
         logits = self.biaffine(s_head, s_dep)
+        outputs = (logits, ) + outputs[2:]
+
         if labels is not None:
             loss_fct = LocalCELoss
             loss = loss_fct(logits, labels)
-            outputs = (loss, ) + outputs
-
+            
+        outputs = (loss, ) + outputs
+        return outputs
 
