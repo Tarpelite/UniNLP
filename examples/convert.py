@@ -107,26 +107,29 @@ def convert_full_task_model(src_path, config_path, container_path, data_dir, tar
                                         cache_dir=None,
                                         output_hidden_state=True)
     path = os.path.join(src_path, "pytorch_model.bin")
-    src_model = MTDNNModelv4.from_pretrained(path,
-                                            from_tf=False,
-                                            num_labels_pos=len(labels_list[0]),
-                                            num_labels_ner=len(labels_list[1]),
-                                            num_labels_chunking=len(labels_list[2]),
-                                            num_labels_srl=len(labels_list[3]),
-                                            num_labels_onto_pos=len(labels_list[4]),
-                                            num_labels_onto_ner=len(labels_list[5]),
-                                            cache_dir=None,
-                                            init_last=False,
-                                            do_adapter=False
-                                            )
-    src_model = src_model.module if hasattr(src_model, "module") else src_model
+
+    src_state_dict = torch.load(path)
+
+    # src_model = MTDNNModelv4.from_pretrained(path,
+    #                                         from_tf=False,
+    #                                         num_labels_pos=len(labels_list[0]),
+    #                                         num_labels_ner=len(labels_list[1]),
+    #                                         num_labels_chunking=len(labels_list[2]),
+    #                                         num_labels_srl=len(labels_list[3]),
+    #                                         num_labels_onto_pos=len(labels_list[4]),
+    #                                         num_labels_onto_ner=len(labels_list[5]),
+    #                                         cache_dir=None,
+    #                                         init_last=False,
+    #                                         do_adapter=False
+    #                                         )
+    # src_model = src_model.module if hasattr(src_model, "module") else src_model
 
     tgt_config = BertConfig.from_pretrained(config_path,
                                             num_labels=2,
                                             cache_dir=None,
                                             output_hidden_states=True)
 
-    tgt_model = MTDNNModel.from_pretrained(container_path,
+    tgt_model = MTDNNModel.from_pretrained(path,
                                            from_tf=False,
                                            config=tgt_config,
                                            labels_list=labels_list,
@@ -134,10 +137,12 @@ def convert_full_task_model(src_path, config_path, container_path, data_dir, tar
                                            do_alpha=False,
                                            do_adapter=False,
                                            num_adapter_layers=2)
+
     tgt_model.bert = src_model.bert
     tgt_model.dropout = src_model.dropout
     for i, task in enumerate(task_list):
-        tgt_model.classifier_list[i] = getattr(src_model, "classifier_{}".format(task.lower()))
+        tgt_model.classifier_list[i].weight.data = src_state_dict["classifier_{}.weight".format(task)].data
+        tgt_model.classifier_list[i].bias.data = src_state_dict["classifier_{}.bias".format(task)].data
 
     if not os.path.exists(target_path):
         os.mkdir(target_path)
@@ -159,12 +164,12 @@ if __name__ == "__main__":
     # parser.add_argument("--task", type=str)
 
     args = parser.parse_args()
-    # convert single task
-    for task in task_list:
-        print("convert ", task)
+
+    # for task in task_list:
+    #     print("convert ", task)
         
-        src_path = os.path.join(args.src_dir, "{}-ft.bin".format(task))
-        label_file = os.path.join(args.data_dir, task.upper(), "labels.txt")
-        convert_single_task_model(src_path, args.config_path, args.container_path, label_file, args.tgt_dir, task)
-    print("finished")
+    #     src_path = os.path.join(args.src_dir, "{}-ft.bin".format(task))
+    #     label_file = os.path.join(args.data_dir, task.upper(), "labels.txt")
+    #     convert_single_task_model(src_path, args.config_path, args.container_path, label_file, args.tgt_dir, task)
+    # print("finished")
     convert_full_task_model(args.src_dir, args.config_path, args.container_path, args.data_dir, args.tgt_dir)
