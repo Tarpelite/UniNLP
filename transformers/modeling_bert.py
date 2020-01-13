@@ -2452,7 +2452,10 @@ def LocalCELoss(scores, labels):
     print("labels shape", labels.shape)
     scores = torch.exp(scores)
     target_scores = torch.gather(scores, 2, labels.unsqueeze(-1)).squeeze(-1) # [batch_size, max_seq_len]
+    print("OK1")
     loss = - torch.log (target_score / torch.sum(scores, dim=-1))
+    print("OK2")
+    loss = torch.sum(loss)
     return loss
 
 
