@@ -122,7 +122,7 @@ def convert_examples_to_features(examples,
 
         for i in range(len(label_ids)):
             if label_ids[i] == -100:
-                label_ids = 0 # 0 for cls means nothing
+                label_ids[i] = 0 # 0 for cls means nothing
             else:
                 label_ids[i] = pos_ids.index(label_ids[i]) + 1
 
