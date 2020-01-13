@@ -272,7 +272,7 @@ class DeepBiaffineScorer(nn.Module):
 
         self.hidden_func = F.relu
 
-        self.scorer = BiaffineScorer(hidden_size, hidden_size, outpout_size)
+        self.scorer = BiaffineScorer(hidden_size, hidden_size, output_size)
 
         self.dropout = nn.Dropout(dropout)
     
