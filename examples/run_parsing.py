@@ -274,7 +274,7 @@ def load_and_cache_examples(args, tokenizer, labels, pad_token_label_id, mode):
     else:
         logger.info("Creating features from dataset file at %s", args.data_dir)
         examples = read_examples_from_file(args.data_dir, mode)
-        features = convert_examples_to_features(examples, labels, args.max_seq_length, tokenizer,
+        features = convert_examples_to_features(examples, args.max_seq_length, tokenizer,
                                                 cls_token_at_end=bool(args.model_type in ["xlnet"]),
                                                 # xlnet has a cls token at the end
                                                 cls_token=tokenizer.cls_token,
