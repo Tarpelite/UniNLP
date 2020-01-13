@@ -140,7 +140,7 @@ def convert_examples_to_features(examples,
             if x == 0: # special token will be left for [0]
                 new_label_ids += [0]
             else:
-                new_label_ids += orig_to_tok_index[x]
+                new_label_ids += [orig_to_tok_index[x]]
         label_ids = new_label_ids
 
         tokens += [sep_token]
