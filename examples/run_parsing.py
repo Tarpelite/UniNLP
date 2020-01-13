@@ -237,7 +237,7 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
 
     eval_loss = eval_loss / nb_eval_steps
     preds = np.argmax(preds, axis=2)
-
+    
     # label_map = {i: label for i, label in enumerate(labels)}
 
     out_label_list = [[] for _ in range(out_label_ids.shape[0])]
@@ -246,8 +246,8 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
     for i in range(out_label_ids.shape[0]):
         for j in range(out_label_ids.shape[1]):
             if out_label_ids[i, j] != pad_token_label_id:
-                out_label_list[i].append(out_label_ids[i][j])
-                preds_list[i].append(preds[i][j])
+                out_label_list[i].append(str(out_label_ids[i][j]))
+                preds_list[i].append(str(preds[i][j]))
 
     results = {
         "loss": eval_loss,
