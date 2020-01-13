@@ -1046,7 +1046,7 @@ def main():
     parser.add_argument("--alpha_learning_rate", type=float, default=1e-3)
     parser.add_argument("--init_last", action="store_true")
     parser.add_argument("--ft_learning_rate", type=float, default=5e-5)
-    parser.add_argument("--recover_path", type=str)
+    parser.add_argument("--recover_path", type=str, default="")
 
     parser.add_argument("--do_alpha", action="store_true")
     parser.add_argument("--ft_with_last_layer", action="store_true")
