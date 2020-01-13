@@ -40,6 +40,9 @@ from transformers import WEIGHTS_NAME, BertConfig, BertForTokenClassification, B
 from transformers import RobertaConfig, RobertaForTokenClassification, RobertaTokenizer
 from transformers import DistilBertConfig, DistilBertForTokenClassification, DistilBertTokenizer
 
+from pudb import set_trace
+set_trace()
+
 logger = logging.getLogger(__name__)
 
 ALL_MODELS = sum(
