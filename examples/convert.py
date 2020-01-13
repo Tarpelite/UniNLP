@@ -138,8 +138,7 @@ def convert_full_task_model(src_path, config_path, container_path, data_dir, tar
                                            do_adapter=False,
                                            num_adapter_layers=2)
 
-    tgt_model.bert = src_model.bert
-    tgt_model.dropout = src_model.dropout
+    
     for i, task in enumerate(task_list):
         tgt_model.classifier_list[i].weight.data = src_state_dict["classifier_{}.weight".format(task)].data
         tgt_model.classifier_list[i].bias.data = src_state_dict["classifier_{}.bias".format(task)].data
