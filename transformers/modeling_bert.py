@@ -2458,7 +2458,7 @@ class BertForParsing(BertPreTrainedModel):
     def __init__(self, config, mlp_dim):
         super(BertForParsing, self).__init__(config)
         self.bert = BertModel(config)
-        self.dropout = nn.Dropout(config.hidden_size)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.mlp_dim = mlp_dim
 
         self.mlp_head = nn.Linear(config.hidden_size, mlp_dim)
