@@ -2488,10 +2488,11 @@ class BertForParsing(BertPreTrainedModel):
         sequence_output = self.dropout(sequence_output)
         s_head = self.mlp_head(sequence_output)
         s_dep = self.mlp_dep(sequence_output)
-
+        
         logits = self.biaffine(s_head, s_dep)
         outputs = (logits, ) + outputs[2:]
-        print("logits", logits)
+
+        # print("logits", logits)
         if labels is not None:
             loss_fct = LocalCELoss
             loss = loss_fct(logits, labels)
