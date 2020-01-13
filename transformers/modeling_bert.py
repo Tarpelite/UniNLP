@@ -2451,6 +2451,7 @@ def LocalCELoss(scores, labels):
     scores = torch.exp(scores)
     target_scores = torch.gather(scores, 2, labels.unqueeze(-1)).squeeze(-1) # [batch_size, max_seq_len]
     loss = - torch.log (target_score / torch.sum(scores, dim=-1))
+    return loss
 
 
 class BertForParsing(BertPreTrainedModel):
