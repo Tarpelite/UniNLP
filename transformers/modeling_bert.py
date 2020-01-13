@@ -25,6 +25,7 @@ import sys
 import torch
 from torch import nn
 from torch.nn import CrossEntropyLoss, MSELoss
+import torch.nn.functional as F
 import copy
 import pickle
 
