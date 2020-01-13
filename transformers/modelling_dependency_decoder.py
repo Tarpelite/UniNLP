@@ -317,7 +317,8 @@ class BiaffineDependencyModel(BertPreTrainedModel):
         sequence_output = outputs[0]
         sequence_output = self.dropout(sequence_output)
 
-        unlabeled_scores = self.unlabeled_biaffine(sequence_output, sequence_output).squeeze(3)
+        unlabeled_scores = self.unlabeled_biaffine(sequence_output, sequence_output)
+        print("unlabeld_scores", unlabeled_score.shape)
         labeled_scores = self.labeled_biaffine(sequence_output, sequence_output)
 
         loss = None
