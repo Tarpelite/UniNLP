@@ -135,7 +135,7 @@ def convert_examples_to_features(examples,
         
         # convert head to absolute ids in these sequence 
         orig_to_tok_index = [x+1 for x in orig_to_tok_index]
-        label_ids = [orig_to_tok_index[x-1] for x in label_ids]
+        label_ids = [orig_to_tok_index[x-1] for x in label_ids if x > 0 else 0]
 
         tokens += [sep_token]
         label_ids += [pad_token_label_id]
@@ -197,7 +197,7 @@ def convert_examples_to_features(examples,
     
     logger.info("*** Statistics ***")
     logger.info("*** max_len:{}  min_len:{} avg_len:{}***".format(max(cnt_counts), min(cnt_counts), sum(cnt_counts) / len(cnt_counts)))
-    
+    logger.info(" skip {} long sentences".format(skip_num))
     print("dataset label list", get_label_list)
     return features
 
