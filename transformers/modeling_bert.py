@@ -2542,5 +2542,10 @@ class BertForParsing(BertPreTrainedModel):
         if labels is not None:
             loss_fct = CrossEntropyLoss()
             loss = loss_fct(logits, labels)
+            print("logits", logits)
+            preds = torch.argmax(logits, dim=2)
+            print("loss", loss)
+            print("preds", preds)
+            print("labels", labels)
             outputs = (loss, ) + outputs
         return outputs
