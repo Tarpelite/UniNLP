@@ -172,7 +172,7 @@ def LocalCELoss(inputs, labels):
     # inputs shape [batch, max_len, max_len]
     # labels [batch, max_len]
     inputs = torch.exp(inputs)
-    score_base = 
+    pass
 
 class BertForDependencyParsing(BertPreTrainedModel):
     def __init__(self, config, num_labels=20):
