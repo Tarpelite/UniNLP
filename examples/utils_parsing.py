@@ -140,6 +140,8 @@ def convert_examples_to_features(examples,
         for x in label_ids:
             if x == 0: # special token will be left for [0]
                 new_label_ids += [0]
+            elif x == pad_token_label_id:
+                new_label_ids += [pad_token_label_id]
             else:
                 new_label_ids += [orig_to_tok_index[x-1]]
       
