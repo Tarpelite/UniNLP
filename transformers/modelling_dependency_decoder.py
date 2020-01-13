@@ -326,7 +326,7 @@ class BiaffineDependencyModel(BertPreTrainedModel):
         if heads is not None:
             # do mask weights
             weights = torch.ones(input_ids.size(0), input_ids.size(1), input_ids.size(1),
-                                    dtype=unlabeled_sccores.dtype, device=unlabeled_scores.device)
+                                    dtype=unlabeled_scores.dtype, device=unlabeled_scores.device)
             input_mask = torch.eq(heads, -100)
             weights = weights.maked_fill(input_mask, 0)
             weights = weights.maked_fill(input_mask, 0)
