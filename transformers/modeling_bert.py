@@ -2445,6 +2445,40 @@ class BiAffine(nn.Module):
         S = Rh @ self.U @ Rd.transpose(-1, -2)
         return S.squeeze(1)
 
+class BiaffineScorer(nn.Module):
+    def __init__(self, input1_size, input2_size, output_size):
+        super().__init__()
+        self.W_bilin = nn.Bilinear(input1_size + 1, input2_size + 1, output_size)
+
+        self.W_bilin.weight.data.zero_()
+        self.W_bilin.bias.data.zero_()
+
+    def forward(self, input1, input2):
+        input1 = torch.cat([input1, input1.new_ones(*input1.size()[:-1], 1)], len(input1.size()) - 1)
+        input2 = torch.cat([input2, input2.new_ones(*input2.size()[:-1], 1)], len(input2.size()) - 1)
+        return self.W_bilin(input1, input2)
+
+class DeepBiaffineScorer(nn.Module):
+    def __init__(self, input1_size, input2_size, 
+                hidden_size, output_size, hidden_func=F.relu, dropout=0,
+                ):
+      
+        super().__init__()
+        
+        self.W1 = nn.Linear(input1_size, hidden_size)
+        self.W2 = nn.Linear(input2_size, hidden_size)
+        
+        self.hidden_func = hidden_func
+    
+        self.scorer = BiaffineScorer(hidden_size, hidden_size, output_size)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, input1, input2):
+        return self.scorer(self.dropout(self.hidden_func(self.W1(input1))),
+                           self.dropout(self.hidden_func(self.W2(input2))))
+
+
+
 def LocalCELoss(scores, labels):
     # score shape [batch_size, max_seq_len, max_seq_len]
     # labels [batch_size, max_seq_len]

@@ -1055,7 +1055,7 @@ def main():
     parser.add_argument("--alpha_learning_rate", type=float, default=1e-3)
     parser.add_argument("--init_last", action="store_true")
     parser.add_argument("--ft_learning_rate", type=float, default=5e-5)
-    parser.add_argument("--recover_path", type=str)
+    parser.add_argument("--recover_path", type=str， default="")
 
     parser.add_argument("--do_alpha", action="store_true")
     parser.add_argument("--ft_with_last_layer", action="store_true")
@@ -1223,12 +1223,12 @@ def main():
             model.to(args.device)
         
 
-            # pos_dataset_ft, ner_dataset_ft, chunking_dataset_ft, srl_dataset_ft, onto_pos_dataset_ft, onto_ner_dataset_ft = load_and_cache_dev_examples(args, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, labels_onto_pos, labels_onto_ner, pad_token_label_id, is_ft=True)
+            pos_dataset_ft, ner_dataset_ft, chunking_dataset_ft, srl_dataset_ft, onto_pos_dataset_ft, onto_ner_dataset_ft = load_and_cache_dev_examples(args, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, labels_onto_pos, labels_onto_ner, pad_token_label_id, is_ft=True)
             pos_dataset, ner_dataset, chunking_dataset, srl_dataset, onto_pos_dataset, onto_ner_dataset = load_and_cache_dev_examples(args, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, labels_onto_pos, labels_onto_ner, pad_token_label_id, is_ft=False)
             
             logger.info("Evaluate before finetune")
 
-            # result_pos_no_ft, _ = evaluate(args, model, tokenizer, pos_dataset, labels_pos, pad_token_label_id, mode="dev", prefix=global_step, task="pos")
+            result_pos_no_ft, _ = evaluate(args, model, tokenizer, pos_dataset, labels_pos, pad_token_label_id, mode="dev", prefix=global_step, task="pos")
             result_ner_no_ft, _ = evaluate(args, model, tokenizer, ner_dataset, labels_ner, pad_token_label_id, mode="dev", prefix=global_step, task="ner")
             # result_chunking_no_ft, _ = evaluate(args, model, tokenizer, chunking_dataset, labels_chunking, pad_token_label_id, mode="dev", prefix=global_step, task="chunking")
             # result_srl_no_ft, _ = evaluate(args, model, tokenizer, srl_dataset, labels_srl, pad_token_label_id, mode="dev", task="srl")
