@@ -2438,7 +2438,7 @@ class BiAffine(nn.Module):
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.U = nn.Parameter(torch.FloatTensor(output_dim, input_dim, input_dim))
-        # nn.init.xavier_uniform_(self.U)
+        nn.init.xavier_uniform_(self.U)
     
     def forward(self, Rh, Rd):
         Rh = Rh.unsqueeze(1)

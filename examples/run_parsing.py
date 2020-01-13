@@ -250,7 +250,7 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
                 preds_list[i].append(str(preds[i][j]))
 
     print("sample results")
-    print("preds", preds[0])
+    print("preds", preds_list[0])
     print("labels", out_label_list[0])
 
     results = {
