@@ -2466,7 +2466,7 @@ class BertForParsing(BertPreTrainedModel):
 
         self.biaffine = BiAffine(mlp_dim, 1)
 
-        self.init_weight()
+        self.init_weights()
     
     def decode(self, scores):
         # do viterbi decoding, build graph for every instance
