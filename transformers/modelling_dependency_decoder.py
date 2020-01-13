@@ -295,7 +295,7 @@ class BiaffineDependencyModel(BertPreTrainedModel):
                                                    biaffine_hidden_size,
                                                    num_labels,
                                                    dropout=0.1)
-    
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
     def forward(self, 
                 input_ids=None,
