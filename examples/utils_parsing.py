@@ -119,12 +119,15 @@ def convert_examples_to_features(examples,
             pos_cnt += 1
             if label not in get_label_list: 
                 get_label_list.append(label)
-
-        for i in range(len(label_ids)):
-            if label_ids[i] == -100:
-                label_ids[i] = 0 # 0 for cls means nothing
-            else:
-                label_ids[i] = pos_ids.index(label_ids[i]) + 1
+        try:
+            for i in range(len(label_ids)):
+                if label_ids[i] == -100 :
+                    label_ids[i] = 0 # 0 for cls means nothing
+                else:
+                    label_ids[i] = pos_ids.index(label_ids[i]) + 1
+        except Exception as e:
+            print("label ids", label_ids)
+            print("pos ids", pos_ids)
 
         # Account for [CLS] and [SEP] with "- 2" and with "- 3" for RoBERTa.
         cnt_counts.append(len(tokens))
