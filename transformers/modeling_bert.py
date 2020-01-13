@@ -2499,7 +2499,7 @@ class BertForParsing(BertPreTrainedModel):
         
         logits = self.biaffine(s_head, s_dep) # [batch_size, seq_len, seq_len]
 
-        logits = logits*attention_mask
+        logits = logits*attention_mask.float()
 
         outputs = (logits, ) + outputs[2:]
         if labels is not None:
