@@ -2456,6 +2456,7 @@ def LocalCELoss(scores, labels):
     loss = - torch.log (target_scores / torch.sum(scores, dim=-1))
     print("OK2")
     loss = torch.sum(loss)
+    print("OK3")
     return loss
 
 
@@ -2504,6 +2505,6 @@ class BertForParsing(BertPreTrainedModel):
             loss_fct = LocalCELoss
             loss = loss_fct(logits, labels)
 
-        outputs = (loss, ) + outputs
+            outputs = (loss, ) + outputs
         return outputs
 
