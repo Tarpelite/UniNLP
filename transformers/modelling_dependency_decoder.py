@@ -285,7 +285,7 @@ class BiaffineDependencyModel(BertPreTrainedModel):
         super().__init__(config)
         self.bert = BertModel(config)
         self.num_labels = num_labels
-        self.unlabeled_biaffine = DeepBiaffineScoerer(config.hidden_size,
+        self.unlabeled_biaffine = DeepBiaffineScorer(config.hidden_size,
                                                       config.hidden_size,
                                                       biaffine_hidden_size,
                                                       1, dropout=0.1)
