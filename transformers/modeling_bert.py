@@ -2502,7 +2502,7 @@ class BertForParsing(BertPreTrainedModel):
         print("s_dep shape", s_dep.shape)
         print("logits shape", logits.shape)
         if labels is not None:
-            loss_fct = LocalCELoss
+            loss_fct = nn.CrossEntropyLoss()
             loss = loss_fct(logits, labels)
             print("OK4")
             print("loss", loss)

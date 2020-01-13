@@ -114,20 +114,11 @@ def convert_examples_to_features(examples,
             if label == '_' or int(label) > (max_seq_length -2):
                 label = -100
             # Use the real label id for the first token of the word, and padding ids for the remaining tokens
-            label_ids.extend([int(label)] + [pad_token_label_id] * (len(word_tokens) - 1))
-            pos_ids.extend([pos_cnt] + [pad_token_label_id]*(len(word_tokens) -1 ))
+            label_ids.extend([int(label)] + [-100] * (len(word_tokens) - 1))
             pos_cnt += 1
             if label not in get_label_list: 
                 get_label_list.append(label)
-        try:
-            for i in range(len(label_ids)):
-                if label_ids[i] == -100 :
-                    label_ids[i] = 0 # 0 for cls means nothing
-                else:
-                    label_ids[i] = pos_ids.index(label_ids[i]) + 1
-        except Exception as e:
-            print("label ids", label_ids)
-            print("pos ids", pos_ids)
+
 
         # Account for [CLS] and [SEP] with "- 2" and with "- 3" for RoBERTa.
         cnt_counts.append(len(tokens))
