@@ -249,6 +249,10 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
                 out_label_list[i].append(str(out_label_ids[i][j]))
                 preds_list[i].append(str(preds[i][j]))
 
+    print("sample results")
+    print("preds", preds[0])
+    print("labels", out_label_list[0])
+
     results = {
         "loss": eval_loss,
         "accuracy_score":accuracy_score(out_label_list, preds_list),
@@ -390,6 +394,7 @@ def main():
                         help="For distributed training: local_rank")
     parser.add_argument("--server_ip", type=str, default="", help="For distant debugging.")
     parser.add_argument("--server_port", type=str, default="", help="For distant debugging.")
+    parser.add_argument("--mlp_dim", type=int, default=200)
     args = parser.parse_args()
 
     if os.path.exists(args.output_dir) and os.listdir(
@@ -447,7 +452,7 @@ def main():
                                                 cache_dir=args.cache_dir if args.cache_dir else None)
     
     model = model_class.from_pretrained(args.model_name_or_path,
-                                        mlp_dim=200,
+                                        mlp_dim=args.mlp_dim,
                                         from_tf=bool(".ckpt" in args.model_name_or_path),
                                         config=config,
                                         cache_dir=args.cache_dir if args.cache_dir else None)
@@ -492,7 +497,7 @@ def main():
         logger.info("Evaluate the following checkpoints: %s", checkpoints)
         for checkpoint in checkpoints:
             global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
-            model = model_class.from_pretrained(checkpoint, mlp_dim=200)
+            model = model_class.from_pretrained(checkpoint, mlp_dim=args.mlp_dim)
             model.to(args.device)
             result, _ = evaluate(args, model, tokenizer, labels, pad_token_label_id, mode="dev", prefix=global_step)
             if global_step:
