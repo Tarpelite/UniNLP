@@ -159,12 +159,12 @@ if __name__ == "__main__":
     # parser.add_argument("--task", type=str)
 
     args = parser.parse_args()
-    # convert single task
-    # for task in task_list:
-    #     print("convert ", task)
+    convert single task
+    for task in task_list:
+        print("convert ", task)
         
-    #     src_path = os.path.join(args.src_dir, "{}-ft.bin".format(task))
-    #     label_file = os.path.join(args.data_dir, task.upper(), "labels.txt")
-    #     convert_single_task_model(src_path, args.config_path, args.container_path, label_file, args.tgt_dir, task)
-    # print("finished")
+        src_path = os.path.join(args.src_dir, "{}-ft.bin".format(task))
+        label_file = os.path.join(args.data_dir, task.upper(), "labels.txt")
+        convert_single_task_model(src_path, args.config_path, args.container_path, label_file, args.tgt_dir, task)
+    print("finished")
     convert_full_task_model(args.src_dir, args.config_path, args.container_path, args.data_dir, args.tgt_dir)
