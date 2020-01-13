@@ -20,7 +20,7 @@ import torch.nn as nn
 from torch.optim import Adam
 
 from transformers import AdamW, get_linear_schedule_with_warmup
-from transformers import WEIGHTS_NAME, BertConfig, BertForTokenClassification, BertTokenizer,BiAffineParser, BertForDependencyParsing
+from transformers import WEIGHTS_NAME, BertConfig, BertForTokenClassification, BertTokenizer,BiAffineParser, BertForDependencyParsing, BiaffineDependencyModel
 from transformers import RobertaConfig, RobertaForTokenClassification, RobertaTokenizer
 from transformers import DistilBertConfig, DistilBertForTokenClassification, DistilBertTokenizer
 from pudb import set_trace
@@ -37,7 +37,7 @@ ALL_MODELS = sum(
     ())
 
 MODEL_CLASSES = {
-    "bert": (BertConfig, BertForDependencyParsing, BertTokenizer),
+    "bert": (BertConfig, BiaffineDependencyModel, BertTokenizer),
     "roberta": (RobertaConfig, RobertaForTokenClassification, RobertaTokenizer),
     "distilbert": (DistilBertConfig, DistilBertForTokenClassification, DistilBertTokenizer)
 }
@@ -146,7 +146,7 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
                 inputs["token_type_ids"]: batch[2] if args.model_type in ["bert", "xlnet"] else None  # XLM and RoBERTa don"t use segment_ids
 
             outputs = model(**inputs)
-            arc_loss, _ = outputs[:2]
+            loss, _ = outputs[:2]
             # S_arc.to(args.device)
             # S_labels.to(args.device)
 
@@ -159,10 +159,7 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
             # heads_mask.masked_fill_(heads==-100, 0)
             # heads_mask.masked_fill_(heads>-100, 1)
             # heads = heads*heads_mask
-            # lab_loss = lab_loss_func(S_labels, heads, labels)
-
-            loss = arc_loss
-            
+            # lab_loss = lab_loss_func(S_labels, heads, labels)            
 
             if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel training
@@ -478,7 +475,8 @@ def main():
                                         from_tf=bool(".ckpt" in args.model_name_or_path),
                                         config=config,
                                         cache_dir=args.cache_dir if args.cache_dir else None,
-                                        num_labels=num_labels)
+                                        num_labels=num_labels,
+                                        biaffine_hidden_size=200)
 
 
     if args.local_rank == 0:

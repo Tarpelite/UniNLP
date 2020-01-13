@@ -3,6 +3,7 @@ from torch import nn
 from torch.autograd import Variable
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from transformers import BertModel, BertPreTrainedModel
+import torch.nn.functional as F
 
 
 PAD_INDEX = nn.CrossEntropyLoss().ignore_index
@@ -167,7 +168,11 @@ class BiAffineParser(BertPreTrainedModel):
         labels = labels.view(-1)                             # [batch*sent_len]
         return self.critierion(S_lab, labels)
 
-
+def LocalCELoss(inputs, labels):
+    # inputs shape [batch, max_len, max_len]
+    # labels [batch, max_len]
+    inputs = torch.exp(inputs)
+    score_base = 
 
 class BertForDependencyParsing(BertPreTrainedModel):
     def __init__(self, config, num_labels=20):
@@ -239,3 +244,112 @@ class BertForDependencyParsing(BertPreTrainedModel):
             # label_loss = loss_func(s_lab, labels)
             outputs = (arc_loss, label_loss) + outputs
         return outputs
+
+class BiaffineScorer(nn.Module):
+    def __init__(self, input1_size, input2_size, output_size):
+        super().__init__()
+
+        self.W_bilin = nn.Bilinear(input1_size + 1, input2_size + 1, output_size)
+
+        self.W_bilin.weight.data.zero_()
+        self.W_bilin.bias.data.zero_()
+
+    def forward(self, input1, input2):
+
+        # input1 size: [batch_size, seq_len, feature_size]
+        # input1.new_ones [batch_size, seq_len, 1]
+        input1 = torch.cat([input1, input1.new_ones(*input1.size()[:-1], 1)], len(input1.size()) - 1)
+        input2 = torch.cat([input2, input2.new_ones(*input2.size()[:-1], 1)], len(input2.size()) - 1)
+
+        return self.W_binin(input1, input2)
+
+
+class DeepBiaffineScorer(nn.Module):
+    def __init__(self, input1_size, input2_size, hidden_size, output_size, dropout=0):
+        super().__init__()
+        self.W1 = nn.Linear(input1_size, hidden_size)
+        self.W2 = nn.Linear(input2_size, hidden_size)
+
+        self.hidden_func = F.relu
+
+        self.scorer = BiaffineScorer(hidden_size, hidden_size, outpout_size)
+
+        self.dropout = nn.Dropout(dropout)
+    
+    def forward(self, input1, input2):
+        return self.scorer(self.dropout(self.hidden_func(self.W1(input1))),
+                           self.dropout(self.hidden_func(self.W2(input2))))
+
+class BiaffineDependencyModel(BertPreTrainedModel):
+    def __init__(self, config, num_labels, biaffine_hidden_size):
+        super().__init__(config)
+        self.bert = BertModel(config)
+        self.num_labels = num_labels
+        self.unlabeled_biaffine = DeepBiaffineScoerer(config.hidden_size,
+                                                      config.hidden_size,
+                                                      biaffine_hidden_size,
+                                                      1, dropout=0.1)
+        
+        self.labeled_biaffine = DeepBiaffineScorer(config.hidden_size,
+                                                   config.hidden_size,
+                                                   biaffine_hidden_size,
+                                                   num_labels,
+                                                   dropout=0.1)
+    
+
+    def forward(self, 
+                input_ids=None,
+                attention_mask=None,
+                token_type_ids=None,
+                position_ids=None,
+                head_mask=None,
+                inputs_embeds=None,
+                heads=None,
+                labels=None):
+        
+        outputs = self.bert(input_ids,
+                            attention_mask=attention_mask,
+                            token_type_ids=token_type_ids,
+                            position_ids=position_ids,
+                            head_mask=head_mask,
+                            inputs_embeds=inputs_embeds)
+
+        sequence_output = outputs[0]
+        sequence_output = self.dropout(sequence_output)
+
+        unlabeled_scores = self.unlabeled_biaffine(sequence_output, sequence_output).squeeze(3)
+        labeled_scores = self.labeled_biaffine(sequence_output, sequence_output)
+
+        loss = None
+        outputs = (unlabeled_scores, labeled_scores) + outputs
+        if heads is not None:
+            # do mask weights
+            weights = torch.ones(word_pad_mask.size(0), inputs_ids.size(1), inputs_ids.size(1),
+                                    dtype=unlabeled_sccores.dtype, device=unlabeled_scores.device)
+            input_mask = torch.eq(heads, -100)
+            weights = weights.maked_fill(input_mask, 0)
+            weights = weights.maked_fill(input_mask, 0)
+
+            # words_num = torch.sum(torch.ge(input_ids, 0)).item()
+
+            loss_fct = nn.BCEWithLogitsLoss(weight=weights, reduction="sum")
+            dep_arc_loss = loss_fct(unlabeled_scores, heads)
+            if loss is None:
+                loss = dep_arc_loss
+        
+        if labels is not None:
+            loss_fct = nn.CrossEntropyLoss(ignore_index=-100, reduction="sum")
+            labeled_scores = labeled_scores.contiguous().view(-1, self.num_labels)
+            dep_label_loss = loss_fct(labeled_scores, labels.view(-1))
+            if loss is None:
+                loss = dep_label_loss
+            else:
+                loss += dep_label_loss
+        
+        if loss is not None:
+            outputs = (loss, ) + outputs
+        return outputs
+
+
+
+
