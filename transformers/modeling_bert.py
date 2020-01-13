@@ -2492,12 +2492,18 @@ class BertForParsing(BertPreTrainedModel):
         s_head = self.mlp_head(sequence_output)
         s_dep = self.mlp_dep(sequence_output)
 
-        logits = self.biaffine(s_head, s_dep)
-        outputs = (logits, ) + outputs[2:]
+        # do the mask
+        # attention_mask [batch_size, seq_len]
+        
+        attention_mask = attention_mask.unsqueeze(-1).expand(attention_mask.shape + (attention_mask.size(-1),))
+        
+        logits = self.biaffine(s_head, s_dep) # [batch_size, seq_len, seq_len]
 
+        logits = logits*attention_mask
+
+        outputs = (logits, ) + outputs[2:]
         if labels is not None:
-            loss_fct = nn.CrossEntropyLoss()
+            loss_fct = CrossEntropyLoss()
             loss = loss_fct(logits, labels)
             outputs = (loss, ) + outputs
         return outputs
-

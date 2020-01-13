@@ -100,22 +100,27 @@ def convert_examples_to_features(examples,
     last_tokens = []
     last_label_ids = []
     get_label_list = []
+    skip_num = 0
     for (ex_index, example) in enumerate(examples):
         if ex_index % 10000 == 0:
             logger.info("Writing example %d of %d", ex_index, len(examples))
 
         tokens = []
         label_ids = []
-        pos_ids = []
-        pos_cnt = 0
+        all_doc_tokens = []
+
+        tok_to_orig_index = []
+        orig_to_tok_index = []
+
         for word, label in zip(example.words, example.labels):
+            orig_to_tok_index.append(len(tokens))
             word_tokens = tokenizer.tokenize(word)
             tokens.extend(word_tokens)
-            if label == '_' or int(label) > (max_seq_length -2):
-                label = -100
+            if label == '_' or int(label) > (max_seq_length -2) or int(label) == '0':
+                label = -1  # 0 for [cls] and [ROOT]
+
             # Use the real label id for the first token of the word, and padding ids for the remaining tokens
-            label_ids.extend([int(label)] + [-100] * (len(word_tokens) - 1))
-            pos_cnt += 1
+            label_ids.extend([int(label)] + [int(label)] * (len(word_tokens) - 1))
             if label not in get_label_list: 
                 get_label_list.append(label)
 
@@ -124,27 +129,14 @@ def convert_examples_to_features(examples,
         cnt_counts.append(len(tokens))
         special_tokens_count = 3 if sep_token_extra else 2
         if len(tokens) > max_seq_length - special_tokens_count:
-            tokens = tokens[:(max_seq_length - special_tokens_count)]
-            label_ids = label_ids[:(max_seq_length - special_tokens_count)]
-
-        # The convention in BERT is:
-        # (a) For sequence pairs:
-        #  tokens:   [CLS] is this jack ##son ##ville ? [SEP] no it is not . [SEP]
-        #  type_ids:   0   0  0    0    0     0       0   0   1  1  1  1   1   1
-        # (b) For single sequences:
-        #  tokens:   [CLS] the dog is hairy . [SEP]
-        #  type_ids:   0   0   0   0  0     0   0
-        #
-        # Where "type_ids" are used to indicate whether this is the first
-        # sequence or the second sequence. The embedding vectors for `type=0` and
-        # `type=1` were learned during pre-training and are added to the wordpiece
-        # embedding vector (and position vector). This is not *strictly* necessary
-        # since the [SEP] token unambiguously separates the sequences, but it makes
-        # it easier for the model to learn the concept of sequences.
-        #
-        # For classification tasks, the first vector (corresponding to [CLS]) is
-        # used as as the "sentence vector". Note that this only makes sense because
-        # the entire model is fine-tuned.
+            # skip long sentence
+            skip_num += 1
+            continue
+        
+        # convert head to absolute ids in these sequence 
+        orig_to_tok_index = [x+1 for x in orig_to_tok_index]
+        labels_ids = [orig_to_tok_index[x-1] for x in labels_ids]
+        
         tokens += [sep_token]
         label_ids += [pad_token_label_id]
         if sep_token_extra:
@@ -161,6 +153,8 @@ def convert_examples_to_features(examples,
             tokens = [cls_token] + tokens
             label_ids = [pad_token_label_id] + label_ids
             segment_ids = [cls_token_segment_id] + segment_ids
+        
+        
 
         input_ids = tokenizer.convert_tokens_to_ids(tokens)
 
