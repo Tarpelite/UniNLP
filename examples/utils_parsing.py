@@ -73,9 +73,9 @@ def read_examples_from_file(data_dir, mode):
 
 
 def convert_examples_to_features(examples,
-                                 label_list=None,
                                  max_seq_length,
                                  tokenizer,
+                                 label_list=None,
                                  cls_token_at_end=False,
                                  cls_token="[CLS]",
                                  cls_token_segment_id=1,
