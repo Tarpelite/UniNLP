@@ -446,6 +446,7 @@ def main():
                                                 cache_dir=args.cache_dir if args.cache_dir else None)
     
     model = model_class.from_pretrained(args.model_name_or_path,
+                                        mlp_dim=200,
                                         from_tf=bool(".ckpt" in args.model_name_or_path),
                                         config=config,
                                         cache_dir=args.cache_dir if args.cache_dir else None)
