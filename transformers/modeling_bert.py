@@ -2206,9 +2206,7 @@ class MTDNNModelv4(BertPreTrainedModel):
 
             # do init
             for task in self.tasks:
-                setattr(self, "adapter_{}".format(task), [copy_model(self.bert.encoder.layer[-2]), copy_model(self.bert.encoder.layer[-1])])
-
-
+                setattr(self, "adapter_{}".format(task), [copy.deepcopy(self.bert.encoder.layer[-2]), copy.deepcopy(self.bert.encoder.layer[-1])])
 
         inf_value = 10
 
