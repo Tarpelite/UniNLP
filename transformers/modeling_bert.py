@@ -2206,7 +2206,7 @@ class MTDNNModelv4(BertPreTrainedModel):
             # do init
             for task in self.tasks:
                 for i in range(len(self.adapter_pos.layers)):
-                    getattr(self, "adapter_{}".format(task)).layers[i] = copy_model(self.bert.encoder.layer[-i])
+                    getattr(self, "adapter_{}".format(task)).layers[i] = copy_model(self.bert.encoder.layer[-(i+1)])
 
 
         inf_value = 10
@@ -2260,7 +2260,7 @@ class MTDNNModelv4(BertPreTrainedModel):
             for i in range(len(adapter_layer.layers)):
                 self.bert.encoder.layer[-i] = adapter_layer.layers[i]
                 if adapter_ft:
-                    for param in self.bert.encoder.layer[-i].parameters():
+                    for param in self.bert.encoder.layer[-(i+1)].parameters():
                         param.requires_grad = True
         
         outputs = self.bert(input_ids,
