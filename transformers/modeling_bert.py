@@ -2196,17 +2196,18 @@ class MTDNNModelv4(BertPreTrainedModel):
         self.tasks = ["pos", "ner", "chunking", "srl", "onto_pos", "onto_ner"]
 
         if self.do_adapter:
-            self.adapter_pos = AdapterLayers(config, 2)
-            self.adapter_ner = AdapterLayers(config, 2)
-            self.adapter_chunking = AdapterLayers(config, 2)
-            self.adapter_srl = AdapterLayers(config, 2)
-            self.adapter_onto_pos = AdapterLayers(config, 2)
-            self.adapter_onto_ner = AdapterLayers(config, 2)
+            # self.adapter_pos = AdapterLayers(config, 2)
+            # self.adapter_ner = AdapterLayers(config, 2)
+            # self.adapter_chunking = AdapterLayers(config, 2)
+            # self.adapter_srl = AdapterLayers(config, 2)
+            # self.adapter_onto_pos = AdapterLayers(config, 2)
+            # self.adapter_onto_ner = AdapterLayers(config, 2)
 
             # do init
             for task in self.tasks:
-                for i in range(len(self.adapter_pos.layers)):
-                    getattr(self, "adapter_{}".format(task)).layers[i] = copy_model(self.bert.encoder.layer[-(i+1)])
+                init_layers = [copy_model(self.bert.encoder.layer)] 
+                setattr(self, "adapter_{}".format(task), [copy_model(self.bert.encoder.layer[-2]), copy_model(self.bert.encoder.layer[-1])])
+
 
 
         inf_value = 10
@@ -2257,11 +2258,13 @@ class MTDNNModelv4(BertPreTrainedModel):
 
             task = self.tasks[task_id]
             adapter_layer = getattr(self, "adapter_{}".format(task))
-            for i in range(len(adapter_layer.layers)):
-                self.bert.encoder.layer[-(i+1)] = adapter_layer.layers[i]
-                if adapter_ft and (labels is not None):
-                    for param in self.bert.encoder.layer[-(i+1)].parameters():
-                        param.requires_grad = True
+            self.bert.encoder.layer[-2] = adapter_layer[0]
+            self.bert.encoder.layer[-1] = adapter_layer[1]
+            if adapter_ft and labels is not None:
+                for param in self.bert.encoder.layer[-1].parameters():
+                    param.requires_grad = True
+                for param in self.bert.encoder.layer[-2].parameters():
+                    param.requires_grad = True
         
         outputs = self.bert(input_ids,
                             attention_mask=attention_mask,
