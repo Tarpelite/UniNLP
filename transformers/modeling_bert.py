@@ -2155,6 +2155,7 @@ class MTDNNModelTaskEmbeddingV2(BertPreTrainedModel):
 def copy_model(src):
     pickle.dump(src, open("save.pl", "wb"))
     target = pickle.load(open("save.pl", "rb"))
+    target.to(torch.device("cuda"))
     return target
 
 class AdapterLayers(nn.Module):
@@ -2205,7 +2206,6 @@ class MTDNNModelv4(BertPreTrainedModel):
 
             # do init
             for task in self.tasks:
-                init_layers = [copy_model(self.bert.encoder.layer)] 
                 setattr(self, "adapter_{}".format(task), [copy_model(self.bert.encoder.layer[-2]), copy_model(self.bert.encoder.layer[-1])])
 
 
