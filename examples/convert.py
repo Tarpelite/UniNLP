@@ -148,7 +148,7 @@ def convert_full_task_model(src_path, config_path, container_path, data_dir, tar
     # tgt_model.save_pretrained(target_path)
     model_path = os.path.join(target_path, "pytorch_model.bin")
     torch.save(tgt_model.state_dict(), model_path)
-    cp_command = "mv {} {}".format(model_path, src_path)
+    cp_command = "mv {} {}".format(model_path, path)
     os.system(cp_command)
 
 if __name__ == "__main__":

@@ -2537,10 +2537,14 @@ class BertForParsing(BertPreTrainedModel):
         
         logits = self.biaffine(s_head, s_dep) # [batch_size, seq_len, seq_len]
 
+        logits = logits.transpose(-1, -2)
+
         # print("logits", logits)
         outputs = (logits, ) + outputs[2:]
         if labels is not None:
             loss_fct = CrossEntropyLoss()
+            logits = logits.contiguous().view(-1. logits.size(-1))
+            labels = labels.view(-1)
             loss = loss_fct(logits, labels)
             print("logits", logits)
             preds = torch.argmax(logits, dim=2)
