@@ -2546,10 +2546,10 @@ class BertForParsing(BertPreTrainedModel):
             logits = logits.contiguous().view(-1, logits.size(-1))
             labels = labels.view(-1)
             loss = loss_fct(logits, labels)
-            print("logits", logits)
-            preds = torch.argmax(logits, dim=2)
-            print("loss", loss)
-            print("preds", preds)
-            print("labels", labels)
+            # print("logits", logits)
+            # preds = torch.argmax(logits, dim=1)
+            # print("loss", loss)
+            # print("preds", preds)
+            # print("labels", labels)
             outputs = (loss, ) + outputs
         return outputs
