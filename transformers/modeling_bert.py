@@ -2543,7 +2543,7 @@ class BertForParsing(BertPreTrainedModel):
         outputs = (logits, ) + outputs[2:]
         if labels is not None:
             loss_fct = CrossEntropyLoss()
-            logits = logits.contiguous().view(-1. logits.size(-1))
+            logits = logits.contiguous().view(-1, logits.size(-1))
             labels = labels.view(-1)
             loss = loss_fct(logits, labels)
             print("logits", logits)
