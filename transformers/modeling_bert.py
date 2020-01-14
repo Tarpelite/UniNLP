@@ -2259,7 +2259,7 @@ class MTDNNModelv4(BertPreTrainedModel):
             adapter_layer = getattr(self, "adapter_{}".format(task))
             for i in range(len(adapter_layer.layers)):
                 self.bert.encoder.layer[-i] = adapter_layer.layers[i]
-                if adapter_ft:
+                if adapter_ft and (labels is not None):
                     for param in self.bert.encoder.layer[-(i+1)].parameters():
                         param.requires_grad = True
         
