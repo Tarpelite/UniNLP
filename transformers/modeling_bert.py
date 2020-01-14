@@ -2205,8 +2205,9 @@ class MTDNNModelv4(BertPreTrainedModel):
             # self.adapter_onto_ner = AdapterLayers(config, 2)
 
             # do init
-            for task in self.tasks:
-                setattr(self, "adapter_{}".format(task), [copy.deepcopy(self.bert.encoder.layer[-2]).to(torch.device("cuda")), copy.deepcopy(self.bert.encoder.layer[-1]).to(torch.device("cuda"))])
+            # for task in self.tasks:
+            #     setattr(self, "adapter_{}".format(task), [copy.deepcopy(self.bert.encoder.layer[-2]).to(torch.device("cuda")), copy.deepcopy(self.bert.encoder.layer[-1]).to(torch.device("cuda"))])
+            pass
 
         inf_value = 10
 
@@ -2253,11 +2254,7 @@ class MTDNNModelv4(BertPreTrainedModel):
             if adapter_ft:
                 for param in self.bert.parameters():
                     param.requires_grad = False
-
-            task = self.tasks[task_id]
-            adapter_layer = getattr(self, "adapter_{}".format(task))
-            self.bert.encoder.layer[-2] = adapter_layer[0]
-            self.bert.encoder.layer[-1] = adapter_layer[1]
+                    
             if adapter_ft and labels is not None:
                 for param in self.bert.encoder.layer[-1].parameters():
                     param.requires_grad = True
