@@ -116,9 +116,10 @@ def convert_examples_to_features(examples,
             orig_to_tok_index.append(len(tokens))
             word_tokens = tokenizer.tokenize(word)
             tokens.extend(word_tokens)
-            if label == '_' or int(label) > (max_seq_length -2) or int(label) == '0':
-                label = 0  # 0 for [cls] and [ROOT]
-
+            if label == '_' or int(label) > (max_seq_length -2) :
+                label = pad_token_label_id  # 0 for [cls] and [ROOT]
+            elif int(label) == '0':
+                label = 0
             # Use the real label id for the first token of the word, and padding ids for the remaining tokens
             label_ids.extend([int(label)] + [pad_token_label_id] * (len(word_tokens) - 1))
             if label not in get_label_list: 

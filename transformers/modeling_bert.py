@@ -2254,7 +2254,7 @@ class MTDNNModelv4(BertPreTrainedModel):
             if adapter_ft:
                 for param in self.bert.parameters():
                     param.requires_grad = False
-                    
+
             if adapter_ft and labels is not None:
                 for param in self.bert.encoder.layer[-1].parameters():
                     param.requires_grad = True
@@ -2551,3 +2551,211 @@ class BertForParsing(BertPreTrainedModel):
             # print("labels", labels)
             outputs = (loss, ) + outputs
         return outputs
+
+
+class DeepBiAffineDecoder(nn.Module):
+    """Parsing decodder"""
+    def __init__(self, hidden_size, mlp_dim=300):
+        super(DeepBiAffineDecoder, self).__init__()
+        self.mlp_dim = mlp_dim
+        self.hidden_size = hidden_size
+        self.mlp_head = nn.Linear(hidden_size, mlp_dim)
+        self.mlp_dep = nn.Linear(hidden_size, mlp_dim)
+
+        self.biaffine = BiAffine(mlp_dim, 1)
+
+    
+    def forward(self, sequence_output):
+        s_head = self.mlp_head(sequence_output)
+        s_dep = self.mlp_dep(sequence_output)
+        logits = self.biaffine(s_head, s_dep)
+        logits = logits.transpose(-1, -2) #[batch_size, max_seq_len, max_seq_len]
+        return logits
+
+
+class MTDNNModelv5(BertPreTrainedModel):
+    def __init__(self, config, 
+                 num_labels_pos, 
+                 num_labels_ner, 
+                 num_labels_chunking, 
+                 num_labels_srl, 
+                 num_labels_onto_pos, 
+                 num_labels_onto_ner, 
+                 init_last=False, 
+                 do_adapter=False):
+        super(MTDNNModelv5, self).__init__(config)
+
+        self.do_adapter = do_adapter
+        self.bert = BertModel(config)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+
+        self.classifier_pos = nn.Linear(config.hidden_size, num_labels_pos)
+        self.classifier_ner = nn.Linear(config.hidden_size, num_labels_ner)
+        self.classifier_chunking = nn.Linear(config.hidden_size, num_labels_chunking)
+        self.classifier_srl = nn.Linear(config.hidden_size, num_labels_srl)
+        self.classifier_onto_pos = nn.Linear(config.hidden_size, num_labels_onto_pos)
+        self.classifier_onto_ner = nn.Linear(config.hidden_size, num_labels_onto_ner)
+        self.classifier_parsing_ud = DeepBiAffineDecoder(config.hidden_size)
+        self.classifier_parsing_ptb = DeepBiAffineDecoder(config.hidden_size)
+
+
+        init_value_pos = torch.zeros(config.num_hidden_layers, 1)
+        init_value_ner = torch.zeros(config.num_hidden_layers, 1)
+        init_value_chunking = torch.zeros(config.num_hidden_layers, 1)
+        init_value_srl = torch.zeros(config.num_hidden_layers, 1)
+        init_value_onto_pos = torch.zeros(config.num_hidden_layers, 1)
+        init_value_onto_ner = torch.zeros(config.num_hidden_layers, 1)
+
+        self.tasks = ["pos", "ner", "chunking", "srl", "onto_pos", "onto_ner", "parsing_ud", "parsing_ptb"]
+
+        if self.do_adapter:
+            # self.adapter_pos = AdapterLayers(config, 2)
+            # self.adapter_ner = AdapterLayers(config, 2)
+            # self.adapter_chunking = AdapterLayers(config, 2)
+            # self.adapter_srl = AdapterLayers(config, 2)
+            # self.adapter_onto_pos = AdapterLayers(config, 2)
+            # self.adapter_onto_ner = AdapterLayers(config, 2)
+
+            # do init
+            # for task in self.tasks:
+            #     setattr(self, "adapter_{}".format(task), [copy.deepcopy(self.bert.encoder.layer[-2]).to(torch.device("cuda")), copy.deepcopy(self.bert.encoder.layer[-1]).to(torch.device("cuda"))])
+            pass
+
+        inf_value = 10
+
+        if init_last:
+            init_value_pos[-1] = inf_value
+            init_value_ner[-1] = inf_value
+            init_value_chunking[-1] = inf_value
+            init_value_srl[-1] = inf_value
+            init_value_onto_pos[-1] = inf_value
+            init_value_onto_ner[-1] = inf_value
+        else:
+            init_value_pos = torch.rand(config.num_hidden_layers, 1)
+            init_value_ner = torch.rand(config.num_hidden_layers, 1)
+            init_value_chunking = torch.rand(config.num_hidden_layers, 1)
+            init_value_srl = torch.rand(config.num_hidden_layers, 1)
+            init_value_onto_pos = torch.rand(config.num_hidden_layers, 1)
+            init_value_onto_ner = torch.rand(config.num_hidden_layers, 1)
+
+
+        self.alpha_pos = torch.nn.Parameter(init_value_pos, requires_grad=True)
+        self.alpha_ner = torch.nn.Parameter(init_value_ner, requires_grad=True)
+        self.alpha_chunking = torch.nn.Parameter(init_value_chunking, requires_grad=True)
+        self.alpha_srl = torch.nn.Parameter(init_value_srl, requires_grad=True)
+        self.alpha_onto_pos = torch.nn.Parameter(init_value_onto_pos, requires_grad=True)
+        self.alpha_onto_ner = torch.nn.Parameter(init_value_onto_ner, requires_grad=True)
+
+        self.num_labels_pos = num_labels_pos
+        self.num_labels_ner = num_labels_ner
+        self.num_labels_chunking = num_labels_chunking
+        self.num_labels_srl = num_labels_srl
+        self.num_labels_onto_pos = num_labels_onto_pos
+        self.num_labels_onto_ner = num_labels_onto_ner
+        
+        self.softmax = nn.Softmax(dim=0)
+
+        # self.similarity = nn.CosineSimilarity(dim=0)
+        self.init_weights()
+    
+    def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, 
+                position_ids=None, head_mask=None, inputs_embeds=None, labels=None, task_id=0, layer_id=-1, do_alpha=False, adapter_ft=False):
+        
+        
+        if self.do_adapter:
+            if adapter_ft:
+                for param in self.bert.parameters():
+                    param.requires_grad = False
+                    
+            if adapter_ft and labels is not None:
+                for param in self.bert.encoder.layer[-1].parameters():
+                    param.requires_grad = True
+                for param in self.bert.encoder.layer[-2].parameters():
+                    param.requires_grad = True
+        
+        outputs = self.bert(input_ids,
+                            attention_mask=attention_mask,
+                            token_type_ids=token_type_ids,
+                            position_ids=position_ids,
+                            head_mask=head_mask,
+                            inputs_embeds=inputs_embeds)
+
+        sequence_output = outputs[0]
+
+        hidden_states = outputs[-1]
+        # print(len(outputs))
+        # print(hidden_states.shape)
+        sequence_output = hidden_states[layer_id]
+
+        
+
+        if task_id == 0: # pos
+            classifier = self.classifier_pos
+            num_labels = self.num_labels_pos
+            alpha = self.alpha_pos
+        elif task_id == 1: # ner
+            classifier = self.classifier_ner
+            num_labels = self.num_labels_ner
+            alpha = self.alpha_ner
+        elif task_id == 2: # chunking
+            classifier = self.classifier_chunking
+            num_labels = self.num_labels_chunking
+            alpha = self.alpha_chunking
+        elif task_id == 3: # srl
+            classifier = self.classifier_srl
+            num_labels = self.num_labels_srl
+            alpha = self.alpha_srl
+        elif task_id == 4: # onto_pos
+            classifier = self.classifier_onto_pos
+            num_labels = self.num_labels_onto_pos
+            alpha = self.alpha_onto_pos
+        elif task_id == 5: # onto_ner
+            classifier = self.classifier_onto_ner
+            num_labels = self.num_labels_onto_ner
+            alpha = self.alpha_onto_ner
+        elif task_id == 6: # parsing_ud
+            classifier = self.classifier_parsing_ud
+        elif task_id == 7: # parsing_ptb
+            classifier = self.classifier_parsing
+
+
+        if do_alpha:
+            alpha = self.softmax(alpha)
+            # print("alpha shape", alpha.shape)
+            # print(alpha)
+            hidden_states = hidden_states[1:]
+            hidden_states = torch.stack(hidden_states)   # [num_hidden_layers, batch_size, seq_len, hidden_size]
+            hidden_states = hidden_states.permute(1,2,3,0)  # [batch_size, seq_len, hidden_size, num_hidden_layers]
+            sequence_output = torch.matmul(hidden_states, alpha).squeeze(-1) # [batch_size, seq_len, hidden_size]
+
+        sequence_output = self.dropout(sequence_output)
+        logits = classifier(sequence_output)
+
+        outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here
+
+
+        if labels is not None:
+            loss_fct = CrossEntropyLoss()
+            # Only keep active parts of the loss
+            if attention_mask is not None:
+                active_loss = attention_mask.view(-1) == 1
+                if task_id in [6, 7]:
+                     active_logits = logits.contiguous().view(-1, logits.size(-1))[active_loss]
+                else:
+                    active_logits = logits.view(-1, num_labels)[active_loss]
+                active_labels = labels.view(-1)[active_loss]
+                loss = loss_fct(active_logits, active_labels)
+            else:
+                if task_id in [6, 7]:
+                    logits = logits.contiguous().view(-1, logits.size(-1)) # do Parsing
+                else:
+                    logits = logits.view(-1, self.num_labels)
+                loss = loss_fct(logits, labels.view(-1))
+            outputs = (loss,) + outputs
+        
+        if do_alpha:
+            # alpha_loss_func = nn.MSELoss()
+            # alpha_sim = self.similarity(self.alpha_pos, self.alpha_ner) + self.similarity(self.alpha_pos, self.alpha_chunking) + self.similarity(self.alpha_ner, self.alpha_chunking)
+            # alpha_loss = alpha_loss_func(alpha_sim, torch.tensor([0]).float().cuda())
+            outputs = (alpha, ) + outputs
+        return outputs  # (loss), scores, (hidden_states), (attentions)
