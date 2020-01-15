@@ -47,7 +47,7 @@ import requests
 
 from transformers import AdamW, get_linear_schedule_with_warmup
 from transformers import WEIGHTS_NAME, BertConfig, BertForTokenClassification, BertTokenizer
-from transformers import MTDNNModelv4 as MTDNNModel
+from transformers import MTDNNModelv5 as MTDNNModel
 from transformers import MTDNNModelTaskEmbeddingV2 as TaskEmbeddingModel
 from transformers import AdapterMTDNNModel 
 from transformers import RobertaConfig, RobertaForTokenClassification, RobertaTokenizer
@@ -69,7 +69,7 @@ MODEL_CLASSES = {
     "task_embedding":(BertConfig, TaskEmbeddingModel, BertTokenizer)
 }
 
-task_list = ["pos", "ner", "chunking", "srl", "onto_pos", "onto_ner"]
+task_list = ["pos", "ner", "chunking", "srl", "onto_pos", "onto_ner", "parsing_ud", "parsing_ptb"]
 task_map = {name:i for i, name in enumerate(task_list)}
 
 def set_seed(args):
@@ -615,7 +615,7 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunk
                                                     )
         # load parsing ud
         logger.info("Creating parsing features from dataset file at %s", args.parsing_ud_data_dir)
-        parsing_ud_examples = read_examples_from_file_parsing_ud(args.parsing_ud_data_dir, "train")
+        parsing_ud_examples = read_examples_from_file_parsing(args.parsing_ud_data_dir, "train")
         parsing_ud_features = convert_examples_to_features_parsing(parsing_ud_examples, None, args.max_seq_length, tokenizer,
                                                     cls_token_at_end=bool(args.model_type in ["xlnet"]),
                                                     # xlnet has a cls token at the end
@@ -633,7 +633,7 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunk
         
         # load parsing ptb
         logger.info("Creating parsing features from dataset file at %s", args.parsing_ptb_data_dir)
-        parsing_ptb_examples = read_examples_from_file_parsing_ptb(args.parsing_ptb_data_dir, "train")
+        parsing_ptb_examples = read_examples_from_file_parsing(args.parsing_ptb_data_dir, "train")
         parsing_ptb_features = convert_examples_to_features_parsing(parsing_ptb_examples, None, args.max_seq_length, tokenizer,
                                                     cls_token_at_end=bool(args.model_type in ["xlnet"]),
                                                     # xlnet has a cls token at the end
@@ -1353,7 +1353,7 @@ def main():
         
 
             pos_dataset_ft, ner_dataset_ft, chunking_dataset_ft, srl_dataset_ft, onto_pos_dataset_ft, onto_ner_dataset_ft, parsing_ud_dataset_ft, parsing_ptb_dataset_ft = load_and_cache_dev_examples(args, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, labels_onto_pos, labels_onto_ner, pad_token_label_id, is_ft=True)
-            pos_dataset, ner_dataset, chunking_dataset, srl_dataset, onto_pos_dataset, onto_ner_dataset, parsing_ud_dataset_ft, parsing_ptb_dataset_ft = load_and_cache_dev_examples(args, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, labels_onto_pos, labels_onto_ner, pad_token_label_id, is_ft=False)
+            pos_dataset, ner_dataset, chunking_dataset, srl_dataset, onto_pos_dataset, onto_ner_dataset, parsing_ud_dataset, parsing_ptb_dataset = load_and_cache_dev_examples(args, tokenizer, labels_pos, labels_ner, labels_chunking, labels_srl, labels_onto_pos, labels_onto_ner, pad_token_label_id, is_ft=False)
             
             logger.info("Evaluate before finetune")
 
@@ -1363,6 +1363,8 @@ def main():
             result_srl_no_ft, _ = evaluate(args, model, tokenizer, srl_dataset, labels_srl, pad_token_label_id, mode="dev", task="srl")
             result_onto_pos_no_ft, _ = evaluate(args, model, tokenizer, onto_pos_dataset, labels_onto_pos, pad_token_label_id, mode="dev",task="onto_pos")
             result_onto_ner_no_ft, _ = evaluate(args, model, tokenizer, onto_ner_dataset, labels_onto_ner, pad_token_label_id, mode="dev", task="onto_ner")
+            result_parsing_ud_no_ft, _ = evaluate(args, model, tokenizer, parsing_ud_dataset, None, pad_token_label_id, mode="dev", task="parsing_ud")
+            result_parsing_ptb_no_ft, _ = evaluate(args, model, tokenizer, parsing_ptb_dataset, None, pad_token_label_id, mode="dev", task="parsing_ptb")
          
             msg_dict["pos_no_ft"] = result_pos_no_ft["pos_accuracy"]
             msg_dict["ner_no_ft"] = result_ner_no_ft["ner_f1"]
@@ -1371,6 +1373,7 @@ def main():
             msg_dict["onto_pos_no_ft"] = result_onto_pos_no_ft["onto_pos_accuracy"]
             msg_dict["onto_ner_no_ft_acc"] = result_onto_ner_no_ft["onto_ner_accuracy"]
             msg_dict["onto_ner_no_ft_f1"] = result_onto_ner_no_ft["onto_ner_f1"]
+            
 
 
             
@@ -1418,6 +1421,17 @@ def main():
             msg_dict["onto_ner_acc_ft"] = result["onto_ner_accuracy"]
             msg_dict["onto_ner_f1_ft"] = result["onto_ner_f1"]
 
+            # Parsing UD
+            model = torch.load("source_model.pl")
+            _, _, model = finetune(args, parsing_ud_dataset_ft, model, tokenizer, None, pad_token_label_id, task="parsing_ud")
+            result, _ = evaluate(args, model, tokenizer, parsing_ud_dataset, None, pad_token_label_id, mode="dev", prefix=global_step, task="parsing_ud")
+
+            # Parsing PTB
+            model = torch.load("source_model.pl")
+            _, _, model = finetune(args, parsing_ptb_dataset_ft, model, tokenizer, None, pad_token_label_id, task="parsing_ptb")
+            result, _ = evaluate(args, model, tokenizer, parsing_ptb_dataset, None, pad_token_label_id, mode="dev", prefix=global_step, task="parsing_ptb")
+
+            
         
 
         output_eval_file = os.path.join(args.output_dir, "eval_results.txt")
