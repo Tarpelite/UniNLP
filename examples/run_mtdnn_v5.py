@@ -431,10 +431,10 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, chunkin
                                                 pad_token_label_id=pad_token_label_id)
         
         
-        if args.local_rank in [-1, 0]:
-            logger.info("Saving features into cached file %s", cached_features_file)
-            features = (pos_features, ner_features, chunking_features, srl_features, onto_pos_features, onto_ner_features)
-            torch.save(features, cached_features_file)
+        # if args.local_rank in [-1, 0]:
+        #     logger.info("Saving features into cached file %s", cached_features_file)
+        #     features = (pos_features, ner_features, chunking_features, srl_features, onto_pos_features, onto_ner_features)
+        #     torch.save(features, cached_features_file)
 
     # Convert to Tensors and build dataset
     all_input_ids = torch.tensor([f.input_ids for f in pos_features], dtype=torch.long)
@@ -651,10 +651,10 @@ def load_and_cache_train_examples(args, tokenizer, pos_labels, ner_labels, chunk
                                                     pad_token_label_id=pad_token_label_id
                                                     )
 
-        if args.local_rank in [-1, 0]:
-            logger.info("Saving features into cached file %s", cached_features_file)
-            features = (pos_features, ner_features, chunking_features, srl_features, onto_pos_features, onto_ner_features)
-            torch.save(features, cached_features_file)
+        # if args.local_rank in [-1, 0]:
+        #     logger.info("Saving features into cached file %s", cached_features_file)
+        #     features = (pos_features, ner_features, chunking_features, srl_features, onto_pos_features, onto_ner_features)
+        #     torch.save(features, cached_features_file)
 
 
 
