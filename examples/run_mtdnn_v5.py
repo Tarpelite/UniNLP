@@ -389,9 +389,9 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, chunkin
         
         logger.info("Creating parsing_ud examples from dataset file at %s", args.parsing_ud_data_dir)
         if is_ft:
-            parsing_ud_examples = read_examples_from_parsing(args.parsing_ud_data_dir, "train")
+            parsing_ud_examples = read_examples_from_file_parsing(args.parsing_ud_data_dir, "train")
         else:
-            parsing_ud_examples = read_examples_from_parsing(args.parsing_ud_data_dir, "dev")
+            parsing_ud_examples = read_examples_from_file_parsing(args.parsing_ud_data_dir, "dev")
         
         
         parsing_ud_features = convert_examples_to_features_parsing(parsing_ud_examples, args.max_seq_length, tokenizer,
@@ -410,9 +410,9 @@ def load_and_cache_dev_examples(args, tokenizer, pos_labels, ner_labels, chunkin
         
         logger.info("Creating parsing_ptb examples from dataset file at %s", args.parsing_ptb_data_dir)
         if is_ft:
-            parsing_ptb_examples = read_examples_from_parsing(args.parsing_ptb_data_dir, "train")
+            parsing_ptb_examples = read_examples_from_file_parsing(args.parsing_ptb_data_dir, "train")
         else:
-            parsing_ptb_examples = read_examples_from_parsing(args.parsing_ptb_data_dir, "dev")
+            parsing_ptb_examples = read_examples_from_file_parsing(args.parsing_ptb_data_dir, "dev")
         
         
         parsing_ptb_features = convert_examples_to_features_parsing(parsing_ptb_examples, args.max_seq_length, tokenizer,
