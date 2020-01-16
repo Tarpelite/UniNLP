@@ -2716,7 +2716,7 @@ class MTDNNModelv5(BertPreTrainedModel):
         elif task_id == 6: # parsing_ud
             classifier = self.classifier_parsing_ud
         elif task_id == 7: # parsing_ptb
-            classifier = self.classifier_parsing
+            classifier = self.classifier_parsing_ptb
 
 
         if do_alpha:
