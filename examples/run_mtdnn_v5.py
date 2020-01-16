@@ -239,8 +239,9 @@ def finetune(args, train_dataset, model, tokenizer, labels, pad_token_label_id, 
         tb_writer.close()
     
     path = os.path.join(args.output_dir, "{}-ft.bin".format(task))
+    model_to_save = model.module if hasattr(model, "module") else model  # Take care of distributed/parallel training
     logger.info("save model to {}".format(path))
-    torch.save(model, path)
+    torch.save(model_to_save.state_dict(), path)
     return global_step, tr_loss / global_step, model
 
 
