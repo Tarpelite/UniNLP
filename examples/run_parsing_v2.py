@@ -445,7 +445,7 @@ def main():
 
     # Prepare CONLL-2003 task
     args.labels = os.path.join(args.data_dir, "labels.txt")
-    labels = get_labels(args.labels.replace("/r", ""))
+    labels = get_labels(args.labels.replace("\r", ""))
     num_labels = len(labels)
     # Use cross entropy ignore index as padding label id so that only real label ids contribute to the loss later
     pad_token_label_id = CrossEntropyLoss().ignore_index
@@ -466,6 +466,7 @@ def main():
     model = model_class.from_pretrained(args.model_name_or_path,
                                         mlp_dim=args.mlp_dim,
                                         from_tf=bool(".ckpt" in args.model_name_or_path),
+                                        num_labels = num_labels,
                                         config=config,
                                         cache_dir=args.cache_dir if args.cache_dir else None)
 
