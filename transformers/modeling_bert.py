@@ -2614,7 +2614,7 @@ class BertForParsingV2(BertPreTrainedModel):
 
         preds = torch.argmax(logits_arc, dim=1) #[batch_size, seq_len, 1]
 
-        indices = preds.unsqueeze(-1).expand(preds.shape, (self.num_labels,)) #[batch_size, seq_len, 1 , num_labels]
+        indices = preds.unsqueeze(-1).expand(preds.shape + (self.num_labels,)) #[batch_size, seq_len, 1 , num_labels]
 
         logits_label = torch.gather(logits_label, -2, indices).squeeze(-2) #[batch_size, seq_len,num_labels]
        
