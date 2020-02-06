@@ -515,7 +515,7 @@ def main():
                                                 from_tf = bool(".ckpt" in checkpoint),
                                                 num_labels=num_labels,
                                                 config=config,
-                                                cache_dir=args.cache_dir if args.cache_dir)
+                                                cache_dir=None)
             model.to(args.device)
             result, _ = evaluate(args, model, tokenizer, labels, pad_token_label_id, mode="dev", prefix=global_step)
             if global_step:
