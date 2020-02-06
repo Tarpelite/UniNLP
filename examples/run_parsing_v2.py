@@ -195,6 +195,7 @@ def las_score(true_label_list, true_heads_list, predict_label_list, predict_head
     total_score = 0
     cnt = len(true_label_list)
     for true_labels, true_heads, predict_labels, predict_heads in zip(true_label_list, true_heads_list, predict_label_list, predict_heads_list):
+        hit = 0
         for true_label, true_head, predict_label, predict_head in zip(true_labels, true_heads, predict_labels, predict_heads):
             if true_label == predict_label and true_head == predict_head:
                 hit += 1
