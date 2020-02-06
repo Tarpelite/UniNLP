@@ -445,7 +445,7 @@ def main():
 
     # Prepare CONLL-2003 task
     args.labels = os.path.join(args.data_dir, "labels.txt")
-    labels = get_labels(args.labels)
+    labels = get_labels(args.labels.replace("/r", ""))
     num_labels = len(labels)
     # Use cross entropy ignore index as padding label id so that only real label ids contribute to the loss later
     pad_token_label_id = CrossEntropyLoss().ignore_index
