@@ -143,7 +143,7 @@ def convert_examples_to_features(examples,
         orig_to_tok_index = [x+1 for x in orig_to_tok_index]
         new_head_ids = []
         
-        for x in label_ids:
+        for x in head_ids:
             if x == 0: # special token will be left for [0]
                 new_head_ids += [0]
             elif x == pad_token_label_id:
