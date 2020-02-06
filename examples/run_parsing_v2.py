@@ -444,6 +444,7 @@ def main():
     set_seed(args)
 
     # Prepare CONLL-2003 task
+    args.labels = os.path.join(args.data_dir, "labels.txt")
     labels = get_labels(args.labels)
     num_labels = len(labels)
     # Use cross entropy ignore index as padding label id so that only real label ids contribute to the loss later
