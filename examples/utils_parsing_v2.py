@@ -126,7 +126,7 @@ def convert_examples_to_features(examples,
 
             # Use the real label id for the first token of the word, and padding ids for the remaining tokens
             head_ids.extend([int(head)] + [pad_token_label_id] * (len(word_tokens) - 1))
-            label_ids.extend(label_map[label] + [pad_token_label_id] * (len(word_tokens) - 1))
+            label_ids.extend([label_map[label]] + [pad_token_label_id] * (len(word_tokens) - 1))
             if label not in get_label_list: 
                 get_label_list.append(label)
 
