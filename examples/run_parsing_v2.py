@@ -191,6 +191,16 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
 
     return global_step, tr_loss / global_step
 
+def las_score(true_label_list, true_heads_list, predict_label_list, predict_heads_list):
+    total_score = 0
+    cnt = len(true_label_list)
+    for true_labels, true_heads, predict_labels, predict_heads in zip(true_label_list, true_heads_list, predict_label_list, predict_heads_list):
+        for true_label, true_head, predict_label, predict_head in zip(true_labels, true_heads, predict_labels, predict_heads):
+            if true_label == predict_label and true_head == predict_head:
+                hit += 1
+        score = hit*1.000 / len(true_label)
+        total_score += score
+    return total_score*1.000/cnt
 
 def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""):
     eval_dataset = load_and_cache_examples(args, tokenizer, labels, pad_token_label_id, mode=mode)
@@ -279,6 +289,7 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
         "loss": eval_loss,
         "uas":accuracy_score(out_head_list, preds_arc_list),
         "label accuracy score":accuracy_score(out_label_list, preds_label_list)
+        "las":las_score(out_label_list, out_head_list, preds_arc_list, preds_label_list)
         # "precision": precision_score(out_label_list, preds_list),
         # "recall": recall_score(out_label_list, preds_list),
         # "f1": f1_score(out_label_list, preds_list)
