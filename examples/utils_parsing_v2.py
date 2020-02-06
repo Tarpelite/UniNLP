@@ -151,7 +151,7 @@ def convert_examples_to_features(examples,
             else:
                 new_head_ids += [orig_to_tok_index[x-1]]
       
-        head_ids = new_label_ids
+        head_ids = new_head_ids
 
         tokens += [sep_token]
         head_ids += [pad_token_label_id]
