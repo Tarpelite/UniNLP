@@ -288,7 +288,7 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
     results = {
         "loss": eval_loss,
         "uas":accuracy_score(out_head_list, preds_arc_list),
-        "label accuracy score":accuracy_score(out_label_list, preds_label_list)
+        "label accuracy score":accuracy_score(out_label_list, preds_label_list),
         "las":las_score(out_label_list, out_head_list, preds_arc_list, preds_label_list)
         # "precision": precision_score(out_label_list, preds_list),
         # "recall": recall_score(out_label_list, preds_list),
