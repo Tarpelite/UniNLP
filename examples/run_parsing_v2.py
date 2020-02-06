@@ -512,7 +512,7 @@ def main():
             global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
             model = model_class.from_pretrained(checkpoint, 
                                                 mlp_dim=args.mlp_dim, 
-                                                from_tf = bool(".ckpt" in checkpoint)
+                                                from_tf = bool(".ckpt" in checkpoint),
                                                 num_labels=num_labels,
                                                 config=config,
                                                 cache_dir=args.cache_dir if args.cache_dir)
