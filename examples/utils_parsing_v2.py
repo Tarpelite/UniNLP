@@ -67,8 +67,7 @@ def read_examples_from_file(data_dir, mode):
             heads = inputs[1].strip().split()
             labels = inputs[2].strip().split()
             
-            words = left
-            labels = right
+           
             assert len(words) == len(labels)
             examples.append(InputExample(guid="%s-%d".format(mode, guid_index),
                                          words=words,
