@@ -2606,7 +2606,7 @@ class BertForParsingV2(BertPreTrainedModel):
         
         logits_arc = self.biaffine_arc(s_head_arc, s_dep_arc) # [batch_size, seq_len, seq_len]
 
-        logits_arc = arc_logits.transpose(-1, -2)
+        logits_arc = logits_arc.transpose(-1, -2)
 
         logits_label = self.biaffine_label(s_head_label, s_dep_label) #[batch_size, num_labels, seq_len, seq_len]
 
