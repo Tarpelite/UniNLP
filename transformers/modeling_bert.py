@@ -2592,7 +2592,7 @@ class BertForParsingV2(BertPreTrainedModel):
         s_dep_arc = self.mlp_dep_arc(sequence_output)
 
         s_head_label = self.mlp_head_label(sequence_output)
-        s_dep_label = self.mlp_head_label(seqeuence_output)
+        s_dep_label = self.mlp_head_label(sequence_output)
 
 
 
