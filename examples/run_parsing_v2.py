@@ -510,7 +510,12 @@ def main():
         logger.info("Evaluate the following checkpoints: %s", checkpoints)
         for checkpoint in checkpoints:
             global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
-            model = model_class.from_pretrained(checkpoint, mlp_dim=args.mlp_dim, num_labels=num_labels)
+            model = model_class.from_pretrained(checkpoint, 
+                                                mlp_dim=args.mlp_dim, 
+                                                from_tf = bool(".ckpt" in checkpoint)
+                                                num_labels=num_labels,
+                                                config=config,
+                                                cache_dir=args.cache_dir if args.cache_dir)
             model.to(args.device)
             result, _ = evaluate(args, model, tokenizer, labels, pad_token_label_id, mode="dev", prefix=global_step)
             if global_step:
