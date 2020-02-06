@@ -2616,8 +2616,8 @@ class BertForParsingV2(BertPreTrainedModel):
 
         indices = preds.unsqueeze(-1).expand(preds.shape + (self.num_labels,)) #[batch_size, seq_len, 1 , num_labels]
 
-        print("logits_label_shape", logits_label.shape)
-        print("indices shape", indices.shape)
+        # print("logits_label_shape", logits_label.shape)
+        # print("indices shape", indices.shape)
         logits_label = torch.gather(logits_label, -2, indices).squeeze(-2) #[batch_size, seq_len,num_labels]
        
         outputs = (logits_arc, logits_label) + outputs[2:]
@@ -2631,8 +2631,8 @@ class BertForParsingV2(BertPreTrainedModel):
             logits_label = logits_label.contiguous().view(-1, self.num_labels)
             labels = labels.view(-1)
             loss_labels = loss_fct(logits_label, labels)
-            print("loss heads", loss)
-            print("loss labels", loss_labels)
+            # print("loss heads", loss)
+            # print("loss labels", loss_labels)
             # print("loss", loss)
             # print("preds", preds)
             # print("labels", labels)
