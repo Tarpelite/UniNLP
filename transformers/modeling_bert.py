@@ -2628,7 +2628,7 @@ class BertForParsingV2(BertPreTrainedModel):
             loss = loss_fct(logits_arc, heads)
 
             
-            logits_arc = logits_arc.contiguous().view(-1, self.num_labels)
+            logits_label = logits_label.contiguous().view(-1, self.num_labels)
             labels = labels.view(-1)
             loss_labels = loss_fct(logits_label, labels)
             print("loss heads", loss)
