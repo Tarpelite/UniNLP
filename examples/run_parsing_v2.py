@@ -288,7 +288,7 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
     for key in sorted(results.keys()):
         logger.info("  %s = %s", key, str(results[key]))
 
-    return results, preds_list
+    return results, preds_label_list
 
 
 def load_and_cache_examples(args, tokenizer, labels, pad_token_label_id, mode):
