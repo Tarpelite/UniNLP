@@ -240,7 +240,7 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
             preds_arc = np.append(preds_arc, logits_arc.detach().cpu().numpy(), axis=0)
             preds_label = np.append(preds_label, logits_label.detach().cpu().numpy(), axis=0)
             
-            out_head_ids = np.append(out_head_ids, inputs["heads"].detach().cpu().numpy())
+            out_head_ids = np.append(out_head_ids, inputs["heads"].detach().cpu().numpy(), axis=0)
             out_label_ids = np.append(out_label_ids, inputs["labels"].detach().cpu().numpy(), axis=0)
 
     eval_loss = eval_loss / nb_eval_steps
