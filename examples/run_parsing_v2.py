@@ -268,13 +268,17 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
                 preds_label_list[i].append(label_map[preds_label[i][j]])
 
     print("sample results")
-    print("preds", preds_arc_list[0])
-    print("labels", out_label_list[0])
+    print("preds head", preds_arc_list[0])
+    print("true head", out_head_list[0])
+
+    print("preds label", preds_label_list[0])
+    print("true label", out_label_list[0])
     
 
     results = {
         "loss": eval_loss,
-        "accuracy_score":accuracy_score(out_label_list, preds_arc_list),
+        "uas":accuracy_score(out_head_list, preds_arc_list),
+        "label accuracy score":accuracy_score(out_label_list, preds_label_list)
         # "precision": precision_score(out_label_list, preds_list),
         # "recall": recall_score(out_label_list, preds_list),
         # "f1": f1_score(out_label_list, preds_list)
