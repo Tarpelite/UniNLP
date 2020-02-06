@@ -264,7 +264,7 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
     for i in range(out_label_ids.shape[0]):
         for j in range(out_label_ids.shape[1]):
             if out_label_ids[i, j] != pad_token_label_id:
-                out_label_list.append(label_map[out_label_ids[i][j]])
+                out_label_list[i].append(label_map[out_label_ids[i][j]])
                 preds_label_list[i].append(label_map[preds_label[i][j]])
 
     print("sample results")
