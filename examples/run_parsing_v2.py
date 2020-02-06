@@ -249,14 +249,23 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
     
     label_map = {i: label for i, label in enumerate(labels)}
 
-    out_label_list = [[] for _ in range(out_head_ids.shape[0])]
+    out_head_list = [[] for _ in range(out_head_ids.shape[0])]
     preds_arc_list = [[] for _ in range(out_head_ids.shape[0])]
 
+    out_label_list = [[] for _ in range(out_label_ids.shape[0])]
+    preds_label_list = [[] for _ in range(out_label_ids.shape[0])]
+
+    for i in range(out_head_ids.shape[0]):
+        for j in range(out_head_ids.shape[1]):
+            if out_head_ids[i, j] != pad_token_label_id:
+                out_head_list[i].append(str(out_head_ids[i][j]))
+                preds_arc_list[i].append(str(preds_arc[i][j]))
+    
     for i in range(out_label_ids.shape[0]):
         for j in range(out_label_ids.shape[1]):
             if out_label_ids[i, j] != pad_token_label_id:
-                out_label_list[i].append(str(out_head_ids[i][j]))
-                preds_list[i].append(str(preds_arc[i][j]))
+                out_label_list.append(label_map[out_label_ids[i][j]])
+                preds_label_list[i].append(label_map[preds_label[i][j]])
 
     print("sample results")
     print("preds", preds_arc_list[0])
